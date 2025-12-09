@@ -2,22 +2,244 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 
+ * Color Design Tokens
+ * 
+ * 프로젝트 전체에서 사용되는 색상 토큰 정의
+ * 피그마 파운데이션 노드 ID: 42:8577
+ * 
+ * TypeScript 파일: src/commons/constants/color.ts
+ */
+
+/* Color Tokens - Light Mode (기본) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* 기본 색상 */
+  --color-background: #ffffff;
+  --color-foreground: #171717;
+
+  /* Primary 색상 팔레트 */
+  --color-primary-50: #f0f9ff;
+  --color-primary-100: #e0f2fe;
+  --color-primary-200: #bae6fd;
+  --color-primary-300: #7dd3fc;
+  --color-primary-400: #38bdf8;
+  --color-primary-500: #0ea5e9;
+  --color-primary-600: #0284c7;
+  --color-primary-700: #0369a1;
+  --color-primary-800: #075985;
+  --color-primary-900: #0c4a6e;
+  --color-primary-950: #082f49;
+
+  /* Secondary 색상 팔레트 */
+  --color-secondary-50: #fafafa;
+  --color-secondary-100: #f4f4f5;
+  --color-secondary-200: #e4e4e7;
+  --color-secondary-300: #d4d4d8;
+  --color-secondary-400: #a1a1aa;
+  --color-secondary-500: #71717a;
+  --color-secondary-600: #52525b;
+  --color-secondary-700: #3f3f46;
+  --color-secondary-800: #27272a;
+  --color-secondary-900: #18181b;
+  --color-secondary-950: #09090b;
+
+  /* 상태 색상 */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* 테두리 및 구분선 */
+  --color-border: #e5e7eb;
+  --color-divider: #e5e7eb;
+
+  /* 텍스트 색상 */
+  --color-text-primary: #171717;
+  --color-text-secondary: #52525b;
+  --color-text-tertiary: #a1a1aa;
+  --color-text-disabled: #d4d4d8;
+
+  /* 하위 호환성을 위한 기존 변수 */
+  --background: var(--color-background);
+  --foreground: var(--color-foreground);
 }
 
+/* Color Tokens - Dark Mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* 기본 색상 */
+    --color-background: #0a0a0a;
+    --color-foreground: #ededed;
+
+    /* Primary 색상 팔레트 (다크모드용 반전) */
+    --color-primary-50: #082f49;
+    --color-primary-100: #0c4a6e;
+    --color-primary-200: #075985;
+    --color-primary-300: #0369a1;
+    --color-primary-400: #0284c7;
+    --color-primary-500: #0ea5e9;
+    --color-primary-600: #38bdf8;
+    --color-primary-700: #7dd3fc;
+    --color-primary-800: #bae6fd;
+    --color-primary-900: #e0f2fe;
+    --color-primary-950: #f0f9ff;
+
+    /* Secondary 색상 팔레트 (다크모드용 반전) */
+    --color-secondary-50: #09090b;
+    --color-secondary-100: #18181b;
+    --color-secondary-200: #27272a;
+    --color-secondary-300: #3f3f46;
+    --color-secondary-400: #52525b;
+    --color-secondary-500: #71717a;
+    --color-secondary-600: #a1a1aa;
+    --color-secondary-700: #d4d4d8;
+    --color-secondary-800: #e4e4e7;
+    --color-secondary-900: #f4f4f5;
+    --color-secondary-950: #fafafa;
+
+    /* 상태 색상 (다크모드에서도 동일) */
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-error: #ef4444;
+    --color-info: #3b82f6;
+
+    /* 테두리 및 구분선 */
+    --color-border: #27272a;
+    --color-divider: #27272a;
+
+    /* 텍스트 색상 */
+    --color-text-primary: #ededed;
+    --color-text-secondary: #a1a1aa;
+    --color-text-tertiary: #71717a;
+    --color-text-disabled: #52525b;
+
+    /* 하위 호환성을 위한 기존 변수 */
+    --background: var(--color-background);
+    --foreground: var(--color-foreground);
+  }
+}
+
+/* Typography Tokens - Mobile (기본) */
+:root {
+  /* 폰트 패밀리 */
+  --typography-font-family-korean: Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, sans-serif;
+  --typography-font-family-english: Pretendard, -apple-system,
+    BlinkMacSystemFont, system-ui, sans-serif;
+  --typography-font-family-code: "Source Code Pro", "Courier New", monospace;
+
+  /* 폰트 웨이트 */
+  --typography-font-weight-regular: 400;
+  --typography-font-weight-medium: 500;
+  --typography-font-weight-semibold: 600;
+  --typography-font-weight-bold: 700;
+
+  /* Heading 스타일 - Mobile */
+  --typography-heading-4xl-font-size: 40px;
+  --typography-heading-4xl-line-height: 44px;
+  --typography-heading-4xl-font-weight: 700;
+  --typography-heading-4xl-font-family: var(--typography-font-family-korean);
+
+  --typography-heading-3xl-font-size: 32px;
+  --typography-heading-3xl-line-height: 36px;
+  --typography-heading-3xl-font-weight: 600;
+  --typography-heading-3xl-font-family: var(--typography-font-family-korean);
+
+  --typography-heading-2xl-font-size: 28px;
+  --typography-heading-2xl-line-height: 32px;
+  --typography-heading-2xl-font-weight: 700;
+  --typography-heading-2xl-font-family: var(--typography-font-family-korean);
+
+  --typography-heading-xl-font-size: 24px;
+  --typography-heading-xl-line-height: 28px;
+  --typography-heading-xl-font-weight: 600;
+  --typography-heading-xl-font-family: var(--typography-font-family-korean);
+
+  --typography-heading-lg-font-size: 20px;
+  --typography-heading-lg-line-height: 24px;
+  --typography-heading-lg-font-weight: 600;
+  --typography-heading-lg-font-family: var(--typography-font-family-korean);
+
+  --typography-heading-md-font-size: 20px;
+  --typography-heading-md-line-height: 24px;
+  --typography-heading-md-font-weight: 600;
+  --typography-heading-md-font-family: var(--typography-font-family-korean);
+
+  --typography-heading-sm-font-size: 18px;
+  --typography-heading-sm-line-height: 22px;
+  --typography-heading-sm-font-weight: 600;
+  --typography-heading-sm-font-family: var(--typography-font-family-korean);
+
+  /* Body 스타일 - Mobile */
+  --typography-body-lg-semibold-font-size: 16px;
+  --typography-body-lg-semibold-line-height: 20px;
+  --typography-body-lg-semibold-font-weight: 600;
+  --typography-body-lg-semibold-font-family: var(
+    --typography-font-family-korean
+  );
+
+  --typography-body-lg-medium-font-size: 16px;
+  --typography-body-lg-medium-line-height: 20px;
+  --typography-body-lg-medium-font-weight: 500;
+  --typography-body-lg-medium-font-family: var(--typography-font-family-korean);
+
+  --typography-body-md-semibold-font-size: 14px;
+  --typography-body-md-semibold-line-height: 18px;
+  --typography-body-md-semibold-font-weight: 600;
+  --typography-body-md-semibold-font-family: var(
+    --typography-font-family-korean
+  );
+
+  --typography-body-md-medium-font-size: 14px;
+  --typography-body-md-medium-line-height: 18px;
+  --typography-body-md-medium-font-weight: 500;
+  --typography-body-md-medium-font-family: var(--typography-font-family-korean);
+
+  --typography-body-md-underline-font-size: 14px;
+  --typography-body-md-underline-line-height: 18px;
+  --typography-body-md-underline-font-weight: 500;
+  --typography-body-md-underline-font-family: var(
+    --typography-font-family-korean
+  );
+  --typography-body-md-underline-text-decoration: underline;
+
+  --typography-body-md-encode-font-size: 14px;
+  --typography-body-md-encode-line-height: 18px;
+  --typography-body-md-encode-font-weight: 500;
+  --typography-body-md-encode-font-family: var(--typography-font-family-code);
+
+  --typography-body-sm-medium-font-size: 12px;
+  --typography-body-sm-medium-line-height: 18px;
+  --typography-body-sm-medium-font-weight: 500;
+  --typography-body-sm-medium-font-family: var(--typography-font-family-korean);
+}
+
+/* Typography Tokens - Desktop */
+@media (min-width: 768px) {
+  :root {
+    /* Heading 스타일 - Desktop */
+    --typography-heading-4xl-font-size: 48px;
+    --typography-heading-4xl-line-height: 52px;
+
+    --typography-heading-3xl-font-size: 40px;
+    --typography-heading-3xl-line-height: 44px;
+
+    --typography-heading-2xl-font-size: 32px;
+    --typography-heading-2xl-line-height: 36px;
+    --typography-heading-2xl-font-weight: 600;
+
+    --typography-heading-xl-font-size: 28px;
+    --typography-heading-xl-line-height: 32px;
+
+    --typography-heading-lg-font-size: 24px;
+    --typography-heading-lg-line-height: 28px;
   }
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--color-foreground);
+  background: var(--color-background);
+  font-family: var(--typography-font-family-korean);
 }
 
 @layer utilities {
