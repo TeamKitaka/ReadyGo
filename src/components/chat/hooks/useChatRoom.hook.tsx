@@ -539,12 +539,26 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     [roomId, user?.id]
   );
 
+  // 이전 roomId를 추적하기 위한 ref
+  const previousRoomIdRef = useRef<number | null>(null);
+
   /**
    * roomId 또는 user?.id 변경 시 자동 처리
    */
   useEffect(() => {
     // roomId가 유효하지 않으면 early return
     if (!roomId || roomId <= 0) {
+      // 이전 채팅방이 있었다면 읽음 처리
+      const prevRoomId = previousRoomIdRef.current;
+      if (prevRoomId && prevRoomId > 0 && user?.id) {
+        // 즉시 낙관적 업데이트로 채팅 목록 업데이트
+        markRoomAsReadOptimistic(prevRoomId);
+        // 백그라운드에서 실제 읽음 처리
+        markRoomAsRead(prevRoomId).catch((error) => {
+          console.error('Failed to mark previous room as read:', error);
+        });
+      }
+      previousRoomIdRef.current = null;
       cleanupChannel();
       setMessages([]);
       seenMessageIdsRef.current.clear();
@@ -555,6 +569,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
 
     // user?.id가 없으면 채널 정리만 수행
     if (!user?.id) {
+      previousRoomIdRef.current = null;
       cleanupChannel();
       setMessages([]);
       seenMessageIdsRef.current.clear();
@@ -562,6 +577,23 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       setError(null);
       return;
     }
+
+    // 이전 채팅방이 있고 현재 채팅방과 다르면 읽음 처리
+    const prevRoomId = previousRoomIdRef.current;
+    if (prevRoomId && prevRoomId !== roomId && prevRoomId > 0) {
+      // 즉시 낙관적 업데이트로 채팅 목록 업데이트 (즉시 반영)
+      markRoomAsReadOptimistic(prevRoomId);
+      // 백그라운드에서 실제 읽음 처리
+      markRoomAsRead(prevRoomId).catch((error) => {
+        console.error('Failed to mark previous room as read:', error);
+      });
+    }
+
+    // 현재 roomId를 이전 roomId로 저장
+    previousRoomIdRef.current = roomId;
+
+    // 채팅방에 접속하자마자 즉시 낙관적 업데이트 (안읽음 표시 즉시 제거)
+    markRoomAsReadOptimistic(roomId);
 
     // 이전 채널 정리
     cleanupChannel();
@@ -581,7 +613,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     loadMessages(roomId).then(async () => {
       // postgres_changes 구독
       subscribeToPostgresChanges(roomId);
-      // 읽음 처리 (await로 에러 확인)
+      // 백그라운드에서 실제 읽음 처리 (낙관적 업데이트는 이미 완료됨)
       try {
         await markRoomAsRead(roomId);
       } catch (error) {
@@ -603,6 +635,16 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
    */
   useEffect(() => {
     return () => {
+      // 언마운트 시 현재 채팅방 읽음 처리
+      const currentRoomId = previousRoomIdRef.current;
+      if (currentRoomId && currentRoomId > 0 && user?.id) {
+        // 즉시 낙관적 업데이트로 채팅 목록 업데이트
+        markRoomAsReadOptimistic(currentRoomId);
+        // 백그라운드에서 실제 읽음 처리 (언마운트 후에도 실행 가능하도록)
+        markRoomAsRead(currentRoomId).catch((error) => {
+          console.error('Failed to mark room as read on unmount:', error);
+        });
+      }
       // postgres_changes 채널 정리
       cleanupChannel();
     };
