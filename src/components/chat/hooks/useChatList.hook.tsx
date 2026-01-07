@@ -206,11 +206,22 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
       const rooms: ChatRoomListItem[] = result.data || [];
 
       if (isMountedRef.current) {
-        // 낙관적으로 읽음 처리된 채팅방의 unreadCount는 0으로 유지
+        // DB에서 조회한 실제 unreadCount를 우선하며, 낙관적 처리 상태와 동기화
         const updatedRooms = rooms.map((room) => {
-          if (optimisticReadRoomsRef.current.has(room.room.id || 0)) {
+          const roomId = room.room.id || 0;
+          const hasOptimisticRead = optimisticReadRoomsRef.current.has(roomId);
+
+          // DB에서 실제 unreadCount가 있으면 낙관적 처리 제거하고 실제 값 사용
+          if (room.unreadCount > 0 && hasOptimisticRead) {
+            optimisticReadRoomsRef.current.delete(roomId);
+            return room; // 실제 unreadCount 반영
+          }
+
+          // 낙관적으로 읽음 처리되었고 DB에서도 0이면 유지
+          if (hasOptimisticRead) {
             return { ...room, unreadCount: 0 };
           }
+
           return room;
         });
 
@@ -380,41 +391,114 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
                   room_id?: number;
                   sender_id?: string;
                   is_read?: boolean;
+                  content?: string;
+                  content_type?: string;
+                  created_at?: string;
                 } | null;
 
-                if (newMessage && newMessage.sender_id !== userId) {
-                  // 상대방이 보낸 메시지인 경우
+                if (newMessage && newMessage.room_id) {
                   const messageRoomId = newMessage.room_id;
 
-                  if (messageRoomId) {
-                    // 현재 열려있는 채팅방인지 확인
-                    const currentRoomIdMatch = pathname?.match(/^\/chat\/(\d+)$/);
-                    const currentRoomId = currentRoomIdMatch
-                      ? parseInt(currentRoomIdMatch[1], 10)
-                      : null;
+                  // 새 메시지가 도착하면 낙관적 읽음 처리를 즉시 제거
+                  // (실제 새 메시지가 왔으므로 읽지 않은 상태로 복귀)
+                  optimisticReadRoomsRef.current.delete(messageRoomId);
 
-                    // 현재 열려있는 채팅방이 아니고, 낙관적으로 읽음 처리되지 않은 채팅방이면
-                    // unreadCount를 즉시 증가시킴
-                    if (
-                      currentRoomId !== messageRoomId &&
-                      !optimisticReadRoomsRef.current.has(messageRoomId)
-                    ) {
-                      setChatRooms((prev) =>
-                        prev.map((room) => {
-                          if (room.room.id === messageRoomId) {
-                            return {
-                              ...room,
-                              unreadCount: (room.unreadCount || 0) + 1,
-                            };
-                          }
-                          return room;
-                        })
-                      );
-                    }
+                  // 현재 열려있는 채팅방인지 확인
+                  const currentRoomIdMatch = pathname?.match(/^\/chat\/(\d+)$/);
+                  const currentRoomId = currentRoomIdMatch
+                    ? parseInt(currentRoomIdMatch[1], 10)
+                    : null;
+
+                  // 상대방이 보낸 메시지인 경우 즉시 상태 업데이트
+                  if (newMessage.sender_id !== userId) {
+                    setChatRooms((prev) => {
+                      const updatedRooms = prev.map((room) => {
+                        if (room.room.id === messageRoomId) {
+                          // 마지막 메시지 정보 생성
+                          const lastMessage: ChatMessage | undefined = newMessage.id
+                            ? {
+                                id: newMessage.id,
+                                room_id: messageRoomId,
+                                sender_id: newMessage.sender_id || '',
+                                content: newMessage.content || null,
+                                content_type: (newMessage.content_type as 'text' | 'image' | 'system') || 'text',
+                                created_at: newMessage.created_at || new Date().toISOString(),
+                                is_read: newMessage.is_read || false,
+                              }
+                            : undefined;
+
+                          // 현재 열려있는 채팅방이 아니면 unreadCount 증가
+                          const newUnreadCount =
+                            currentRoomId !== messageRoomId
+                              ? (room.unreadCount || 0) + 1
+                              : room.unreadCount || 0;
+
+                          return {
+                            ...room,
+                            lastMessage,
+                            unreadCount: newUnreadCount,
+                          };
+                        }
+                        return room;
+                      });
+
+                      // 최신 메시지 순으로 정렬 (lastMessage.created_at 기준, 내림차순)
+                      updatedRooms.sort((a, b) => {
+                        const aTime = a.lastMessage?.created_at
+                          ? new Date(a.lastMessage.created_at).getTime()
+                          : 0;
+                        const bTime = b.lastMessage?.created_at
+                          ? new Date(b.lastMessage.created_at).getTime()
+                          : 0;
+                        return bTime - aTime;
+                      });
+
+                      return updatedRooms;
+                    });
+                  } else {
+                    // 내가 보낸 메시지인 경우에도 마지막 메시지와 시간은 즉시 업데이트
+                    setChatRooms((prev) => {
+                      const updatedRooms = prev.map((room) => {
+                        if (room.room.id === messageRoomId) {
+                          // 마지막 메시지 정보 생성
+                          const lastMessage: ChatMessage | undefined = newMessage.id
+                            ? {
+                                id: newMessage.id,
+                                room_id: messageRoomId,
+                                sender_id: newMessage.sender_id || '',
+                                content: newMessage.content || null,
+                                content_type: (newMessage.content_type as 'text' | 'image' | 'system') || 'text',
+                                created_at: newMessage.created_at || new Date().toISOString(),
+                                is_read: newMessage.is_read || false,
+                              }
+                            : undefined;
+
+                          return {
+                            ...room,
+                            lastMessage,
+                          };
+                        }
+                        return room;
+                      });
+
+                      // 최신 메시지 순으로 정렬
+                      updatedRooms.sort((a, b) => {
+                        const aTime = a.lastMessage?.created_at
+                          ? new Date(a.lastMessage.created_at).getTime()
+                          : 0;
+                        const bTime = b.lastMessage?.created_at
+                          ? new Date(b.lastMessage.created_at).getTime()
+                          : 0;
+                        return bTime - aTime;
+                      });
+
+                      return updatedRooms;
+                    });
                   }
                 }
 
-                // 목록 업데이트 (마지막 메시지, 시간 등)
+                // 백그라운드에서 최종 동기화 (debounce 적용)
+                // 실제 DB 상태와 동기화하기 위해 필요하지만, UI는 이미 업데이트됨
                 debouncedRefresh();
               }
             )
