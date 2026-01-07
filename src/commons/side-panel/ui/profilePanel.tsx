@@ -8,6 +8,7 @@ import RadarChart from '../../components/radar-chart';
 import { useProfileByUserId } from '@/hooks/useProfileByUserId';
 import { useAuthStore } from '@/stores/auth.store';
 import { AnimalType } from '../../constants/animal';
+import { useChatList } from '@/components/chat/hooks';
 
 export interface ProfilePanelProps {
   userId: string;
@@ -30,6 +31,9 @@ export default function ProfilePanel({
   // 상대방 프로필 가져오기
   const { loading, viewModel, error, empty } = useProfileByUserId(userId);
 
+  // 채팅 목록 가져오기 (기존 채팅방 확인용)
+  const { chatRooms } = useChatList();
+
   // 채팅하기 버튼 핸들러
   const handleStartChat = async () => {
     if (!myUserId || !userId || isCreatingChat) {
@@ -39,7 +43,19 @@ export default function ProfilePanel({
     try {
       setIsCreatingChat(true);
 
-      // 채팅방 생성 API 호출
+      // 먼저 기존 채팅방이 있는지 확인
+      const existingRoom = chatRooms.find((room) => {
+        // 다른 멤버의 user_id가 현재 userId와 일치하는지 확인
+        return room.otherMember?.id === userId && room.room.type === 'direct';
+      });
+
+      if (existingRoom && existingRoom.room.id) {
+        // 기존 채팅방이 있으면 해당 채팅방으로 이동
+        router.push(`/chat/${existingRoom.room.id}`);
+        return;
+      }
+
+      // 기존 채팅방이 없으면 새로 생성
       const response = await fetch('/api/chat/room', {
         method: 'POST',
         headers: {
