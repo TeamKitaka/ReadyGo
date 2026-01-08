@@ -22,6 +22,7 @@ export interface TraitsResultPageProps {
   };
   matchTypes: string[];
   characteristics: string[];
+  isSteamConnected: boolean;
 }
 
 export default function TraitsResultPage({
@@ -32,6 +33,7 @@ export default function TraitsResultPage({
   subRole,
   matchTypes,
   characteristics,
+  isSteamConnected,
 }: TraitsResultPageProps) {
   const router = useRouter();
 
@@ -53,6 +55,7 @@ export default function TraitsResultPage({
         subRole={subRole}
         matchTypes={matchTypes}
         characteristics={characteristics}
+        isSteamConnected={isSteamConnected}
         onPrevious={handlePrevious}
         onComplete={handleComplete}
       />

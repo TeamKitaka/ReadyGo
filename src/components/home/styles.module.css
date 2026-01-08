@@ -39,6 +39,11 @@
   }
 }
 
+/* 시작 섹션 */
+.startSection {
+  width: 100%;
+}
+
 /* 매치 섹션 */
 .matchSection {
   width: 100%;

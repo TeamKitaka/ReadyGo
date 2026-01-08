@@ -343,6 +343,28 @@ export const animalCopies: Record<AnimalType, AnimalCopy> = {
       '기술적인 완성도를 추구합니다.',
     ],
   },
+
+  // ========== uninitialized 그룹 ==========
+  [AnimalType.unknown]: {
+    label: '미정',
+    description: ['아직 내 게임 타입이 없어요'],
+    extendedDescription:
+      '아직 게임 성향 테스트를 완료하지 않아 당신의 게임 타입이 정해지지 않았습니다. 테스트를 완료하면 당신만의 동물 타입을 확인할 수 있습니다.',
+    mainRole: {
+      name: '분석 필요',
+      description:
+        '게임 성향 테스트를 완료하면\n당신의 플레이 스타일을 알 수 있습니다.',
+    },
+    subRole: {
+      name: '분석 필요',
+      description: '활동 시간과 게임 성향을\n분석하여 타입을 결정합니다.',
+    },
+    checkSentences: [
+      '게임 성향 테스트를 완료하면 내 타입을 알 수 있어요.',
+      '테스트를 통해 나에게 맞는 플레이 스타일을 찾아보세요.',
+      '내 플레이 스타일 알아보기 버튼을 눌러 테스트를 시작하세요.',
+    ],
+  },
 } as const;
 
 // ============================================
