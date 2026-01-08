@@ -31,35 +31,6 @@ const debounce = <T extends (...args: unknown[]) => void>(
 };
 
 /**
- * throttle 함수 (마지막 호출 보장)
- */
-const throttle = <T extends (...args: unknown[]) => void>(
-  func: T,
-  wait: number
-): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout | null = null;
-  let lastCallTime = 0;
-
-  return (...args: Parameters<T>) => {
-    const now = Date.now();
-    const timeSinceLastCall = now - lastCallTime;
-
-    if (timeSinceLastCall >= wait) {
-      lastCallTime = now;
-      func(...args);
-    } else {
-      if (timeout) {
-        clearTimeout(timeout);
-      }
-      timeout = setTimeout(() => {
-        lastCallTime = Date.now();
-        func(...args);
-      }, wait - timeSinceLastCall);
-    }
-  };
-};
-
-/**
  * 시간 포맷 함수 (24h 기준, 오늘은 시간, 그 외는 날짜)
  */
 const formatMessageTime = (dateString: string | null): string => {
@@ -193,7 +164,21 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
   const optimisticReadRoomsRef = useRef<Set<number>>(new Set()); // 낙관적으로 읽음 처리된 채팅방 ID들
   const chatRoomsRef = useRef<ChatRoomListItem[]>([]); // 최신 chatRooms 상태 추적용 ref
   const pendingMessageUpdatesRef = useRef<
-    Map<number, { message: any; count: number }>
+    Map<
+      number,
+      {
+        message: {
+          id?: number;
+          room_id?: number;
+          sender_id?: string;
+          content?: string | null;
+          content_type?: string;
+          created_at?: string;
+          is_read?: boolean;
+        };
+        count: number;
+      }
+    >
   >(new Map()); // 배치 처리용 대기 중인 메시지 업데이트
   const messageUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -276,7 +261,7 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
       setIsLoading(false);
       console.error(errorMessage);
     }
-  }, [user?.id]);
+  }, [user?.id, pathname]);
 
   /**
    * 낙관적 업데이트: 특정 채팅방의 unreadCount를 즉시 0으로 설정
@@ -339,7 +324,7 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
     // ref를 통해 최신 상태 참조
     const currentRooms = chatRoomsRef.current;
 
-    let updatedRooms = [...currentRooms];
+    const updatedRooms = [...currentRooms];
     const updates = pendingMessageUpdatesRef.current;
 
     // 각 채팅방별로 업데이트 적용
@@ -423,7 +408,15 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
    * 메시지 업데이트를 스케줄링하는 함수
    */
   const scheduleMessageUpdate = useCallback(
-    (newMessage: any) => {
+    (newMessage: {
+      id?: number;
+      room_id?: number;
+      sender_id?: string;
+      content?: string | null;
+      content_type?: string;
+      created_at?: string;
+      is_read?: boolean;
+    }) => {
       if (!newMessage || !newMessage.room_id) {
         return;
       }
@@ -743,7 +736,7 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
       markRoomAsReadOptimistic,
       pathname,
       scheduleMessageUpdate,
-      processPendingMessageUpdates,
+      user?.id,
     ]
   );
 

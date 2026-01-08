@@ -26,6 +26,7 @@ Steam API로부터 받은 항목 중 실제 게임만 필터링하여 동기화�
 **목적**: 이미 확인된 게임만 보유한 유저의 빠른 동기화 확인
 
 **절차**:
+
 ```bash
 # 1. 인기 게임만 보유한 테스트 유저로 동기화
 curl -X POST http://localhost:3000/api/steam/sync \
@@ -33,6 +34,7 @@ curl -X POST http://localhost:3000/api/steam/sync \
 ```
 
 **기대 결과**:
+
 - Edge Function 로그: `Store API calls: 0` (또는 매우 적은 수)
 - 빠른 동기화 완료 (1-2초)
 - `steam_user_games`에 게임 저장 확인
@@ -42,6 +44,7 @@ curl -X POST http://localhost:3000/api/steam/sync \
 **목적**: DLC, 소프트웨어 등이 포함된 계정에서 필터링 확인
 
 **절차**:
+
 ```bash
 # 1. 동기화 실행
 curl -X POST http://localhost:3000/api/steam/sync \
@@ -57,6 +60,7 @@ SELECT COUNT(*) FROM steam_user_games WHERE user_id = 'your-user-id';
 ```
 
 **기대 결과**:
+
 - 원본 항목 수 > 저장된 게임 수
 - 비게임 항목은 `steam_user_games`에 저장되지 않음
 - `steam_game_info`에는 게임만 추가됨
@@ -66,6 +70,7 @@ SELECT COUNT(*) FROM steam_user_games WHERE user_id = 'your-user-id';
 **목적**: 새로 출시된 게임이 올바르게 추가되는지 확인
 
 **전제 조건**:
+
 ```sql
 -- 테스트할 app_id가 steam_game_info에 없는지 확인
 SELECT * FROM steam_game_info WHERE app_id = 730; -- CS:GO 예시
@@ -73,6 +78,7 @@ SELECT * FROM steam_game_info WHERE app_id = 730; -- CS:GO 예시
 ```
 
 **절차**:
+
 ```bash
 # 1. 동기화 실행
 curl -X POST http://localhost:3000/api/steam/sync \
@@ -83,6 +89,7 @@ SELECT * FROM steam_game_info WHERE app_id = 730;
 ```
 
 **기대 결과**:
+
 - Store API 호출 로그 확인
 - `steam_game_info`에 게임 정보 저장
 - `steam_user_games`에도 동기화
@@ -92,6 +99,7 @@ SELECT * FROM steam_game_info WHERE app_id = 730;
 **목적**: 여러 유저 동기화 시 필터링 작동 확인
 
 **절차**:
+
 ```bash
 # Edge Function 호출
 curl -L -X POST 'https://wwyavdsmukthfioqlldn.supabase.co/functions/v1/steam-sync-batch' \
@@ -100,6 +108,7 @@ curl -L -X POST 'https://wwyavdsmukthfioqlldn.supabase.co/functions/v1/steam-syn
 ```
 
 **기대 결과**:
+
 - 각 유저별 필터링 로그 출력
 - Store API 호출 횟수 확인
 - 메모리 초과 없이 완료
@@ -107,12 +116,14 @@ curl -L -X POST 'https://wwyavdsmukthfioqlldn.supabase.co/functions/v1/steam-syn
 ## 예상 로그 출력
 
 ### Node.js (개별 동기화)
+
 ```
 [Steam API] Successfully fetched 245 games
 [Steam Sync] Filtered 245 items → 230 games (15 Store API calls)
 ```
 
 ### Deno (배치 동기화)
+
 ```
 [Sync User abc123] Filtering 180 items (checking steam_game_info cache)
 [Sync User abc123] Filtered 180 items → 175 games (5 Store API calls)
@@ -123,10 +134,12 @@ curl -L -X POST 'https://wwyavdsmukthfioqlldn.supabase.co/functions/v1/steam-syn
 ## 성능 지표
 
 ### 캐시 히트율
+
 - **목표**: 95% 이상
 - **측정**: `(전체 게임 수 - Store API 호출 수) / 전체 게임 수`
 
 ### 동기화 시간
+
 - **캐시 히트 (1000게임)**: 1-2초
 - **캐시 미스 포함 (50개 검증)**: 10-15초
 - **배치 (50명)**: 2-5분
@@ -134,6 +147,7 @@ curl -L -X POST 'https://wwyavdsmukthfioqlldn.supabase.co/functions/v1/steam-syn
 ## 검증 쿼리
 
 ### 1. 필터링 효과 확인
+
 ```sql
 -- 원본 vs 필터링 비교 (수동 확인)
 -- Steam API 응답 로그에서 total 확인
@@ -144,6 +158,7 @@ GROUP BY user_id;
 ```
 
 ### 2. steam_game_info 증가 추이
+
 ```sql
 -- 새로운 게임이 추가되는지 확인
 SELECT COUNT(*) as total_games FROM steam_game_info;
@@ -151,9 +166,10 @@ SELECT COUNT(*) as total_games FROM steam_game_info;
 ```
 
 ### 3. 동기화 로그 확인
+
 ```sql
 -- 최근 동기화 상태
-SELECT 
+SELECT
   user_id,
   status,
   synced_games_count,
@@ -164,6 +180,7 @@ LIMIT 20;
 ```
 
 ### 4. 게임 타입 확인 (샘플)
+
 ```sql
 -- steam_game_info에 저장된 게임들이 실제 게임인지 확인
 SELECT app_id, name, genres
@@ -175,23 +192,30 @@ LIMIT 10;
 ## 문제 해결
 
 ### 문제: Store API 호출이 너무 많음
+
 **원인**: 캐시 미스가 많음
-**해결**: 
+**해결**:
+
 1. `steam_game_info`에 인기 게임 미리 추가
 2. 배치 크기 줄이기 (50 → 20)
 
 ### 문제: 일부 게임이 동기화되지 않음
+
 **원인**: Store API 에러 또는 Rate Limit
-**확인**: 
+**확인**:
+
 ```bash
 # Edge Function 로그 확인
 # "Failed to save game info" 메시지 검색
 ```
+
 **해결**: Rate limit 대기 시간 증가 (100ms → 200ms)
 
 ### 문제: 게임이 아닌 항목이 저장됨
+
 **원인**: Store API 검증 우회
 **확인**:
+
 ```sql
 -- steam_game_info에서 genres가 비어있는 항목 확인
 SELECT * FROM steam_game_info WHERE genres IS NULL OR genres = '{}';
@@ -206,4 +230,3 @@ SELECT * FROM steam_game_info WHERE genres IS NULL OR genres = '{}';
 ✅ 비게임 항목(DLC, 소프트웨어) 자동 제외
 ✅ 새로운 게임 자동 검증 및 저장
 ✅ 배치 동기화에서도 정상 작동
-

@@ -274,7 +274,6 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
             // message 타입인 경우
             const {
               message,
-              isConsecutive,
               isGroupStart,
               isGroupEnd,
               isOwnMessage,

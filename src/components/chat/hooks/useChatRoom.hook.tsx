@@ -130,7 +130,9 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
   const isInitialLoadRef = useRef(false); // 초기 로드 플래그
   const readTimerRef = useRef<NodeJS.Timeout | null>(null); // 읽음 처리 타이머
   const hasMarkedAsReadRef = useRef(false); // 이미 읽음 처리했는지 추적
-  const messageListContainerRef = useRef<React.RefObject<HTMLDivElement> | null>(null); // 메시지 리스트 컨테이너 ref
+  const messageListContainerRef =
+    useRef<React.RefObject<HTMLDivElement> | null>(null); // 메시지 리스트 컨테이너 ref
+  const markRoomAsReadRef = useRef<((targetRoomId: number) => Promise<void>) | null>(null); // 읽음 처리 함수 ref
 
   // onMessage ref 업데이트 (최신 콜백 유지)
   useEffect(() => {
@@ -169,9 +171,12 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
 
           // 스크롤이 최하단에 있으면 (50px 이내) 즉시 읽음 처리
           if (scrollableHeight <= 0 || distanceFromBottom <= 50) {
-            if (!hasMarkedAsReadRef.current) {
-              markRoomAsRead(message.room_id).catch((error) => {
-                console.error('Failed to mark room as read on new message:', error);
+            if (!hasMarkedAsReadRef.current && markRoomAsReadRef.current) {
+              markRoomAsReadRef.current(message.room_id).catch((error) => {
+                console.error(
+                  'Failed to mark room as read on new message:',
+                  error
+                );
               });
             }
           }
@@ -194,7 +199,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         });
       });
     },
-    [user?.id, markRoomAsReadOptimistic]
+    [user?.id]
   );
 
   /**
@@ -469,7 +474,10 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       }
 
       // 이미 읽음 처리했으면 중복 호출 방지
-      if (hasMarkedAsReadRef.current && previousRoomIdRef.current === targetRoomId) {
+      if (
+        hasMarkedAsReadRef.current &&
+        previousRoomIdRef.current === targetRoomId
+      ) {
         return;
       }
 
@@ -511,7 +519,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
 
         // 채팅 목록의 안읽은 표시 즉시 업데이트
         markRoomAsReadOptimistic(targetRoomId);
-        
+
         // 읽음 처리 완료 표시
         hasMarkedAsReadRef.current = true;
       } catch (error) {
@@ -521,6 +529,11 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     },
     [user?.id, markRoomAsReadOptimistic]
   );
+
+  // markRoomAsRead의 최신 버전을 ref에 저장
+  useEffect(() => {
+    markRoomAsReadRef.current = markRoomAsRead;
+  }, [markRoomAsRead]);
 
   /**
    * 스크롤 기반 읽음 처리
@@ -538,8 +551,14 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       }
 
       // 스크롤이 최하단에 있는지 확인
-      const { scrollTop, scrollHeight, clientHeight } = containerRef.current || {};
-      if (!containerRef.current || scrollTop === undefined || scrollHeight === undefined || clientHeight === undefined) {
+      const { scrollTop, scrollHeight, clientHeight } =
+        containerRef.current || {};
+      if (
+        !containerRef.current ||
+        scrollTop === undefined ||
+        scrollHeight === undefined ||
+        clientHeight === undefined
+      ) {
         return;
       }
 
@@ -657,7 +676,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
 
     // 읽음 처리 상태 리셋
     hasMarkedAsReadRef.current = false;
-    
+
     // 기존 타이머 정리
     if (readTimerRef.current) {
       clearTimeout(readTimerRef.current);
@@ -682,10 +701,13 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     loadMessages(roomId).then(() => {
       // postgres_changes 구독
       subscribeToPostgresChanges(roomId);
-      
+
       // 타이머 기반 읽음 처리: 채팅방 접속 후 3초 후 읽음 처리
       readTimerRef.current = setTimeout(() => {
-        if (!hasMarkedAsReadRef.current && previousRoomIdRef.current === roomId) {
+        if (
+          !hasMarkedAsReadRef.current &&
+          previousRoomIdRef.current === roomId
+        ) {
           markRoomAsRead(roomId).catch((error) => {
             console.error('Failed to mark room as read on timer:', error);
           });
@@ -722,7 +744,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         clearTimeout(readTimerRef.current);
         readTimerRef.current = null;
       }
-      
+
       // 언마운트 시 현재 채팅방 읽음 처리
       const currentRoomId = previousRoomIdRef.current;
       if (currentRoomId && currentRoomId > 0 && user?.id) {
