@@ -51,17 +51,20 @@ export function formatReason(reason: MatchReasonCoreDTO): FormattedReason {
       };
 
     case 'ACTIVITY_PATTERN':
-      // commonTimeSlots 배열을 읽기 쉽게 변환
+      // commonTimeSlots 객체 배열을 읽기 쉽게 변환
       const slots = reason.detail.commonTimeSlots || [];
       if (slots.length === 0) {
         return { icon: '⏰', text: '비슷한 시간대에 활동해요' };
       }
-      // 예: ["22-00", "00-02"] → "밤 10시~새벽 2시"
-      const firstSlot = slots[0].split('-')[0];
-      const lastSlot = slots[slots.length - 1].split('-')[1];
+      // slots는 { dayType: string, timeSlot: string }[] 형태
+      // 예: [{ dayType: 'weekday', timeSlot: '22:00-00:00' }]
+      const timeSlotStr = slots[0].timeSlot;
+      const [startTime, endTime] = timeSlotStr.split('-');
+      const startHour = startTime.split(':')[0];
+      const endHour = endTime.split(':')[0];
       return {
         icon: '⏰',
-        text: `${firstSlot}시~${lastSlot}시에 함께 플레이할 수 있어요`,
+        text: `${startHour}시~${endHour}시에 함께 플레이할 수 있어요`,
       };
 
     case 'ONLINE_NOW':
