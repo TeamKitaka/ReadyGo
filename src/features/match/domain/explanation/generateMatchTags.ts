@@ -135,7 +135,7 @@ export const generateMatchTags = (
     }
   }
 
-  // 4. 시간대일치 (플레이 시간대 공통)
+  // 4. 시간잘맞음 (플레이 시간대 공통) - "시간대일치"에서 변경
   const viewerSchedule = context.viewer.activity?.schedule ?? [];
   const targetSchedule = context.target.activity?.schedule ?? [];
   if (viewerSchedule.length > 0 && targetSchedule.length > 0) {
@@ -144,7 +144,7 @@ export const generateMatchTags = (
       targetSchedule
     );
     if (scheduleScore > 0) {
-      tags.push({ label: '시간대일치' });
+      tags.push({ label: '시간잘맞음' });
     }
   }
 
@@ -182,7 +182,7 @@ export const generateMatchTags = (
   const targetSteam = context.target.steam;
 
   if (viewerSteam && targetSteam) {
-    // 1. 장르일치 (장르 유사도 70% 이상)
+    // 1. 같은취향 (장르 유사도 70% 이상) - "장르일치"에서 변경
     const viewerGenres = viewerSteam.mainGenres ?? [];
     const targetGenres = targetSteam.mainGenres ?? [];
 
@@ -193,7 +193,7 @@ export const generateMatchTags = (
       );
 
       if (genreSimilarity >= 70) {
-        tags.push({ label: '장르일치' });
+        tags.push({ label: '같은취향' });
       }
     }
 
@@ -254,6 +254,71 @@ export const generateMatchTags = (
   // 11. 활동적 (플레이 시간대가 다양함)
   if (targetSchedule.length >= 4) {
     tags.push({ label: '활동적' });
+  }
+
+  // 12. 꾸준함 (신뢰도 중상 + 최근 활동 지속)
+  // 신뢰도가 50 이상이면 꾸준한 유저로 판단
+  if (reliabilityScore !== undefined && reliabilityScore >= 50) {
+    tags.push({ label: '꾸준함' });
+  }
+
+  // 13. 협동형 (cooperation trait 상위)
+  if (targetTraits && targetTraits.cooperation >= 70) {
+    tags.push({ label: '협동형' });
+  }
+
+  // 14. 전략형 (strategy 또는 leadership trait 상위)
+  if (
+    targetTraits &&
+    (targetTraits.strategy >= 70 || targetTraits.leadership >= 70)
+  ) {
+    tags.push({ label: '전략형' });
+  }
+
+  // 15. 집중형 (긴 세션 플레이 - Steam totalPlayTime이 많은 경우)
+  if (targetSteam && targetSteam.totalPlayTime && targetSteam.totalPlayTime >= 1000) {
+    tags.push({ label: '집중형' });
+  }
+
+  // 16. 시간대별 태그 (저녁형, 밤올빼미, 오후형, 새벽형)
+  if (targetSchedule.length > 0) {
+    // 주로 활동하는 시간대를 계산
+    const timeSlotCounts: Record<string, number> = {
+      morning: 0, // 06-12
+      afternoon: 0, // 12-18
+      evening: 0, // 18-24
+      night: 0, // 00-06
+    };
+
+    targetSchedule.forEach((slot) => {
+      const timeSlot = slot.timeSlot;
+      const [startTime] = timeSlot.split('-');
+      const startHour = parseInt(startTime.split(':')[0], 10);
+
+      if (startHour >= 6 && startHour < 12) {
+        timeSlotCounts.morning++;
+      } else if (startHour >= 12 && startHour < 18) {
+        timeSlotCounts.afternoon++;
+      } else if (startHour >= 18 && startHour < 24) {
+        timeSlotCounts.evening++;
+      } else {
+        timeSlotCounts.night++;
+      }
+    });
+
+    // 가장 많은 시간대에 태그 부여 (최소 2개 이상 슬롯)
+    const maxCount = Math.max(...Object.values(timeSlotCounts));
+    if (maxCount >= 2) {
+      if (timeSlotCounts.evening === maxCount) {
+        tags.push({ label: '저녁형' });
+      } else if (timeSlotCounts.night === maxCount) {
+        tags.push({ label: '밤올빼미' });
+      } else if (timeSlotCounts.afternoon === maxCount) {
+        tags.push({ label: '오후형' });
+      } else if (timeSlotCounts.morning === maxCount) {
+        tags.push({ label: '새벽형' });
+      }
+    }
   }
 
   // 최소 3개 보장: 부족하면 기본 Tag 추가

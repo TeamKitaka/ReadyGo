@@ -35,14 +35,14 @@ interface BuildMatchExplanationVMOptions {
 function mapLabelToReasonType(
   label: string
 ): MatchReasonCoreDTO['detail']['type'] | undefined {
-  const mapping: Record<string, MatchReasonCoreDTO['detail']['type']> = {
+  const mapping: Record<string, MatchReasonCoreDTO['detail']['type'] | undefined> = {
     같은게임: 'COMMON_GAME',
     플타임일치: 'PLAY_TIME',
     스타일유사: 'STYLE_SIMILARITY',
-    시간대일치: 'ACTIVITY_PATTERN',
+    시간잘맞음: 'ACTIVITY_PATTERN', // 시간대일치 → 시간잘맞음으로 변경
     지금온라인: 'ONLINE_NOW',
-    매너좋음: 'RELIABILITY', // 신뢰높음 → 매너좋음으로 변경
-    장르일치: 'STEAM_GENRE',
+    매너좋음: 'RELIABILITY',
+    같은취향: 'STEAM_GENRE', // 장르일치 → 같은취향으로 변경
     플스타일유사: 'STEAM_PLAYSTYLE',
     // 새로운 태그들은 reason type이 없으므로 undefined 반환
     천생연분: undefined,
@@ -52,6 +52,14 @@ function mapLabelToReasonType(
     활동적: undefined,
     좋은만남: undefined,
     경험유사: undefined,
+    꾸준함: undefined,
+    협동형: undefined,
+    전략형: undefined,
+    집중형: undefined,
+    저녁형: undefined,
+    밤올빼미: undefined,
+    오후형: undefined,
+    새벽형: undefined,
   };
   return mapping[label];
 }
@@ -106,6 +114,12 @@ export function buildMatchExplanationVM(
     
     // 동물 궁합 태그 (천생연분, 궁합좋음)
     const isAnimalCompatibility = ['천생연분', '궁합좋음'].includes(tag.label);
+    
+    // 시간대 태그 (저녁형, 밤올빼미, 오후형, 새벽형)
+    const isTimeSlotTag = ['저녁형', '밤올빼미', '오후형', '새벽형'].includes(tag.label);
+    
+    // MVP 핵심 태그 (꾸준함, 협동형, 전략형)
+    const isMVPTag = ['꾸준함', '협동형', '전략형'].includes(tag.label);
 
     let emphasis: 'primary' | 'secondary' = 'secondary';
 
@@ -113,12 +127,16 @@ export function buildMatchExplanationVM(
     if (isAnimalCompatibility) {
       emphasis = 'primary';
     }
-    // 2순위: Steam 연동 시 Steam 관련 태그 강조
+    // 2순위: MVP 핵심 태그 강조
+    else if (isMVPTag) {
+      emphasis = 'primary';
+    }
+    // 3순위: Steam 연동 시 Steam 관련 태그 강조
     else if (isSteamConnected && isSteamRelated) {
       emphasis = 'primary';
     }
-    // 3순위: 고우선순위 태그 강조
-    else if (isHighPriority) {
+    // 4순위: 고우선순위 태그 + 시간대 태그 강조
+    else if (isHighPriority || isTimeSlotTag) {
       emphasis = 'primary';
     }
 
