@@ -185,7 +185,10 @@ export const generateMatchTags = (
   // 조건 완화: reliabilityScore >= 70 → >= 40 (성향 불필요, 행동 기반)
   const reliabilityScore = context.target.reliability?.reliabilityScore;
   if (reliabilityScore !== undefined && reliabilityScore >= 40) {
-    tags.push({ label: '매너좋음' });
+    // 중복 방지: 이미 추가된 태그는 스킵
+    if (!tags.some((t) => t.label === '매너좋음')) {
+      tags.push({ label: '매너좋음' });
+    }
   }
 
   // 7. 경험유사 (파티 경험 유사)
@@ -285,7 +288,10 @@ export const generateMatchTags = (
   // 11. 활동적 (플레이 시간대가 있음)
   // 조건 완화: 4개 이상 → 2개 이상 (성향 테스트 없는 유저도 받을 수 있도록)
   if (targetSchedule.length >= 2) {
-    tags.push({ label: '활동적' });
+    // 중복 방지: 이미 추가된 태그는 스킵
+    if (!tags.some((t) => t.label === '활동적')) {
+      tags.push({ label: '활동적' });
+    }
   }
 
   // 12. 꾸준함 (신뢰도 데이터 존재 또는 파티 경험 존재)
@@ -294,21 +300,15 @@ export const generateMatchTags = (
   const hasReliabilityData = reliabilityScore !== undefined && reliabilityScore > 0;
   const hasPartyExperience = targetPartyCount !== undefined && targetPartyCount >= 5;
   if (hasReliabilityData || hasPartyExperience) {
-    tags.push({ label: '꾸준함' });
+    // 중복 방지: 이미 추가된 태그는 스킵
+    if (!tags.some((t) => t.label === '꾸준함')) {
+      tags.push({ label: '꾸준함' });
+    }
   }
 
-  // 13. 협동형 (cooperation trait 상위)
-  if (targetTraits && targetTraits.cooperation >= 70) {
-    tags.push({ label: '협동형' });
-  }
-
-  // 14. 전략형 (strategy 또는 leadership trait 상위)
-  if (
-    targetTraits &&
-    (targetTraits.strategy >= 70 || targetTraits.leadership >= 70)
-  ) {
-    tags.push({ label: '전략형' });
-  }
+  // 13-14. 협동형, 전략형, 리더형, 사교형 태그는 Line 125-147에서 topTrait 로직으로 이미 처리됨
+  // 중복 방지를 위해 개별 trait 체크 로직 제거
+  // (이전에는 여기서 다시 추가하여 같은 태그가 2개씩 생성되는 문제가 있었음)
 
   // 15. 집중형 (긴 세션 플레이 - Steam totalPlayTime이 많은 경우)
   if (targetSteam && targetSteam.totalPlayTime && targetSteam.totalPlayTime >= 1000) {
