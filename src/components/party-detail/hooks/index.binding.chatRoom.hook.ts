@@ -261,7 +261,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       setPartyMemberProfiles((prev) => {
         const newMap = new Map(prev);
 
-        (profiles || []).forEach((profile: UserProfile) => {
+        (profiles || []).forEach((profile) => {
           if (!profile.id) {
             return;
           }
@@ -509,6 +509,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
             async (payload) => {
               try {
                 // 새 멤버가 추가되면 프로필 정보 갱신
+                // eslint-disable-next-line no-console
                 console.log('Party member INSERT event received:', payload);
                 await loadPartyMemberProfiles(targetPostId);
               } catch (error) {
