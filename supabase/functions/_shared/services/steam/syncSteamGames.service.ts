@@ -306,7 +306,22 @@ export const syncSteamGames = async (
     syncedGamesCount: syncedCount,
   });
 
-  // 8. Result 반환
+  // 8. steam_user_stats 업데이트
+  try {
+    const { updateSteamUserStats } = await import(
+      './updateSteamUserStats.service.ts'
+    );
+    await updateSteamUserStats(client, userId);
+    console.log(`[Sync User ${userId}] Steam user stats updated`);
+  } catch (statsError) {
+    // stats 업데이트 실패는 로그만 남기고 동기화는 성공으로 처리
+    console.error(
+      `[Sync User ${userId}] Failed to update steam_user_stats:`,
+      statsError
+    );
+  }
+
+  // 9. Result 반환
   return {
     status: 'success',
     syncedGamesCount: syncedCount,

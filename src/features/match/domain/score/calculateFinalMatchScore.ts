@@ -130,6 +130,7 @@ import { calculateBaseSimilarity } from './calculateBaseSimilarity';
 import { calculateAnimalCompatibilityFactor } from './applyAnimalCompatibility';
 import { calculateScheduleCompatibilityFactor } from './calculateScheduleCompatibilityFactor';
 import { calculateOnlineFactor } from './calculateAvailabilityFactor';
+import { calculateSteamCompatibilityFactor } from './applySteamBonus';
 
 /**
  * 최종 매칭 점수 계산 (단일 진입점)
@@ -264,10 +265,18 @@ export const calculateFinalMatchScore = (
   // 4. 온라인 팩터 (multiplicative)
   const onlineFactor = calculateOnlineFactor(context);
 
-  // 5. 최종 점수 계산 (모든 팩터를 곱셈으로 적용)
-  const rawScore = baseScore * animalFactor * scheduleFactor * onlineFactor;
+  // 5. Steam 호환성 팩터 (multiplicative) - 항상 마지막에 적용
+  const steamFactor = calculateSteamCompatibilityFactor(context);
 
-  // 6. 반올림 및 범위 제한 (0~100)
+  // 6. 최종 점수 계산 (모든 팩터를 곱셈으로 적용)
+  // ⚠️ 중요: Steam Factor는 항상 마지막에 곱함
+  // - Steam이 "좋은 관계를 더 좋게" 만드는 역할
+  // - Steam만 비슷한데 성향 안 맞는 케이스 방지
+  // - 성향(baseScore)이 가장 중요한 요소로 유지
+  const rawScore =
+    baseScore * animalFactor * scheduleFactor * onlineFactor * steamFactor;
+
+  // 7. 반올림 및 범위 제한 (0~100)
   const finalScore = Math.min(100, Math.max(0, Math.round(rawScore)));
 
   // 디버깅: 100점인 경우 계산 과정 로깅 (개발 환경에서만)
@@ -279,6 +288,7 @@ export const calculateFinalMatchScore = (
       animalFactor,
       scheduleFactor,
       onlineFactor,
+      steamFactor,
       rawScore,
       finalScore,
       viewerTraits: context.viewer.traits?.traits,

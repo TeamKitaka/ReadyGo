@@ -24,6 +24,7 @@ import type { MatchContextCoreDTO } from '@/commons/types/match/matchContextCore
 import type { MatchTagCoreDTO } from '@/commons/types/match/matchTagCore.dto';
 import { calculateTraitsSimilarity } from '../utils/traitsSimilarity';
 import { calculateScheduleSimilarity } from '../utils/scheduleSimilarity';
+import { calculateGenreSimilarity } from '../utils/steamGenreSimilarity';
 
 /**
  * 매칭 태그 생성
@@ -171,6 +172,44 @@ export const generateMatchTags = (
       Math.max(viewerPartyCount, targetPartyCount);
     if (ratio >= 0.6) {
       tags.push({ label: '경험유사' });
+    }
+  }
+
+  // Steam 관련 태그 추가
+  const viewerSteam = context.viewer.steam;
+  const targetSteam = context.target.steam;
+
+  if (viewerSteam && targetSteam) {
+    // 1. 장르일치 (장르 유사도 70% 이상)
+    const viewerGenres = viewerSteam.mainGenres ?? [];
+    const targetGenres = targetSteam.mainGenres ?? [];
+
+    if (viewerGenres.length > 0 && targetGenres.length > 0) {
+      const genreSimilarity = calculateGenreSimilarity(
+        viewerGenres,
+        targetGenres
+      );
+
+      if (genreSimilarity >= 70) {
+        tags.push({ label: '장르일치' });
+      }
+    }
+
+    // 2. 플타임유사 (Play Style 동일 또는 인접)
+    const viewerStyle = viewerSteam.playStyle;
+    const targetStyle = targetSteam.playStyle;
+
+    if (viewerStyle && targetStyle) {
+      const isCompatible =
+        viewerStyle === targetStyle ||
+        (viewerStyle === 'casual' && targetStyle === 'regular') ||
+        (viewerStyle === 'regular' && targetStyle === 'casual') ||
+        (viewerStyle === 'regular' && targetStyle === 'hardcore') ||
+        (viewerStyle === 'hardcore' && targetStyle === 'regular');
+
+      if (isCompatible) {
+        tags.push({ label: '플타임유사' });
+      }
     }
   }
 

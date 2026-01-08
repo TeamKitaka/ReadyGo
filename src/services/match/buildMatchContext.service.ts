@@ -83,16 +83,28 @@ export const buildMatchContext = async (
     viewerProfile,
     viewerTraits,
     viewerSchedules,
+    viewerSteamStats,
     targetProfile,
     targetTraits,
     targetSchedules,
+    targetSteamStats,
   ] = await Promise.all([
     userProfilesRepository.findByUserId(client, viewerId),
     userTraitsRepository.findByUserId(client, viewerId),
     userPlaySchedulesRepository.findByUserId(client, viewerId),
+    client
+      .from('steam_user_stats')
+      .select('play_style, avg_weekly_playtime, main_genres')
+      .eq('user_id', viewerId)
+      .maybeSingle(),
     userProfilesRepository.findByUserId(client, targetUserId),
     userTraitsRepository.findByUserId(client, targetUserId),
     userPlaySchedulesRepository.findByUserId(client, targetUserId),
+    client
+      .from('steam_user_stats')
+      .select('play_style, avg_weekly_playtime, main_genres')
+      .eq('user_id', targetUserId)
+      .maybeSingle(),
   ]);
 
   // 2. viewer의 하위 Context 조립
@@ -101,6 +113,7 @@ export const buildMatchContext = async (
     viewerProfile.data
   );
   const viewerActivityContext = assembleActivityContext(viewerSchedules.data);
+  const viewerSteamContext = assembleSteamContext(viewerSteamStats.data);
 
   // 3. target의 하위 Context 조립
   const targetTraitsContext = assembleTraitsContext(
@@ -108,6 +121,7 @@ export const buildMatchContext = async (
     targetProfile.data
   );
   const targetActivityContext = assembleActivityContext(targetSchedules.data);
+  const targetSteamContext = assembleSteamContext(targetSteamStats.data);
 
   // 4. viewer UserMatchInput 조립
   // optional 필드는 값이 없으면 필드 자체를 포함하지 않음
@@ -117,7 +131,8 @@ export const buildMatchContext = async (
     ...(viewerActivityContext !== undefined && {
       activity: viewerActivityContext,
     }),
-    // steam, reliability는 미구현 상태이므로 필드 자체를 포함하지 않음
+    ...(viewerSteamContext !== undefined && { steam: viewerSteamContext }),
+    // reliability는 미구현 상태이므로 필드 자체를 포함하지 않음
   };
 
   // 5. target UserMatchInput 조립
@@ -128,7 +143,8 @@ export const buildMatchContext = async (
     ...(targetActivityContext !== undefined && {
       activity: targetActivityContext,
     }),
-    // steam, reliability는 미구현 상태이므로 필드 자체를 포함하지 않음
+    ...(targetSteamContext !== undefined && { steam: targetSteamContext }),
+    // reliability는 미구현 상태이므로 필드 자체를 포함하지 않음
   };
 
   // 6. MatchContext 반환 (불변 객체)
@@ -221,5 +237,39 @@ const assembleActivityContext = (
   // isOnline은 현재 미구현 상태로 필드 자체를 포함하지 않음
   return {
     schedule,
+  };
+};
+
+/**
+ * Steam Context 조립 (내부 헬퍼)
+ *
+ * @param steamStatsData - steam_user_stats 조회 결과의 data 필드
+ * @returns SteamContextInput 또는 undefined
+ *
+ * 📌 조립 규칙:
+ * - steam_user_stats 데이터가 없으면 → undefined 반환
+ * - steam_user_stats 데이터가 있으면 → SteamContextInput 구조로 변환
+ * - mainGenres, playStyle 추출
+ * - 기본값 삽입 ❌
+ */
+const assembleSteamContext = (
+  steamStatsData: {
+    play_style: string;
+    avg_weekly_playtime: number;
+    main_genres: string[];
+  } | null
+) => {
+  // steam_user_stats 데이터가 없으면 undefined 반환
+  if (!steamStatsData) {
+    return undefined;
+  }
+
+  // SteamContextInput 반환
+  return {
+    mainGenres: steamStatsData.main_genres || [],
+    playStyle: steamStatsData.play_style as
+      | 'casual'
+      | 'regular'
+      | 'hardcore',
   };
 };

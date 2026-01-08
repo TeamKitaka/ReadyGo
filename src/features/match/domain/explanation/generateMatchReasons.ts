@@ -38,6 +38,7 @@ import {
   findTopTrait,
 } from '../utils/traitsSimilarity';
 import { calculateScheduleSimilarity } from '../utils/scheduleSimilarity';
+import { calculateGenreSimilarity } from '../utils/steamGenreSimilarity';
 
 /**
  * 매칭 이유 생성
@@ -266,6 +267,69 @@ export const generateMatchReasons = (
         priority: 'LOW',
         isBaseline: true, // baseline 플래그
       });
+    }
+  }
+
+  // Steam 관련 설명 추가
+  const viewerSteam = context.viewer.steam;
+  const targetSteam = context.target.steam;
+
+  if (viewerSteam && targetSteam) {
+    // 1. 장르 일치
+    const viewerGenres = viewerSteam.mainGenres ?? [];
+    const targetGenres = targetSteam.mainGenres ?? [];
+
+    if (viewerGenres.length > 0 && targetGenres.length > 0) {
+      const genreSimilarity = calculateGenreSimilarity(
+        viewerGenres,
+        targetGenres
+      );
+
+      if (genreSimilarity >= 60) {
+        // 공통 장르 찾기
+        const commonGenres = viewerGenres.filter((genre) =>
+          targetGenres.some((tg) => tg.toLowerCase() === genre.toLowerCase())
+        );
+
+        if (commonGenres.length > 0) {
+          const genreName = commonGenres[0]; // 첫 번째 공통 장르
+          reasons.push({
+            detail: {
+              type: 'STEAM_GENRE',
+              genre: genreName,
+              similarity: genreSimilarity,
+            },
+            priority: 'MEDIUM',
+            isBaseline: false,
+          });
+        }
+      }
+    }
+
+    // 2. 플레이 스타일 유사
+    const viewerStyle = viewerSteam.playStyle;
+    const targetStyle = targetSteam.playStyle;
+
+    if (viewerStyle && targetStyle) {
+      // 동일하거나 인접한 스타일
+      const isCompatible =
+        viewerStyle === targetStyle ||
+        (viewerStyle === 'casual' && targetStyle === 'regular') ||
+        (viewerStyle === 'regular' && targetStyle === 'casual') ||
+        (viewerStyle === 'regular' && targetStyle === 'hardcore') ||
+        (viewerStyle === 'hardcore' && targetStyle === 'regular');
+
+      if (isCompatible) {
+        reasons.push({
+          detail: {
+            type: 'STEAM_PLAYSTYLE',
+            viewerStyle,
+            targetStyle,
+          },
+          priority: 'LOW',
+          isBaseline: false,
+        });
+      }
     }
   }
 

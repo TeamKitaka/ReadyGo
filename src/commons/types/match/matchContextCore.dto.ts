@@ -122,6 +122,8 @@ export interface ActivityContextInput {
  * 📌 선택 필드:
  * - steamGames: Steam 게임 목록 (Steam 미연동 시 undefined)
  * - totalPlayTime: 총 플레이 시간 (Steam 미연동 시 undefined)
+ * - mainGenres: 주요 장르 3개 (steam_user_stats 기반)
+ * - playStyle: 플레이 스타일 (steam_user_stats 기반)
  *
  * 📌 Cold Start 대응:
  * - Steam 미연동 상태가 기본 시나리오
@@ -151,6 +153,31 @@ export interface SteamContextInput {
    * - 숫자: 총 플레이 시간 (분)
    */
   totalPlayTime?: number;
+
+  /**
+   * 주요 장르 목록 (상위 3개)
+   *
+   * 선택 필드
+   * steam_user_stats.main_genres 기반
+   *
+   * - undefined: Steam 미연동 또는 stats 미계산
+   * - []: 장르 정보 없음
+   * - [genre1, genre2, genre3]: 주요 장르 목록
+   */
+  mainGenres?: string[];
+
+  /**
+   * 플레이 스타일
+   *
+   * 선택 필드
+   * steam_user_stats.play_style 기반
+   *
+   * - undefined: Steam 미연동 또는 stats 미계산
+   * - 'casual': 주당 평균 < 10시간
+   * - 'regular': 주당 평균 10~30시간
+   * - 'hardcore': 주당 평균 > 30시간
+   */
+  playStyle?: 'casual' | 'regular' | 'hardcore';
 }
 
 /**
