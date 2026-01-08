@@ -155,8 +155,9 @@ export const generateMatchTags = (
   }
 
   // 6. 매너좋음 (신뢰도 점수 - 서비스 내 매너 점수)
+  // 조건 완화: reliabilityScore >= 70 → >= 40 (성향 불필요, 행동 기반)
   const reliabilityScore = context.target.reliability?.reliabilityScore;
-  if (reliabilityScore !== undefined && reliabilityScore >= 70) {
+  if (reliabilityScore !== undefined && reliabilityScore >= 40) {
     tags.push({ label: '매너좋음' });
   }
 
@@ -236,29 +237,36 @@ export const generateMatchTags = (
   }
 
   // 9. 파티러버 (파티 경험이 많은 경우)
+  // 조건 완화: partyCount >= 20 → >= 10 (성향 불필요, 행동 기반)
   // targetPartyCount는 위에서 이미 정의됨 (line 165)
-  if (targetPartyCount !== undefined && targetPartyCount >= 20) {
+  if (targetPartyCount !== undefined && targetPartyCount >= 10) {
     tags.push({ label: '파티러버' });
   }
 
   // 10. 베테랑 (높은 신뢰도 + 많은 파티 경험)
+  // 조건 완화: reliabilityScore >= 80 & partyCount >= 30
+  //          → reliabilityScore >= 70 & partyCount >= 20
   if (
     reliabilityScore !== undefined &&
-    reliabilityScore >= 80 &&
+    reliabilityScore >= 70 &&
     targetPartyCount !== undefined &&
-    targetPartyCount >= 30
+    targetPartyCount >= 20
   ) {
     tags.push({ label: '베테랑' });
   }
 
-  // 11. 활동적 (플레이 시간대가 다양함)
-  if (targetSchedule.length >= 4) {
+  // 11. 활동적 (플레이 시간대가 있음)
+  // 조건 완화: 4개 이상 → 2개 이상 (성향 테스트 없는 유저도 받을 수 있도록)
+  if (targetSchedule.length >= 2) {
     tags.push({ label: '활동적' });
   }
 
-  // 12. 꾸준함 (신뢰도 중상 + 최근 활동 지속)
-  // 신뢰도가 50 이상이면 꾸준한 유저로 판단
-  if (reliabilityScore !== undefined && reliabilityScore >= 50) {
+  // 12. 꾸준함 (신뢰도 데이터 존재 또는 파티 경험 존재)
+  // 조건 완화: reliabilityScore >= 50 → 데이터만 있으면 OK (성향 불필요)
+  // 또는 파티 경험이 5개 이상이면 꾸준함으로 인정
+  const hasReliabilityData = reliabilityScore !== undefined && reliabilityScore > 0;
+  const hasPartyExperience = targetPartyCount !== undefined && targetPartyCount >= 5;
+  if (hasReliabilityData || hasPartyExperience) {
     tags.push({ label: '꾸준함' });
   }
 
@@ -323,14 +331,16 @@ export const generateMatchTags = (
 
   // 최소 3개 보장: 부족하면 기본 Tag 추가 (조건 없이 무조건 추가)
   // 성향 테스트를 안 한 사람도 최소 3개 태그를 가져야 함
+  // Fallback 태그는 조건 없이 추가 가능한 "일반적 긍정 메시지"만 포함
   if (tags.length < 3) {
     // Fallback 태그 목록 (우선순위 순)
+    // 조건 없이 추가 가능한 일반적/긍정적 태그만
     const fallbackTags = [
       '좋은만남',      // 1순위: 새로운 만남 긍정 메시지
-      '스타일유사',    // 2순위: 일반적 궁합
-      '매너좋음',      // 3순위: 기본 매너
-      '활동적',        // 4순위: 활동성
-      '꾸준함',        // 5순위: 지속성
+      '매너좋음',      // 2순위: 기본 매너 (긍정 이미지)
+      '활동적',        // 3순위: 활동성 (일반적 표현)
+      '꾸준함',        // 4순위: 지속성 (긍정 신호)
+      '스타일유사',    // 5순위: 일반적 궁합
     ];
 
     // 이미 추가되지 않은 fallback 태그를 순서대로 추가
