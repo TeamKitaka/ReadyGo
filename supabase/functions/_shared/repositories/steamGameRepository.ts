@@ -54,4 +54,3 @@ export const checkGameExists = async (
 
   return data.map((row: { app_id: number }) => row.app_id);
 };
-
