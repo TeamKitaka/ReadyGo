@@ -88,7 +88,75 @@ export function formatReason(reason: MatchReasonCoreDTO): FormattedReason {
       }
 
     case 'ACTIVITY_PATTERN':
-      // commonTimeSlots 패턴 분석하여 구체적 메시지 생성
+      // viewerTimeType과 targetTimeType이 있으면 관계 기반 메시지 생성
+      const viewerType = reason.detail.viewerTimeType;
+      const targetType = reason.detail.targetTimeType;
+      
+      if (viewerType && targetType) {
+        // 1. 같은 타입 (가장 강력)
+        if (viewerType === targetType) {
+          switch (viewerType) {
+            case 'morning':
+              return {
+                icon: '🌅',
+                text: '플레이 리듬이 비슷해요 (아침형)',
+              };
+            case 'afternoon':
+              return {
+                icon: '☀️',
+                text: '오후 시간대에 자주 접속해요',
+              };
+            case 'evening':
+              return {
+                icon: '🌆',
+                text: '퇴근 후 플레이 시간이 잘 맞아요',
+              };
+            case 'lateNight':
+              return {
+                icon: '🦉',
+                text: '둘 다 밤에 활발해요',
+              };
+            case 'weekend':
+              return {
+                icon: '🎮',
+                text: '주말에 함께 게임하기 좋아요',
+              };
+            case 'flexible':
+              return {
+                icon: '🕐',
+                text: '자유롭게 시간 맞출 수 있어요',
+              };
+          }
+        }
+        
+        // 2. 보완형 (설득력 있음)
+        const isEveningLateNight =
+          (viewerType === 'evening' && targetType === 'lateNight') ||
+          (viewerType === 'lateNight' && targetType === 'evening');
+        
+        if (isEveningLateNight) {
+          return {
+            icon: '🌙',
+            text: '저녁부터 밤까지 자연스럽게 이어져요',
+          };
+        }
+        
+        const hasFlexible = viewerType === 'flexible' || targetType === 'flexible';
+        if (hasFlexible) {
+          return {
+            icon: '🔄',
+            text: '시간대에 맞춰 함께 플레이하기 좋아요',
+          };
+        }
+        
+        // 3. 다른 타입이지만 긍정적으로 표현 (절대 감점 금지)
+        return {
+          icon: '⏰',
+          text: '각자의 시간대에서 자유롭게 즐기는 스타일이에요',
+        };
+      }
+      
+      // Fallback: viewerTimeType이 없는 경우 (이전 로직)
       const slots = reason.detail.commonTimeSlots || [];
       if (slots.length === 0) {
         return { icon: '⏰', text: '비슷한 시간대에 활동해요' };

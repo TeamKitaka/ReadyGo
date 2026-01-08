@@ -165,12 +165,18 @@ export const generateMatchReasons = (
     );
 
     if (commonSlots.length > 0) {
+      // Viewer와 Target의 시간대 타입 계산 (UI 메시지 세분화용)
+      const viewerTimeType = calculateTimeType(viewerSchedule);
+      const targetTimeType = calculateTimeType(targetSchedule);
+      
       // UI 가공 제거: 원시 데이터만 전달
       reasons.push({
         detail: {
           type: 'ACTIVITY_PATTERN',
           patternScore,
           commonTimeSlots: commonSlots,
+          viewerTimeType,
+          targetTimeType,
         },
         priority: 'MEDIUM',
       });
@@ -336,3 +342,73 @@ export const generateMatchReasons = (
   // 상위 5개로 제한
   return reasons.slice(0, 5);
 };
+
+/**
+ * 시간대 타입 계산 헬퍼 (내부 함수)
+ * 
+ * schedule 배열을 분석하여 가장 대표적인 시간대 타입을 반환
+ * UI에서 관계 기반 메시지 생성에 사용
+ */
+function calculateTimeType(
+  schedule: Array<{ dayType: string; timeSlot: string }>
+): 'morning' | 'afternoon' | 'evening' | 'lateNight' | 'flexible' | 'weekend' {
+  if (schedule.length === 0) {
+    return 'flexible';
+  }
+
+  // 시간대와 요일 분석
+  const timePatterns = {
+    morning: 0,    // 06-12
+    afternoon: 0,  // 12-18
+    evening: 0,    // 18-22
+    lateNight: 0,  // 22-04
+  };
+  let weekendCount = 0;
+  let weekdayCount = 0;
+
+  schedule.forEach((slot) => {
+    const [startTime] = slot.timeSlot.split('-');
+    const startHour = parseInt(startTime.split(':')[0], 10);
+
+    if (startHour >= 6 && startHour < 12) {
+      timePatterns.morning++;
+    } else if (startHour >= 12 && startHour < 18) {
+      timePatterns.afternoon++;
+    } else if (startHour >= 18 && startHour < 22) {
+      timePatterns.evening++;
+    } else if (startHour >= 22 || startHour < 4) {
+      timePatterns.lateNight++;
+    }
+
+    if (slot.dayType === 'weekend') {
+      weekendCount++;
+    } else if (slot.dayType === 'weekday') {
+      weekdayCount++;
+    }
+  });
+
+  // 1. 주말형 (weekend 비중이 높음)
+  if (weekendCount > 0 && weekendCount >= weekdayCount * 1.5) {
+    return 'weekend';
+  }
+
+  // 2. 유연형 (다양한 시간대)
+  const nonZeroCounts = Object.values(timePatterns).filter((c) => c > 0).length;
+  const maxPattern = Math.max(...Object.values(timePatterns));
+  if (nonZeroCounts >= 3 && maxPattern / schedule.length < 0.5) {
+    return 'flexible';
+  }
+
+  // 3. 특정 시간대 (가장 많은 패턴)
+  if (timePatterns.lateNight === maxPattern) {
+    return 'lateNight';
+  } else if (timePatterns.evening === maxPattern) {
+    return 'evening';
+  } else if (timePatterns.afternoon === maxPattern) {
+    return 'afternoon';
+  } else if (timePatterns.morning === maxPattern) {
+    return 'morning';
+  }
+
+  return 'flexible';
+}
