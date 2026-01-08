@@ -321,27 +321,27 @@ export const generateMatchTags = (
     }
   }
 
-  // 최소 3개 보장: 부족하면 기본 Tag 추가
+  // 최소 3개 보장: 부족하면 기본 Tag 추가 (조건 없이 무조건 추가)
+  // 성향 테스트를 안 한 사람도 최소 3개 태그를 가져야 함
   if (tags.length < 3) {
-    // '천생연분' 또는 '궁합좋음'이 없으면 '좋은만남' 추가 (기본)
-    if (
-      !tags.some((t) =>
-        ['천생연분', '궁합좋음'].includes(t.label)
-      ) &&
-      viewerAnimal &&
-      targetAnimal &&
-      viewerAnimal !== AnimalType.unknown &&
-      targetAnimal !== AnimalType.unknown
-    ) {
-      tags.push({ label: '좋은만남' });
-    }
-    // '스타일유사'가 없으면 추가 (기본)
-    if (!tags.some((t) => t.label === '스타일유사') && tags.length < 3) {
-      tags.push({ label: '스타일유사' });
-    }
-    // '매너좋음'이 없으면 추가 (기본)
-    if (!tags.some((t) => t.label === '매너좋음') && tags.length < 3) {
-      tags.push({ label: '매너좋음' });
+    // Fallback 태그 목록 (우선순위 순)
+    const fallbackTags = [
+      '좋은만남',      // 1순위: 새로운 만남 긍정 메시지
+      '스타일유사',    // 2순위: 일반적 궁합
+      '매너좋음',      // 3순위: 기본 매너
+      '활동적',        // 4순위: 활동성
+      '꾸준함',        // 5순위: 지속성
+    ];
+
+    // 이미 추가되지 않은 fallback 태그를 순서대로 추가
+    for (const fallbackLabel of fallbackTags) {
+      if (tags.length >= 3) {
+        break; // 3개 이상이면 중단
+      }
+      // 중복 방지: 이미 있는 태그는 추가하지 않음
+      if (!tags.some((t) => t.label === fallbackLabel)) {
+        tags.push({ label: fallbackLabel });
+      }
     }
   }
 
