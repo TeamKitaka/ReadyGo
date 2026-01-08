@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import styles from './styles.module.css';
 import { MatchList } from './ui';
+import MatchListSkeleton from './ui/match-list/matchListSkeleton';
 import { useMatchFilters } from './hooks/useMatchFilters';
 import { useSidePanelStore } from '@/stores/sidePanel.store';
 import { useAuthStore } from '@/stores/auth.store';
@@ -115,9 +116,7 @@ export default function Match() {
         </div>
 
         {/* 로딩 상태 */}
-        {loading && (
-          <div className={styles.loading}>매칭 결과를 불러오는 중...</div>
-        )}
+        {loading && <MatchListSkeleton isSidePanelOpen={isOpen} />}
 
         {/* 에러 상태 */}
         {error && (

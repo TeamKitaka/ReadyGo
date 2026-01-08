@@ -1,0 +1,124 @@
+/* 매치 카드 스켈레톤 - 원본 스타일 복사 */
+.skeletonCard {
+  background-color: var(--color-bg-secondary);
+  border-radius: 24px;
+  padding: 32px;
+  width: 100%;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* 컨텐츠 래퍼 */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  align-items: center;
+  width: 100%;
+}
+
+/* 사용자 정보 섹션 */
+.userSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+}
+
+/* 아바타 래퍼 */
+.avatarWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 아바타 스켈레톤 */
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: var(--color-bg-primary);
+  border: 2px solid var(--color-border-secondary);
+}
+
+/* 사용자 정보 (닉네임, 매칭률, 태그) */
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+/* 닉네임 및 매칭률 섹션 */
+.nameSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+/* 닉네임 스켈레톤 */
+.nickname {
+  width: 120px;
+  height: 24px;
+}
+
+/* 매칭률 컨테이너 */
+.matchRate {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 매칭률 라벨 스켈레톤 */
+.matchRateLabel {
+  width: 50px;
+  height: 20px;
+}
+
+/* 매칭률 값 스켈레톤 */
+.matchRateValue {
+  width: 40px;
+  height: 20px;
+}
+
+/* 태그 컨테이너 */
+.tagContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* 태그 스켈레톤 */
+.tag {
+  width: 60px;
+  height: 24px;
+  border-radius: 8px;
+}
+
+/* 버튼 스켈레톤 */
+.button {
+  width: 100%;
+  height: 48px;
+  border-radius: 9999px;
+}
+
+/* 반응형 - 작은 화면에서 최소 너비 조정 */
+@media (max-width: 768px) {
+  .skeletonCard {
+    min-width: 260px;
+  }
+}
+
+@media (max-width: 480px) {
+  .skeletonCard {
+    min-width: 0;
+  }
+}
