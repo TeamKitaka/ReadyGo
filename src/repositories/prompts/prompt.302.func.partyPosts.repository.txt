@@ -1,0 +1,202 @@
+아래의 조건을 모두 적용하여, 아래의 요구사항을 모두 구현할 것.
+구현 결과를 체크리스트로 반환할 것.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하여 작업하고, 이 작업이 끝나면 해당 rules 적용 결과를 체크리스트로 반환할 것.
+            - @01-common.mdc
+            - @04-func.mdc
+
+==============================================
+
+조건-파일경로) 참고할 Repository 파일경로: src/repositories/partyMessages.repository.ts
+조건-파일경로) 구현될 Repository 파일경로: src/repositories/partyPosts.repository.ts
+조건-파일경로) 참고할 타입 파일경로: supabase/types/database.types.ts
+조건-파일경로) 참고할 DB 문서경로: docs/database/04-table-details.md
+
+==============================================
+
+핵심요구사항) party_posts 테이블의 CRUD 기능을 위한 Repository를 구현하고, 적용 결과를 체크리스트로 반환할 것.
+
+            ❗ 전제 조건
+                - party_posts 테이블은 파티 모집글을 관리하는 테이블이다.
+                - 작성자(creator_id)는 인증된 사용자여야 한다.
+                - 게시물 조회, 작성, 수정, 삭제 기능을 제공한다.
+
+            1) Repository 기본 구조
+                1-1) Supabase 클라이언트 사용
+                    - src/lib/supabase/admin.ts의 supabaseAdmin을 사용할 것.
+                    - import 경로: import { supabaseAdmin } from '@/lib/supabase/admin';
+                
+                1-2) 타입 정의
+                    - database.types.ts의 Database 타입을 활용할 것.
+                    - party_posts의 Row, Insert, Update 타입을 활용할 것.
+                    - 커스텀 타입이 필요한 경우 파일 내부에 정의할 것.
+
+                1-3) 에러 처리
+                    - 모든 함수는 error가 발생하면 throw error할 것.
+                    - steamGame.repository.ts의 패턴을 따를 것.
+                
+                1-4) 권한/RLS 전제 조건
+                    - Repository는 supabaseAdmin(service role)을 사용하므로 RLS를 우회한다.
+                    - 작성자 권한 검증은 호출부(API Route 또는 Hook)에서 선행되어야 한다.
+                    - Repository 함수는 순수한 데이터 액세스 로직만 담당한다.
+
+            2) 파티 게시물 조회 함수
+                2-1) getPartyPosts(options?: GetPartyPostsOptions): Promise<PartyPost[]>
+                    - 파티 게시물 목록을 조회할 것.
+                    - party_posts 테이블 사용할 것.
+                    - 조회할 필드 (모든 컬럼 조회):
+                        - id: number - 게시물 ID
+                        - creator_id: string - 작성자 ID
+                        - game_title: string - 게임명
+                        - party_title: string - 파티 제목
+                        - start_date: string - 시작일 (date 형식)
+                        - start_time: string - 시작 시간 (time 형식)
+                        - description: string - 모집 설명
+                        - max_members: number - 파티 최대 인원
+                        - control_level: string - 컨트롤 수준
+                        - difficulty: string - 난이도
+                        - voice_chat: string | null - 보이스챗 사용 여부
+                        - tags: Json | null - 태그 배열 (jsonb)
+                        - status: string - 모집 상태
+                        - created_at: string - 생성 시각
+                    - 옵션 파라미터:
+                        - limit: number (기본값: 50) - 조회할 최대 개수
+                        - offset: number (기본값: 0) - 페이지네이션 오프셋
+                        - creatorId?: string - 작성자 ID로 필터링 (선택)
+                        - gameTitle?: string - 게임명으로 필터링 (선택)
+                        - status?: string - 모집 상태로 필터링 (선택)
+                    - 정렬: created_at 기준 내림차순 (최신 게시물이 먼저)
+                    - 반환 타입: database.types.ts의 party_posts.Row[] 타입 활용.
+
+                2-2) getPartyPost(postId: number): Promise<PartyPost | null>
+                    - 특정 파티 게시물을 단일 조회할 것.
+                    - party_posts 테이블 사용할 것.
+                    - id로 필터링할 것.
+                    - 조회할 필드 (모든 컬럼 조회):
+                        - id: number - 게시물 ID
+                        - creator_id: string - 작성자 ID
+                        - game_title: string - 게임명
+                        - party_title: string - 파티 제목
+                        - start_date: string - 시작일 (date 형식)
+                        - start_time: string - 시작 시간 (time 형식)
+                        - description: string - 모집 설명
+                        - max_members: number - 파티 최대 인원
+                        - control_level: string - 컨트롤 수준
+                        - difficulty: string - 난이도
+                        - voice_chat: string | null - 보이스챗 사용 여부
+                        - tags: Json | null - 태그 배열 (jsonb)
+                        - status: string - 모집 상태
+                        - created_at: string - 생성 시각
+                    - 조회 결과가 없으면 null을 반환할 것.
+                    - 반환 타입: database.types.ts의 party_posts.Row | null 타입 활용.
+
+            3) 파티 게시물 작성 함수
+                3-1) createPartyPost(input: CreatePartyPostInput): Promise<PartyPost>
+                    - 파티 게시물을 생성할 것.
+                    - party_posts 테이블에 레코드 생성할 것.
+                    - input 필드:
+                        - creator_id: string (필수) - 작성자 ID
+                        - game_title: string (필수) - 게임명
+                        - party_title: string (필수) - 파티 제목
+                        - start_date: string (필수) - 시작일 (date 형식)
+                        - start_time: string (필수) - 시작 시간 (time 형식)
+                        - description: string (필수) - 모집 설명
+                        - max_members: number (필수) - 파티 최대 인원
+                        - control_level: string (필수) - 컨트롤 수준
+                        - difficulty: string (필수) - 난이도
+                        - voice_chat?: string | null (선택) - 보이스챗 사용 여부
+                        - tags?: Json | null (선택) - 태그 배열 (jsonb)
+                        - status?: string (선택, 기본값: 'recruiting') - 모집 상태
+                    - created_at은 Supabase에서 자동 설정됨.
+                    - 생성된 게시물 정보를 반환할 것.
+                    - 반환 타입: database.types.ts의 party_posts.Row 타입 활용.
+
+            4) 파티 게시물 수정 함수
+                4-1) updatePartyPost(postId: number, input: UpdatePartyPostInput): Promise<PartyPost>
+                    - 파티 게시물을 수정할 것.
+                    - party_posts 테이블에서 id로 업데이트할 것.
+                    - input 필드 (모두 선택):
+                        - game_title?: string - 게임명
+                        - party_title?: string - 파티 제목
+                        - start_date?: string - 시작일
+                        - start_time?: string - 시작 시간
+                        - description?: string - 모집 설명
+                        - max_members?: number - 파티 최대 인원
+                        - control_level?: string - 컨트롤 수준
+                        - difficulty?: string - 난이도
+                        - voice_chat?: string | null - 보이스챗 사용 여부
+                        - tags?: Json | null - 태그 배열
+                        - status?: string - 모집 상태
+                    - 수정된 게시물 정보를 반환할 것.
+                    - 반환 타입: database.types.ts의 party_posts.Row 타입 활용.
+                    - 게시물이 존재하지 않으면 에러를 throw할 것.
+
+            5) 파티 게시물 삭제 함수
+                5-1) deletePartyPost(postId: number): Promise<void>
+                    - 파티 게시물을 삭제할 것 (hard delete).
+                    - party_posts 테이블에서 id로 삭제할 것.
+                    - 삭제 성공 시 아무것도 반환하지 않을 것.
+                    - 게시물이 존재하지 않아도 에러를 throw하지 않을 것 (idempotent).
+
+            6) 타입 정의
+                6-1) 커스텀 타입 정의
+                    - PartyPost: database.types.ts의 party_posts.Row 활용.
+                    - GetPartyPostsOptions: 조회 옵션 타입 (파일 내부에 정의)
+                    - CreatePartyPostInput: 생성 입력 타입 (파일 내부에 정의)
+                    - UpdatePartyPostInput: 수정 입력 타입 (파일 내부에 정의)
+
+                6-2) 함수 파라미터 타입
+                    - 모든 함수의 파라미터는 명시적 타입을 지정할 것.
+                    - uuid 타입은 string으로 처리할 것.
+                    - bigint 타입은 number로 처리할 것.
+                    - date 타입은 string으로 처리할 것 (ISO 형식).
+                    - time 타입은 string으로 처리할 것.
+
+            7) 구현 주의사항
+                7-1) Supabase 쿼리 패턴
+                    - .from()으로 테이블 선택.
+                    - .select()로 필요한 컬럼만 선택 (성능 최적화).
+                    - .eq(), .in(), .ilike() 등으로 필터링.
+                    - .order()로 정렬.
+                    - .limit(), .range()로 페이지네이션.
+                    - .insert()로 생성.
+                    - .update()로 수정.
+                    - .delete()로 삭제.
+
+                7-2) 조인 쿼리
+                    - 필요시 Supabase의 .select()에서 관계된 테이블 조인 가능.
+                    - 예: .select('*, user_profiles(*)')
+                    - 또는 별도 쿼리로 분리하여 처리.
+
+                7-3) 에러 처리
+                    - 모든 Supabase 쿼리 결과에서 error 체크할 것.
+                    - error가 존재하면 throw error할 것.
+                    - try-catch는 호출하는 쪽(Hook 등)에서 처리할 것.
+
+                7-4) 데이터 검증
+                    - 필수 필드 검증은 호출부(API Route 등)에서 수행할 것.
+                    - Repository는 데이터베이스 레벨의 제약 조건만 확인할 것.
+
+==============================================
+
+구현 완료 후 아래 2가지 체크리스트를 반환할 것.
+
+1) 커서룰(@01-common.mdc, @04-func.mdc) 적용 결과 체크리스트
+   - 파일 경로 준수 여부
+   - 라이브러리 사용 규칙 준수 여부
+   - 코드 구조 및 네이밍 규칙 준수 여부
+
+2) 기능 요구사항 구현 체크리스트
+   - 파티 게시물 목록 조회 함수 구현 완료 여부
+   - 파티 게시물 단일 조회 함수 구현 완료 여부
+   - 파티 게시물 작성 함수 구현 완료 여부
+   - 파티 게시물 수정 함수 구현 완료 여부
+   - 파티 게시물 삭제 함수 구현 완료 여부
+   - party_posts 테이블만 사용 여부
+   - 타입 정의 완료 여부 (PartyPost, GetPartyPostsOptions, CreatePartyPostInput, UpdatePartyPostInput)
+   - 에러 처리 일관성 유지 여부
+   - Supabase 쿼리 패턴 준수 여부
+   - 페이지네이션 지원 여부
+   - 필터링 옵션 지원 여부

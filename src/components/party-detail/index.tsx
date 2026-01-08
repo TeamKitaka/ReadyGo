@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import Icon from '@/commons/components/icon';
@@ -15,6 +15,7 @@ import { useLinkUpdateModal } from './hooks/index.link.update.modal.hook';
 import { useDeleteParty } from './hooks/index.delete.hook';
 import { useJoinParty } from './hooks/index.join.hook';
 import { useLeaveParty } from './hooks/index.leave.hook';
+import { useMemberList } from './hooks/index.binding.memberList.hook';
 import styles from './styles.module.css';
 
 export default function PartyDetail() {
@@ -23,10 +24,26 @@ export default function PartyDetail() {
   const { user } = useAuth();
   const { data, isLoading, error, refetch, currentUserRole } =
     usePartyBinding();
+
+  // postId를 URL 파라미터에서 가져오고 number로 변환
+  const postIdNumber =
+    partyId && !isNaN(parseInt(partyId, 10)) ? parseInt(partyId, 10) : 0;
+
+  // useMemberList Hook 호출 (refetch 함수 가져오기)
+  const { refetch: refetchMemberList } = useMemberList({
+    postId: postIdNumber,
+  });
+
+  // refetch를 결합한 함수 생성
+  const handleRefetch = useCallback(async () => {
+    await refetch();
+    await refetchMemberList();
+  }, [refetch, refetchMemberList]);
+
   const { openUpdateModal } = useLinkUpdateModal({ onRefetch: refetch });
   const { openDeleteModal } = useDeleteParty({ onRefetch: refetch });
-  const { joinParty } = useJoinParty({ onRefetch: refetch });
-  const { leaveParty } = useLeaveParty({ onRefetch: refetch });
+  const { joinParty } = useJoinParty({ onRefetch: handleRefetch });
+  const { leaveParty } = useLeaveParty({ onRefetch: handleRefetch });
 
   // 작성자 여부 확인
   const isCreator = data?.creator_id === user?.id;

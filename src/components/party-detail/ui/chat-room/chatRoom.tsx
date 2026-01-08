@@ -168,6 +168,7 @@ export default function ChatRoom() {
                           alt={senderNickname || ''}
                           size="s"
                           className={styles.messageAvatar}
+                          showStatus={false}
                         />
                       )}
                       {isConsecutive && <div className={styles.avatarSpacer} />}
@@ -212,8 +213,15 @@ export default function ChatRoom() {
             onKeyDown={handleKeyDown}
             aria-label="메시지 입력"
             label={false}
-            iconRight="send"
-            onIconRightClick={handleSendMessage}
+            iconRight={messageInput.trim() ? 'send' : undefined}
+            iconRightColor={
+              messageInput.trim() && !isBlocked
+                ? 'var(--color-icon-interactive-secondary)'
+                : undefined
+            }
+            onIconRightClick={
+              messageInput.trim() && !isBlocked ? handleSendMessage : undefined
+            }
             iconSize={20}
             disabled={isBlocked}
           />

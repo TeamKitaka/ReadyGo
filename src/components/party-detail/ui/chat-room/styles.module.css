@@ -9,10 +9,11 @@
   background-color: var(--color-bg-primary);
   border-radius: 36px;
   border: 1px solid var(--color-border-secondary);
+  padding: 32px;
 }
 
 .messageList {
-  width: 760px;
+  /* width: 760px; */
   height: 1094px;
   display: flex;
   flex-direction: column;
@@ -127,7 +128,7 @@
 }
 
 .otherMessageContent .messageTime {
-  padding-bottom: 0;
+  padding-bottom: 14px;
 }
 
 .senderNickname {
@@ -140,13 +141,15 @@
 .messageBubbles {
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
+
   gap: 8px;
 }
 
 .otherMessageWrapper {
   display: flex;
+  align-items: flex-end;
   gap: 12px;
-  align-items: center;
 }
 
 .otherMessageBubble {
@@ -163,7 +166,7 @@
   font-style: normal;
   font-weight: var(--typo-body-lg-font-weight);
   line-height: var(--typo-body-lg-line-height);
-  white-space: nowrap;
+  /* white-space: nowrap; */
   word-wrap: normal;
 }
 
@@ -172,12 +175,12 @@
   font-size: var(--typo-body-lg-font-size);
   font-weight: var(--typo-body-lg-font-weight);
   line-height: var(--typo-body-lg-line-height);
-  white-space: nowrap;
+  /* white-space: nowrap; */
   word-wrap: normal;
 }
 
 .inputArea {
-  width: 760px;
+  /* width: 760px; */
   height: 48px;
   display: flex;
   align-items: center;

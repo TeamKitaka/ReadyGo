@@ -1,0 +1,303 @@
+아래의 조건을 모두 적용하여, 아래의 요구사항을 모두 구현할 것.
+구현 결과를 체크리스트로 반환할 것.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하여 작업하고, 이 작업이 끝나면 해당 rules 적용 결과를 체크리스트로 반환할 것.
+            - @01-common.mdc
+            - @04-func.mdc
+
+==============================================
+
+조건-파일경로) 수정할 TSX 파일경로: src/components/party-detail/ui/member-list/memberList.tsx
+조건-파일경로) 수정할 CSS 파일경로: src/components/party-detail/ui/member-list/styles.module.css
+조건-파일경로) 수정할 TSX 파일경로: src/components/party-detail/ui/member-item/memberItem.tsx
+조건-파일경로) 참고할 API 파일경로: src/app/api/party/[id]/members/route.ts
+조건-파일경로) 참고할 API 파일경로: src/app/api/party/[id]/members/route.ts (members와 profiles를 한 번에 반환)
+조건-파일경로) 참고할 Auth Provider: src/commons/providers/auth/auth.provider.tsx
+조건-파일경로) 참고할 Party Binding Hook: src/components/party-detail/hooks/index.binding.hook.ts
+조건-파일경로) 구현할 Hook 파일경로: src/components/party-detail/hooks/index.binding.memberList.hook.ts
+조건-파일경로) 구현될 TEST 파일경로: src/components/party-detail/tests/index.binding.memberList.hook.spec.ts
+조건-파일경로) 참고할 Avatar 유틸리티: src/lib/avatar/getAvatarImagePath.ts
+
+조건-테스트) 테스트 파일(index.binding.memberList.hook.spec.ts)에서 최소 다음 케이스를 검증할 것:
+            - postId=0 → formattedMembers=[], isLoading=false
+            - members + max_members=8 → (member 수 + empty 수 = 8)
+            - leader 우선 정렬(creator_id 일치 or role=leader)
+            - 프로필 없을 때 nickname "알 수 없음", avatar 기본값
+==============================================
+
+핵심요구사항) memberList.tsx 컴포넌트는 오로지 UI 기능만 수행하고, 모든 로직(포맷팅, 데이터 처리 등)은 Hook에서 처리하도록 구현할 것.
+            채팅 목록 바인딩(useChatList + chatList.tsx) 패턴을 참고하여 동일한 구조로 구현할 것.
+
+            [원칙]
+            - 컴포넌트(memberList.tsx): UI 렌더링만 담당, 최소한의 UI 상태 관리만 수행
+            - Hook(useMemberList): 모든 비즈니스 로직, 데이터 포맷팅, 상태 관리 처리
+            - Hook은 UI에서 바로 사용 가능한 포맷된 데이터를 반환 (formattedChatRooms 패턴 참고)
+            - party_members 테이블 사용: post_id, user_id, role, joined_at 필드 존재
+            - user_profiles 테이블 사용: id, nickname, avatar_url, animal_type 필드 존재
+
+            [중요] Hook 파일명 및 경로:
+            - Hook 파일은 src/components/party-detail/hooks/index.binding.memberList.hook.ts에 생성하고, export 이름은 useMemberList로 통일한다.
+
+            1) Hook 구현 (index.binding.memberList.hook.ts에 useMemberList export)
+                - useMemberList Hook을 생성하여 UI에서 바로 사용 가능한 포맷된 데이터를 반환하도록 구현할 것.
+                - 반환 타입에 다음 필드 포함:
+                    - formattedMembers: FormattedMemberItem[] (UI에서 바로 사용 가능한 포맷된 멤버 배열)
+                    - currentMemberCount: number (현재 멤버 수)
+                    - maxMemberCount: number (최대 멤버 수, party_posts.max_members에서 조회)
+                    - isLoading: boolean (로딩 상태)
+                    - error: Error | null (에러 상태)
+                - Hook 내부에서 다음 로직 처리:
+                    - 파티 멤버 및 프로필 조회: /api/party/[id]/members API 호출 (members와 profiles를 한 번에 받음)
+                    - 파티 정보 조회: usePartyBinding Hook에서 max_members 가져오기 (없으면 기본값 8 사용)
+                    - 아바타 이미지 경로 계산 (getAvatarImagePath 사용)
+                    - 멤버 포맷팅 (FormattedMemberItem 타입으로 변환)
+                    - 파티장(leader) 구분 (party_posts.creator_id와 비교 또는 party_members.role 사용)
+                    - 빈 자리 처리 (max_members까지 빈 자리 아이템 생성)
+                - FormattedMemberItem 타입 정의 (Hook 파일에 추가):
+                    - type: 'member' | 'empty'
+                    - userId?: string (member인 경우)
+                    - nickname?: string (member인 경우)
+                    - animalType?: string (member인 경우)
+                    - avatarImagePath?: string (member인 경우)
+                    - isLeader?: boolean (member인 경우, 파티장 여부)
+                - formattedMembers 생성 로직:
+                    - 실제 멤버를 먼저 추가 (파티장이 먼저, 그 다음 일반 멤버)
+                    - 빈 자리를 max_members까지 채움
+                    - 각 멤버에 대해 nickname, avatarImagePath, animalType, isLeader 계산
+                - 파티 정보 조회 로직:
+                    - max_members는 usePartyBinding Hook에서만 가져오고, 없으면 기본값 8 사용
+                    - 별도 API 호출 금지 (중복 fetch 방지)
+
+            2) 컴포넌트 수정 (memberList.tsx)
+                - postId를 URL 파라미터에서 가져오거나 props로 전달받을 것.
+                    - postId는 string 타입 (URL 파라미터)이므로 parseInt(postId, 10)으로 변환
+                    - parseInt 결과가 NaN인 경우 0을 전달 (Hook이 early return하여 빈 멤버 목록 반환)
+                    - postId가 없거나 유효하지 않은 경우 0 전달
+                - useMemberList Hook을 호출하여 formattedMembers, currentMemberCount, maxMemberCount, isLoading, error를 받을 것.
+                - Hook에서 받은 포맷된 데이터를 그대로 렌더링:
+                    - formattedMembers를 map하여 렌더링 (member와 empty 구분)
+                    - 각 멤버의 nickname, avatarImagePath, animalType, isLeader 사용
+                    - 포맷팅 로직은 컴포넌트에서 제거 (Hook에서 처리)
+                - 멤버 카운트 표시:
+                    - currentMemberCount / maxMemberCount 형식으로 표시
+                - Mock 데이터 및 포맷팅 함수 제거:
+                    - getMemberData 함수 제거
+                    - Mock 타입 정의 제거
+                - 주의: 컴포넌트에서는 포맷팅, 데이터 처리 로직을 모두 제거하고, Hook에서 받은 데이터를 그대로 렌더링만 할 것.
+
+==============================================
+
+세부요구사항) Hook 구현 상세 (index.binding.memberList.hook.ts)
+
+            1) 파티 멤버 및 프로필 조회 로직
+                - /api/party/[id]/members API를 호출하여 members와 profiles를 한 번에 받음
+                - API 응답 구조: { members: PartyMember[], profiles: UserProfile[] }
+                - useMemo를 사용하여 postId 변경 시 재계산
+                - getAvatarImagePath로 아바타 이미지 경로 계산
+                - 주의: Hook 내부에서 supabase client를 직접 생성하지 않고, API Route를 통해서만 조회
+
+            2) 파티 정보 조회 로직
+                - usePartyBinding Hook을 활용하여 party_posts.max_members 조회
+                - max_members가 없으면 기본값 8 사용
+                - 별도 API 호출 금지 (중복 fetch 방지)
+                - max_members 정보를 사용하여 빈 자리 계산
+
+            3) formattedMembers 생성 로직
+                - useMemo를 사용하여 members, profiles, maxMembers 변경 시 재계산
+                - 실제 멤버를 먼저 추가:
+                    - 파티장(creator_id와 일치하는 멤버 또는 role='leader')을 먼저 추가
+                    - 그 다음 일반 멤버를 joined_at 순서로 추가
+                - 빈 자리를 max_members까지 채움:
+                    - 현재 멤버 수가 max_members보다 적으면 빈 자리(type='empty') 아이템 추가
+                - 각 멤버에 대해 다음 정보 계산:
+                    - nickname: user_profiles.nickname 또는 "알 수 없음"
+                    - avatarImagePath: getAvatarImagePath(avatar_url, animal_type)
+                    - animalType: user_profiles.animal_type
+                    - isLeader: creator_id와 일치하거나 role='leader'인 경우 true
+
+            4) 실시간 구독 로직 (선택사항)
+                - postgres_changes로 party_members 테이블의 INSERT/DELETE 이벤트 구독
+                - post_id가 현재 postId와 일치하는 멤버 변경만 수신
+                - 멤버 추가/제거 시 formattedMembers 자동 업데이트
+
+            5) 타입 정의 추가
+                - FormattedMemberItem 타입 정의
+                - UseMemberListReturn 타입 정의
+                - PartyMember 타입: Database['public']['Tables']['party_members']['Row'] 사용
+                - UserProfile 타입: Database['public']['Tables']['user_profiles']['Row'] 사용
+
+==============================================
+
+세부요구사항) 컴포넌트 구현 상세 (memberList.tsx)
+
+            1) Hook 사용 및 상태 관리
+                - useMemberList Hook 호출:
+                    - postId는 URL 파라미터에서 가져오거나 props로 전달받음
+                    - const postIdNumber = isNaN(parseInt(postId, 10)) ? 0 : parseInt(postId, 10);
+                    - const { formattedMembers, currentMemberCount, maxMemberCount, isLoading, error } = useMemberList({ postId: postIdNumber });
+
+            2) 멤버 렌더링 구조
+                - formattedMembers를 map하여 렌더링:
+                    - item.type === 'member'인 경우: MemberItem에 member 데이터 전달
+                        - type: isLeader ? 'leader' : 'member'
+                        - userId: item.userId
+                        - name: item.nickname
+                        - animalType: item.animalType
+                    - item.type === 'empty'인 경우: MemberItem에 empty 데이터 전달
+                        - type: 'empty'
+                        - userId, name, animalType은 undefined
+                - 포맷팅 로직은 모두 제거 (Hook에서 처리된 데이터 사용)
+                - Mock 데이터 및 포맷팅 함수 제거:
+                    - getMemberData 함수 제거
+                    - Array.from({ length: 8 }) 제거
+                    - Mock 타입 정의 제거
+
+            3) 멤버 카운트 표시
+                - currentMemberCount / maxMemberCount 형식으로 표시
+                - 예: "4 / 8명"
+
+            4) 기존 UI 구조 유지
+                - <div className={styles.container}>
+                - <div className={styles.mainArea}>
+                - <div className={styles.partyTitle}>
+                - <div className={styles.memberCount}>
+                - <div className={styles.partyItemGroup}>
+                - 스타일링은 변경하지 않음
+                - 접근성 속성은 그대로 유지
+
+            5) 로딩/에러 상태 처리
+                - isLoading이 true인 경우: 로딩 UI 표시 (선택사항)
+                - error가 null이 아닌 경우: 에러 메시지 표시 (선택사항)
+                - 에러 발생 시에도 기존 UI는 유지하여 앱이 중단되지 않도록 처리
+
+==============================================
+
+세부요구사항) 에러 처리 및 예외 상황
+
+            1) Hook에서 처리할 예외 상황
+                - postId 없음 또는 유효하지 않음:
+                    - postId가 0 이하인 경우: formattedMembers를 빈 배열로 반환
+                    - early return하여 추가 처리 중단
+                - 사용자 인증 없음:
+                    - user?.id가 없는 경우: formattedMembers를 빈 배열로 반환
+                    - Hook 내부에서 useAuth를 호출하므로 자동 처리됨
+                - 파티 멤버 정보 없음:
+                    - getPartyMembersService 호출 실패 시: formattedMembers를 빈 배열로 반환
+                - 파티 정보 없음:
+                    - usePartyBinding에서 max_members를 가져올 수 없는 경우: 기본값 8 사용
+                - 프로필 정보 없음:
+                    - 각 멤버의 프로필 정보가 없는 경우: 기본값 사용
+                    - nickname: "알 수 없음"
+                    - avatarImagePath: getAvatarImagePath(null, null) → 기본값 bear 아바타
+                    - animalType: undefined
+                - 로딩/에러 상태:
+                    - isLoading, error 상태는 Hook에서 관리
+                    - 컴포넌트에서는 Hook에서 받은 상태를 그대로 사용
+
+            2) 컴포넌트에서 처리할 예외 상황
+                - postId 없음 또는 유효하지 않음:
+                    - formattedMembers가 빈 배열인 경우: 빈 멤버 UI 표시
+                - 로딩 중:
+                    - isLoading === true인 경우: 로딩 UI 표시 (선택사항)
+                - 에러 발생:
+                    - error가 null이 아닌 경우: 콘솔 에러 로그 출력 (선택사항: UI 표시)
+                    - 에러 발생 시에도 기존 UI는 유지하여 앱이 중단되지 않도록 처리
+                - 멤버 없음:
+                    - formattedMembers.length === 0인 경우: 빈 멤버 UI 표시
+
+==============================================
+
+체크리스트) 구현이 완료되면 다음 항목을 포함한 체크리스트를 반환할 것.
+            - [ ] 커서룰 @01-common.mdc 적용 결과
+            - [ ] 커서룰 @04-func.mdc 적용 결과
+            - [ ] useMemberList Hook 구현 완료 (formattedMembers, currentMemberCount, maxMemberCount, isLoading, error 반환)
+            - [ ] FormattedMemberItem 타입 정의 완료 (type, userId, nickname, animalType, avatarImagePath, isLeader)
+            - [ ] formattedMembers 생성 로직 구현 완료 (파티장 우선, 일반 멤버, 빈 자리 포함)
+            - [ ] 파티 멤버 및 프로필 조회 로직 구현 완료 (/api/party/[id]/members API 호출, members와 profiles 한 번에 받음)
+            - [ ] 파티 정보 조회 로직 구현 완료 (usePartyBinding에서 max_members 가져오기, 없으면 기본값 8)
+            - [ ] 아바타 이미지 경로 계산 완료 (getAvatarImagePath 사용)
+            - [ ] 파티장 구분 로직 구현 완료 (creator_id 또는 role 비교)
+            - [ ] 빈 자리 처리 로직 구현 완료 (max_members까지 빈 자리 생성)
+            - [ ] useMemberList Hook import 및 사용 완료 (컴포넌트에서)
+            - [ ] postId string → number 변환 완료 (NaN 처리 포함)
+            - [ ] postId가 0인 경우 UI 처리 완료 (빈 상태)
+            - [ ] Mock 데이터 및 타입 정의 제거 완료 (컴포넌트에서)
+            - [ ] formattedMembers 렌더링 완료 (member와 empty 구분, 파티장 구분)
+            - [ ] 멤버 카운트 표시 완료 (currentMemberCount / maxMemberCount)
+            - [ ] 로딩 상태 처리 완료 (컴포넌트에서)
+            - [ ] 에러 상태 처리 완료 (컴포넌트에서)
+            - [ ] 기존 UI 구조 및 스타일 유지 완료
+            - [ ] 접근성 속성 유지 완료
+            - [ ] 컴포넌트는 UI만 담당하고 로직은 모두 Hook에서 처리하는 구조 완료
+            - [ ] party_members 테이블 구조에 맞게 구현 완료
+            - [ ] user_profiles 테이블 구조에 맞게 구현 완료
+            - [ ] 테스트 케이스 구현 완료 (postId=0, 멤버+빈자리=8, leader 우선 정렬, 프로필 없을 때 기본값)
+
+==============================================
+
+참고사항) 
+
+            1) 채팅 목록 바인딩 패턴 참고:
+               - useChatList Hook: 모든 로직(포맷팅, 상태 관리)을 Hook에서 처리
+               - chatList.tsx 컴포넌트: Hook에서 받은 formattedChatRooms를 그대로 렌더링
+               - 동일한 패턴을 useMemberList + memberList.tsx에 적용할 것
+
+            2) useMemberList Hook 구현 사항:
+               - 파티 멤버 및 프로필 조회: /api/party/[id]/members API 호출 (members와 profiles를 한 번에 받음)
+               - 파티 정보 조회: usePartyBinding Hook에서 max_members 가져오기 (없으면 기본값 8)
+               - 아바타 이미지 경로: getAvatarImagePath로 계산
+               - 반환 타입: formattedMembers, currentMemberCount, maxMemberCount, isLoading, error
+               - 주의: Hook 내부에서 supabase client를 직접 생성하지 않고, API Route를 통해서만 조회
+
+            3) 파티 멤버 정보 조회:
+               - /api/party/[id]/members API를 호출하여 members와 profiles를 한 번에 받음
+               - API 응답 구조: { members: PartyMember[], profiles: UserProfile[] }
+               - formattedMembers 생성 시 각 멤버의 정보를 포맷팅하여 추가
+               - 새 repository 생성 금지
+
+            4) 파티장 구분:
+               - party_posts.creator_id와 각 멤버의 user_id를 비교하여 파티장 구분
+               - 또는 party_members.role이 'leader'인 경우 파티장으로 구분
+               - 파티장은 formattedMembers 배열의 첫 번째에 배치
+
+            5) 빈 자리 처리:
+               - 현재 멤버 수가 max_members보다 적으면 빈 자리(type='empty') 아이템 추가
+               - 빈 자리는 formattedMembers 배열의 끝에 배치
+               - MemberItem 컴포넌트에 type='empty'로 전달
+
+            6) 아바타 이미지 선택 로직:
+               - 공통 유틸리티 함수 사용: src/lib/avatar/getAvatarImagePath.ts
+               - Hook 내부에서 getAvatarImagePath 호출하여 avatarImagePath 계산
+               - 선택 우선순위:
+                 1) memberProfile?.avatar_url이 null이 아닌 경우: avatar_url 사용
+                 2) memberProfile?.avatar_url이 null인 경우: animal_type을 사용하여 동물 타입 이미지 가져오기
+                 3) 둘 다 없으면 기본값 bear 아바타 사용
+               - 컴포넌트에서는 avatarImagePath를 그대로 사용
+
+            7) DB 스키마 정리:
+               - party_members 테이블: id (number), post_id (number | null), user_id (string | null), role (string | null), joined_at (string | null)
+               - party_posts 테이블: id (number), creator_id (string), max_members (number) 등
+               - user_profiles 테이블: id (string), nickname (string | null), animal_type (string), avatar_url (string | null) 등
+               - user_profiles에 user_id, status 필드는 없음 (id 필드가 user_id 역할, status는 presence store에서 조회)
+
+            8) 인증 방식:
+               - Hook 내부에서 useAuth() 호출하여 현재 사용자 ID 조회 (필요한 경우)
+               - 컴포넌트에서는 인증 관련 로직을 처리하지 않음
+
+            9) 컴포넌트 역할:
+               - memberList.tsx는 오로지 UI 렌더링만 담당
+               - Hook에서 받은 포맷된 데이터를 그대로 렌더링
+               - 최소한의 UI 상태 관리만 수행
+               - 비즈니스 로직, 포맷팅, 데이터 처리 로직은 모두 Hook에서 처리
+
+            10) 멤버 정렬 순서:
+                - 파티장(creator_id와 일치하는 멤버 또는 role='leader')을 먼저 배치
+                - 그 다음 일반 멤버를 joined_at 순서로 배치
+                - 빈 자리는 마지막에 배치
+
+            11) 실시간 업데이트 (선택사항):
+                - postgres_changes로 party_members 테이블의 INSERT/DELETE 이벤트 구독
+                - 멤버 추가/제거 시 formattedMembers 자동 업데이트
+                - 중복 방지를 위해 seenMemberIdsRef로 관리 (필요한 경우)

@@ -130,6 +130,11 @@ export default function Card({
 
   const isDisabled = isStartTimePassed(_categories.startTime);
 
+  // 시작 시간에서 "새벽"을 "오전"으로 변환하는 함수
+  const formatStartTime = (startTime: string): string => {
+    return startTime.replace(/새벽/g, '오전');
+  };
+
   // data-testid 생성
   const cardTestId = partyId ? `party-card-${partyId}` : undefined;
   const titleTestId = partyId ? `party-card-title-${partyId}` : undefined;
@@ -261,7 +266,7 @@ export default function Card({
               className={styles.categoryValue}
               data-testid={startTimeTestId}
             >
-              {_categories.startTime}
+              {formatStartTime(_categories.startTime)}
             </span>
           </div>
           <div className={styles.categoryItem}>

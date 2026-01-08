@@ -95,7 +95,15 @@ export class ChatFetchError extends Error {
   readonly originalError?: string;
 
   constructor(
-    resource: 'room' | 'rooms' | 'message' | 'messages' | 'members' | 'reads',
+    resource:
+      | 'room'
+      | 'rooms'
+      | 'message'
+      | 'messages'
+      | 'members'
+      | 'reads'
+      | 'post'
+      | 'posts',
     originalError?: string
   ) {
     super(`Failed to fetch ${resource}: ${originalError || 'Unknown error'}`);
@@ -122,7 +130,7 @@ export class ChatCreateError extends Error {
   readonly statusCode = 500;
   readonly originalError?: string;
 
-  constructor(resource: 'room' | 'message', originalError?: string) {
+  constructor(resource: 'room' | 'message' | 'post', originalError?: string) {
     super(`Failed to create ${resource}: ${originalError || 'Unknown error'}`);
     this.name = 'ChatCreateError';
     this.originalError = originalError;
@@ -146,7 +154,10 @@ export class ChatUpdateError extends Error {
   readonly statusCode = 500;
   readonly originalError?: string;
 
-  constructor(resource: 'read_status' | 'message', originalError?: string) {
+  constructor(
+    resource: 'read_status' | 'message' | 'post',
+    originalError?: string
+  ) {
     super(`Failed to update ${resource}: ${originalError || 'Unknown error'}`);
     this.name = 'ChatUpdateError';
     this.originalError = originalError;

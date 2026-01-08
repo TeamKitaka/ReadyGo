@@ -1,0 +1,96 @@
+아래의 조건을 모두 적용하여, 아래의 요구사항을 모두 구현할 것.
+구현 결과를 체크리스트로 반환할 것.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하여 작업하고, 이 작업이 끝나면 해당 rules 적용 결과를 체크리스트로 반환할 것.
+	- Repository는 단일 테이블에만 접근
+	- 비즈니스 로직 포함 금지
+	- Join/복잡한 쿼리 금지
+	- 인프라 에러만 throw, 로직 에러는 반환
+	- named export만 허용
+	- Supabase client는 외부에서 주입받을 것
+
+==============================================
+
+조건-파일경로) 참고 및 기준 파일 경로는 다음과 같다.
+	- 구현 대상
+		- src/repositories/steamGame.repository.ts
+		- supabase/functions/_shared/repositories/steamGameRepository.ts (Deno용)
+	- 테이블
+		- steam_game_info
+
+==============================================
+
+조건-구현참고) 반드시 참고할 기존 구현 패턴은 다음과 같다.
+	- 다른 Repository 패턴과 동일한 구조
+	- client 파라미터로 Supabase 주입
+	- 단순 CRUD만 수행
+
+==============================================
+
+핵심요구사항) 다음 기능을 step-by-step으로 구현하고, 각 항목의 적용 여부를 체크리스트로 반환할 것.
+
+1. 함수 정의
+	- upsertSteamGame(client, input): Promise<void>
+		- steam_game_info에 게임 정보 저장/업데이트
+		- (app_id) unique constraint 기준 upsert
+	
+	- checkGameExists(client, appIds): Promise<number[]>
+		- 여러 app_id가 steam_game_info에 존재하는지 배치 조회
+		- 존재하는 app_id 배열 반환
+
+2. upsertSteamGame 구현
+	- Input 타입:
+		type SteamGameUpsertInput = {
+		  app_id: number;
+		  name: string;
+		  short_description: string | null;
+		  header_image: string | null;
+		  genres: string[];
+		  categories: SteamCategoryJson[];
+		}
+	
+	- onConflict: 'app_id' 설정
+	- DB 에러 시 throw (인프라 오류)
+
+3. checkGameExists 구현 ⭐ 핵심
+	- 배치 조회로 성능 최적화
+	- SQL: SELECT app_id FROM steam_game_info WHERE app_id IN (appIds)
+	- Supabase: .select('app_id').in('app_id', appIds)
+	- 빈 배열 입력 시 빈 배열 반환
+	- 존재하는 app_id만 number[] 형태로 반환
+	- 사용 목적: 캐시 히트 확인 (점진적 검증)
+
+4. 에러 처리
+	- DB 연결 실패, 권한 에러 등 인프라 문제만 throw
+	- 데이터 없음은 정상 케이스 (빈 배열 반환)
+
+5. Deno 버전 차이점
+	- Node: SupabaseClient<Database> 타입 사용
+	- Deno: DbClient 인터페이스 사용
+	- 로직은 동일, 타입만 다름
+
+==============================================
+
+조건-Hook 책임)
+	- 해당 없음
+
+==============================================
+
+조건-UI 책임)
+	- 해당 없음
+
+==============================================
+
+구현 완료 후 반환) 아래 체크리스트를 반드시 반환할 것.
+	- steam_game_info 테이블만 접근한다
+	- upsertSteamGame이 구현되어 있다
+	- checkGameExists가 배치 조회로 구현되어 있다
+	- .in() 메서드를 사용한다
+	- 빈 배열 입력 시 빈 배열을 반환한다
+	- 인프라 에러만 throw 한다
+	- 비즈니스 로직이 포함되지 않았다
+	- client를 외부에서 주입받는다
+	- Deno 버전이 DbClient 인터페이스를 사용한다
+

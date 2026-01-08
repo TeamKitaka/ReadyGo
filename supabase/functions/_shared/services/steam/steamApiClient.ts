@@ -93,25 +93,16 @@ export const getOwnedGames = async (
       };
     }
 
-    // 게임 수가 너무 많으면 메모리 문제 발생 가능
-    // playtime 기준 상위 1000개만 처리
+    // Steam API에서 받은 전체 게임 목록 반환
+    // 정렬 및 필터링은 syncSteamGames에서 수행
     const { games } = data.response;
     const originalCount = games.length;
-    const sortedGames = games
-      .sort((a, b) => b.playtime_forever - a.playtime_forever)
-      .slice(0, 1000);
 
-    if (originalCount > 1000) {
-      console.log(
-        `[Steam API] Limiting ${originalCount} games to top 1000 by playtime`
-      );
-    } else {
-      console.log(`[Steam API] Successfully fetched ${originalCount} games`);
-    }
+    console.log(`[Steam API] Successfully fetched ${originalCount} items`);
 
     return {
       ok: true,
-      games: sortedGames,
+      games: games,
     };
   } catch (error) {
     // 네트워크 에러, 타임아웃, JSON 파싱 에러 등

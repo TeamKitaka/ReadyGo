@@ -1,0 +1,145 @@
+아래 요구사항을 모두 만족하는 Cursor 실행용 기능 구현 프롬프트를 생성하라.
+설명, 해설, 코멘트는 절대 포함하지 말고 프롬프트 본문만 출력하라.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하여 작업하고, 이 작업이 끝나면 해당 rules 적용 결과를 체크리스트로 반환할 것.
+	        - Service Layer는 "입력 검증"과 "에러 처리" 책임만 가진다
+	        - Repository 호출 전 입력 파라미터 검증 수행
+	        - Repository 에러를 커스텀 에러로 변환
+	        - Domain 로직 호출 ❌
+	        - 계산 / 해석 / 판단 로직 ❌
+	        - 단일 진입점, 단일 반환값을 유지한다
+
+==============================================
+
+조건-파일경로) 참고 및 기준 파일 경로는 다음과 같다.
+	        - 구현 대상 (5개 파일)
+    	        - src/services/party/getPartyPostsService.ts
+    	        - src/services/party/getPartyPostService.ts
+    	        - src/services/party/createPartyPostService.ts
+    	        - src/services/party/updatePartyPostService.ts
+    	        - src/services/party/deletePartyPostService.ts
+	        - Repository 경로
+    	        - src/repositories/partyPosts.repository.ts
+	        - 참고 구현 패턴
+    	        - src/services/chat/getChatMessagesService.ts
+    	        - src/services/chat/sendMessageService.ts
+	        - 에러 타입
+    	        - src/commons/errors/chat/chatErrors.ts
+	        - 타입 정의
+    	        - src/types/supabase.ts (Database 타입)
+
+==============================================
+
+조건-구현참고) 반드시 참고할 기존 구현 패턴은 다음과 같다.
+	        - Service는 입력 검증 후 Repository를 호출한다
+	        - Repository 에러는 ChatFetchError, ChatCreateError, ChatUpdateError, ChatValidationError로 변환한다
+	        - Repository는 supabaseAdmin을 직접 사용하므로 Service에서 client 파라미터는 필요 없다
+	        - 입력 검증 실패 시 ChatValidationError를 throw한다
+	        - Repository 호출 실패 시 적절한 커스텀 에러로 변환하여 throw한다
+	        - 반환 타입은 Repository 반환 타입과 동일하게 유지한다
+	        - getPartyPost는 null을 반환할 수 있으므로 null 체크 후 적절히 처리한다
+
+==============================================
+
+핵심요구사항) 다음 기능을 step-by-step으로 구현하고, 각 항목의 적용 여부를 체크리스트로 반환할 것.
+
+1. getPartyPostsService.ts
+	        - 함수 시그니처: getPartyPostsService(options?: GetPartyPostsOptions): Promise<PartyPost[]>
+	        - 입력 검증: limit은 1 이상, offset은 0 이상, creatorId는 비어있지 않은 문자열(있는 경우), gameTitle은 비어있지 않은 문자열(있는 경우), status는 비어있지 않은 문자열(있는 경우)
+	        - 검증 실패 시 ChatValidationError throw
+	        - Repository 호출: partyPostsRepository.getPartyPosts
+	        - Repository 에러는 ChatFetchError로 변환
+	        - 항상 PartyPost[] 배열 반환 (throw ❌ / null ❌ / undefined ❌)
+
+2. getPartyPostService.ts
+	        - 함수 시그니처: getPartyPostService(postId: number): Promise<PartyPost | null>
+	        - 입력 검증: postId는 양수
+	        - 검증 실패 시 ChatValidationError throw
+	        - Repository 호출: partyPostsRepository.getPartyPost
+	        - Repository 에러는 ChatFetchError로 변환
+	        - Repository가 null을 반환할 수 있으므로 null을 그대로 반환 (throw ❌)
+
+3. createPartyPostService.ts
+	        - 함수 시그니처: createPartyPostService(input: CreatePartyPostInput): Promise<PartyPost>
+	        - 입력 검증: creator_id는 비어있지 않은 문자열, game_title은 비어있지 않은 문자열(trim 후 검증), party_title은 비어있지 않은 문자열(trim 후 검증), start_date는 비어있지 않은 문자열, start_time은 비어있지 않은 문자열, description은 비어있지 않은 문자열(trim 후 검증), max_members는 양수, control_level은 비어있지 않은 문자열, difficulty는 비어있지 않은 문자열
+	        - 검증 실패 시 ChatValidationError throw
+	        - Repository 호출: partyPostsRepository.createPartyPost (문자열 필드는 trim 처리)
+	        - Repository 에러는 ChatCreateError로 변환
+	        - 반환 데이터가 없으면 ChatCreateError throw
+	        - 항상 PartyPost 객체 반환 (throw ❌ / null ❌ / undefined ❌)
+
+4. updatePartyPostService.ts
+	        - 함수 시그니처: updatePartyPostService(postId: number, input: UpdatePartyPostInput): Promise<PartyPost>
+	        - 입력 검증: postId는 양수, input의 각 필드가 제공된 경우 해당 필드 검증 (game_title, party_title, description은 trim 후 비어있지 않은 문자열, max_members는 양수, control_level, difficulty는 비어있지 않은 문자열)
+	        - 검증 실패 시 ChatValidationError throw
+	        - Repository 호출: partyPostsRepository.updatePartyPost (문자열 필드는 trim 처리)
+	        - Repository 에러는 ChatUpdateError로 변환
+	        - 반환 데이터가 없으면 ChatUpdateError throw
+	        - 항상 PartyPost 객체 반환 (throw ❌ / null ❌ / undefined ❌)
+
+5. deletePartyPostService.ts
+	        - 함수 시그니처: deletePartyPostService(postId: number): Promise<void>
+	        - 입력 검증: postId는 양수
+	        - 검증 실패 시 ChatValidationError throw
+	        - Repository 호출: partyPostsRepository.deletePartyPost
+	        - Repository 에러는 ChatUpdateError로 변환
+	        - 반환값 없음 (void)
+
+6. 에러 처리 규칙
+	        - ChatValidationError: 입력 검증 실패 (statusCode: 400)
+	        - ChatFetchError: 데이터 조회 실패 (statusCode: 500)
+	        - ChatCreateError: 데이터 생성 실패 (statusCode: 500)
+	        - ChatUpdateError: 데이터 업데이트/삭제 실패 (statusCode: 500)
+	        - Repository에서 발생한 에러는 error.message를 originalError로 포함
+
+7. 타입 정의
+	        - PartyPost: partyPosts.repository.ts에서 export된 PartyPost 타입
+	        - GetPartyPostsOptions: partyPosts.repository.ts에서 export된 GetPartyPostsOptions 인터페이스
+	        - CreatePartyPostInput: partyPosts.repository.ts에서 export된 CreatePartyPostInput 인터페이스
+	        - UpdatePartyPostInput: partyPosts.repository.ts에서 export된 UpdatePartyPostInput 인터페이스
+	        - 에러 타입은 chatErrors.ts에서 import
+
+8. Import 규칙
+	        - Repository: import * as partyPostsRepository from '@/repositories/partyPosts.repository'
+	        - 에러: import { ChatFetchError, ChatCreateError, ChatUpdateError, ChatValidationError } from '@/commons/errors/chat/chatErrors'
+	        - 타입: import type { PartyPost, GetPartyPostsOptions, CreatePartyPostInput, UpdatePartyPostInput } from '@/repositories/partyPosts.repository'
+
+==============================================
+
+조건-Hook 책임)
+	•	없음
+	•	Hook 구현 ❌
+
+==============================================
+
+조건-UI 책임)
+	•	없음
+	•	ViewModel 생성 ❌
+	•	UI 조건 분기 ❌
+
+==============================================
+
+구현 완료 후 반환) 아래 체크리스트를 반드시 반환할 것.
+	        - 5개 파일이 모두 src/services/party/ 디렉토리에 생성되었는가
+	        - getPartyPostsService.ts가 올바른 함수 시그니처를 가지는가
+	        - getPartyPostService.ts가 올바른 함수 시그니처를 가지는가
+	        - createPartyPostService.ts가 올바른 함수 시그니처를 가지는가
+	        - updatePartyPostService.ts가 올바른 함수 시그니처를 가지는가
+	        - deletePartyPostService.ts가 올바른 함수 시그니처를 가지는가
+	        - 모든 Service가 입력 검증을 수행하는가
+	        - 입력 검증 실패 시 ChatValidationError를 throw하는가
+	        - Repository 호출 전에 검증이 완료되는가
+	        - Repository 에러가 적절한 커스텀 에러로 변환되는가
+	        - getPartyPostsService가 항상 PartyPost[]를 반환하는가
+	        - getPartyPostService가 PartyPost | null을 반환하는가
+	        - createPartyPostService가 항상 PartyPost를 반환하는가
+	        - updatePartyPostService가 항상 PartyPost를 반환하는가
+	        - deletePartyPostService가 void를 반환하는가
+	        - 문자열 필드는 trim 처리 후 Repository에 전달되는가
+	        - Domain 로직 호출이 없는가
+	        - 계산 / 해석 / 판단 로직이 없는가
+	        - 에러 타입 import가 올바른가
+	        - 타입 정의가 올바른가 (Repository에서 export된 타입 사용)
+	        - chat 서비스 패턴과 일관성이 유지되는가

@@ -15,7 +15,7 @@
 조건-파일경로) 참고할 Service 파일경로: src/services/party/getPartyMessagesService.ts, src/services/party/sendPartyMessageService.ts, src/services/party/getPartyMembersService.ts
 조건-파일경로) 참고할 Auth Provider: src/commons/providers/auth/auth.provider.tsx
 조건-파일경로) 구현할 Hook 파일경로: /src/components/party-detail/hooks/index.binding.chatRoom.hook.ts
-
+조건-파일경로) 구현될 TEST 파일경로: /src/components/party-detail/tests/index.binding.chatRoom.hook.spec.ts
 ==============================================
 
 핵심요구사항) chatRoom.tsx 컴포넌트는 오로지 UI 기능만 수행하고, 모든 로직(포맷팅, 그룹화, 데이터 처리 등)은 Hook에서 처리하도록 구현할 것.

@@ -1,72 +1,55 @@
 'use client';
 
 import React from 'react';
+import { useParams } from 'next/navigation';
 import styles from './styles.module.css';
 import MemberItem from '../member-item/memberItem';
+import { useMemberList } from '../../hooks/index.binding.memberList.hook';
 
 export default function MemberList() {
+  const params = useParams();
+  const partyId = params?.id as string | undefined;
+
+  // postId를 URL 파라미터에서 가져오고 number로 변환
+  const postIdNumber = isNaN(parseInt(partyId ?? '', 10))
+    ? 0
+    : parseInt(partyId ?? '', 10);
+
+  // useMemberList Hook 호출
+  const { formattedMembers, currentMemberCount, maxMemberCount, error } =
+    useMemberList({ postId: postIdNumber });
+
+  // 에러 상태 처리 (콘솔 로그만 출력, UI는 유지)
+  if (error) {
+    console.error('MemberList error:', error);
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.mainArea}>
         <div className={styles.partyTitle}>
           파티원
           <div className={styles.memberCount}>
-            <span className={styles.currentCount}>4</span>
-            <span className={styles.maxCount}> / 8명</span>
+            <span className={styles.currentCount}>{currentMemberCount}</span>
+            <span className={styles.maxCount}> / {maxMemberCount}명</span>
           </div>
         </div>
         <div className={styles.partyItemGroup}>
-          {Array.from({ length: 8 }).map((_, index) => {
-            // Mock 데이터 (테스트용)
-            const getMemberData = (idx: number) => {
-              if (idx === 0) {
-                return {
-                  userId: 'user-1',
-                  name: '까칠한까마귀',
-                  animalType: 'raven',
-                };
-              }
-              if (idx === 1) {
-                return {
-                  userId: 'user-2',
-                  name: '도라방돌핀',
-                  animalType: 'dolphin',
-                };
-              }
-              if (idx === 2) {
-                return {
-                  userId: 'user-3',
-                  name: '호쾌한망토',
-                  animalType: 'fox',
-                };
-              }
-              if (idx === 3) {
-                return {
-                  userId: 'user-4',
-                  name: '용감한사자',
-                  animalType: 'bear',
-                };
-              }
-              return {
-                userId: undefined,
-                name: undefined,
-                animalType: undefined,
-              };
-            };
-
-            const memberData = getMemberData(index);
-            const type =
-              index === 0 ? 'leader' : index < 4 ? 'member' : 'empty';
-
-            return (
-              <MemberItem
-                key={index}
-                type={type}
-                userId={memberData.userId}
-                name={memberData.name}
-                animalType={memberData.animalType}
-              />
-            );
+          {formattedMembers.map((item, index) => {
+            if (item.type === 'member') {
+              return (
+                <MemberItem
+                  key={item.userId || `member-${index}`}
+                  type={item.isLeader ? 'leader' : 'member'}
+                  userId={item.userId}
+                  name={item.nickname}
+                  animalType={item.animalType}
+                />
+              );
+            } else {
+              // empty 타입
+              return <MemberItem key={`empty-${index}`} type="empty" />;
+            }
           })}
         </div>
       </div>
