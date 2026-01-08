@@ -35,11 +35,32 @@
   mask-repeat: no-repeat;
 }
 
+/* Unknown Avatar - border 안에 들어가도록 크기 조정 */
+.unknownAvatar {
+  padding: 10%;
+}
+
+.unknownAvatar .image {
+  width: 100%;
+  height: 100%;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* size-s (40x40)의 경우 더 작은 padding */
+.size-s .unknownAvatar {
+  padding: 12%;
+}
+
 /* Size Styles */
 .size-s {
   width: 40px;
   height: 40px;
-  border: 2px solid var(--color-border-secondary);
+  border: 1px solid var(--color-border-secondary);
 }
 
 .size-m {

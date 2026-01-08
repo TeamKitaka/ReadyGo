@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Icon from '@/commons/components/icon';
+import Avatar from '@/commons/components/avatar';
 import { useAuth } from '@/commons/providers/auth/auth.provider';
 import {
   useUserStatusStore,
   type ManualStatus,
 } from '@/stores/user-status.store';
 import { useProfileBinding } from '../hooks/index.binding.hook';
+import { getAvatarImagePath } from '@/lib/avatar/getAvatarImagePath';
 import styles from './styles.module.css';
 
 type UserStatus = 'online' | 'away' | 'dnd' | 'offline';
@@ -56,11 +58,16 @@ export default function ProfileDropdown({ onClose }: ProfileDropdownProps) {
   // user가 null이거나 user.email이 없는 경우 fallback 처리
   const username = authUser?.email || '';
 
+  // 아바타 이미지 경로 계산
+  const avatarImagePath = getAvatarImagePath(
+    profileData.avatarUrl,
+    profileData.animalType
+  );
+
   // 실제 사용자 데이터 (user_profiles에서 조회한 데이터)
   const user = {
     nickname: profileData.nickname || '',
     username,
-    avatar: 'bear', // TODO: 향후 avatar_url 또는 animal_type 사용
     isSteamConnected: profileData.isSteamConnected,
   };
 
@@ -97,8 +104,12 @@ export default function ProfileDropdown({ onClose }: ProfileDropdownProps) {
       <div className={styles.userInfo}>
         <div className={styles.userInfoContent}>
           <div className={styles.avatar}>
-            {/* TODO: Avatar 컴포넌트로 교체 */}
-            <Icon name="user" size={20} />
+            <Avatar
+              imageUrl={avatarImagePath}
+              size="s"
+              status="offline"
+              showStatus={false}
+            />
           </div>
           <div className={styles.userText}>
             <div className={styles.nickname}>{user.nickname}</div>

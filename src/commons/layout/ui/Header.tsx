@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
 import Icon from '@/commons/components/icon';
+import Avatar from '@/commons/components/avatar';
 import { ProfileDropdown } from '@/components/overlay/profile';
+import { useProfileBinding } from '@/components/overlay/profile/hooks/index.binding.hook';
+import { getAvatarImagePath } from '@/lib/avatar/getAvatarImagePath';
 import styles from '../styles.module.css';
 
 export const Header = () => {
@@ -9,6 +12,13 @@ export const Header = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const profileRef = useRef<HTMLDivElement>(null);
+  const { profileData, isLoading } = useProfileBinding();
+
+  // 아바타 이미지 경로 계산
+  const avatarImagePath = getAvatarImagePath(
+    profileData.avatarUrl,
+    profileData.animalType
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -75,7 +85,17 @@ export const Header = () => {
             aria-label="프로필 메뉴"
             aria-expanded={isProfileOpen}
           >
-            <Icon name="user" size={20} />
+            {isLoading ? (
+              <Icon name="user" size={20} />
+            ) : (
+              <Avatar
+                imageUrl={avatarImagePath}
+                size="m"
+                status="offline"
+                showStatus={false}
+                className={styles.headerAvatar}
+              />
+            )}
           </button>
 
           {isProfileOpen && (
