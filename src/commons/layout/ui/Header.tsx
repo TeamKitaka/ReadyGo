@@ -90,7 +90,7 @@ export const Header = () => {
             ) : (
               <Avatar
                 imageUrl={avatarImagePath}
-                size="m"
+                size="s"
                 status="offline"
                 showStatus={false}
                 className={styles.headerAvatar}

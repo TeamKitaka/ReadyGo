@@ -51,9 +51,9 @@
   mask-repeat: no-repeat;
 }
 
-/* size-s (40x40)의 경우 더 작은 padding */
+/* size-s (40x40)의 경우 더 많은 padding */
 .size-s .unknownAvatar {
-  padding: 12%;
+  padding: 15%;
 }
 
 /* Size Styles */
