@@ -236,7 +236,7 @@ export const generateMatchTags = (
   }
 
   // 9. 파티러버 (파티 경험이 많은 경우)
-  const targetPartyCount = context.target.reliability?.partyCount;
+  // targetPartyCount는 위에서 이미 정의됨 (line 165)
   if (targetPartyCount !== undefined && targetPartyCount >= 20) {
     tags.push({ label: '파티러버' });
   }
