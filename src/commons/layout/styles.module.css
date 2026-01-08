@@ -284,14 +284,13 @@
 /* Steam Alert Styles */
 .steamAlert {
   width: 100%;
-  max-width: 1776px;
   height: 82px;
   display: flex;
   align-items: center;
   background-color: var(--color-transparent-12);
   border: 1px solid var(--color-border-interactive-primary);
   border-radius: 24px;
-  padding: 24px 32px;
+  padding: 16px;
   gap: 16px;
 }
 
