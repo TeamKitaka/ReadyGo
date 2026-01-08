@@ -163,25 +163,11 @@ export const useMemberList = (
    * Realtime 채널 정리 함수
    */
   const cleanupChannel = useCallback(() => {
-    const channel = channelRef.current;
-    if (channel) {
-      // 채널 참조를 먼저 null로 설정하여 중복 호출 방지
+    if (channelRef.current) {
+      baseSupabase.removeChannel(channelRef.current);
       channelRef.current = null;
-      subscribedPostIdRef.current = null;
-      // 채널 제거
-      try {
-        baseSupabase.removeChannel(channel);
-      } catch (error) {
-        // 이미 제거된 채널이거나 에러가 발생해도 무시
-        console.warn(
-          'Failed to remove channel (may already be removed):',
-          error
-        );
-      }
-    } else {
-      // 채널이 없으면 subscribedPostIdRef만 초기화
-      subscribedPostIdRef.current = null;
     }
+    subscribedPostIdRef.current = null;
   }, []);
 
   /**
@@ -196,25 +182,13 @@ export const useMemberList = (
         return;
       }
 
-      // 중복 구독 방지
-      if (subscribedPostIdRef.current === targetPostId && channelRef.current) {
+      // 이미 같은 postId에 구독 중이면 early return
+      if (channelRef.current && subscribedPostIdRef.current === targetPostId) {
         return;
       }
 
       // 기존 채널 정리
-      if (channelRef.current) {
-        const oldChannel = channelRef.current;
-        // 참조를 먼저 null로 설정
-        channelRef.current = null;
-        subscribedPostIdRef.current = null;
-        // 채널 제거
-        try {
-          baseSupabase.removeChannel(oldChannel);
-        } catch (error) {
-          // 이미 제거된 채널이거나 에러가 발생해도 무시
-          console.warn('Failed to remove old channel:', error);
-        }
-      }
+      cleanupChannel();
 
       try {
         // postgres_changes 채널 생성
@@ -229,20 +203,10 @@ export const useMemberList = (
               filter: `post_id=eq.${targetPostId}`,
             },
             (payload) => {
-              console.log(
-                '[useMemberList] Party member INSERT event received:',
-                payload
-              );
+              console.log('Party member INSERT event received:', payload);
               // 멤버 추가 시 목록 갱신
               if (isMountedRef.current && fetchMembersRef.current) {
-                console.log(
-                  '[useMemberList] Refreshing member list after INSERT event'
-                );
                 fetchMembersRef.current();
-              } else {
-                console.warn(
-                  '[useMemberList] Cannot refresh member list: component unmounted or fetchMembersRef not available'
-                );
               }
             }
           )
@@ -255,52 +219,20 @@ export const useMemberList = (
               filter: `post_id=eq.${targetPostId}`,
             },
             (payload) => {
-              console.log(
-                '[useMemberList] Party member DELETE event received:',
-                payload
-              );
+              console.log('Party member DELETE event received:', payload);
               // 멤버 삭제 시 목록 갱신
               if (isMountedRef.current && fetchMembersRef.current) {
-                console.log(
-                  '[useMemberList] Refreshing member list after DELETE event'
-                );
                 fetchMembersRef.current();
-              } else {
-                console.warn(
-                  '[useMemberList] Cannot refresh member list: component unmounted or fetchMembersRef not available'
-                );
               }
             }
           )
           .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
               console.log(
-                `[useMemberList] Successfully subscribed to party_members changes for post ${targetPostId}`
+                `Subscribed to party_members changes for post ${targetPostId}`
               );
             } else if (status === 'CHANNEL_ERROR') {
-              // cleanupChannel을 호출하지 않고, 채널 참조만 정리
-              if (channelRef.current === channel) {
-                channelRef.current = null;
-                subscribedPostIdRef.current = null;
-              }
-            } else if (status === 'CLOSED') {
-              // CLOSED 상태는 이미 채널이 닫힌 상태이므로 cleanupChannel을 호출하지 않음
-              if (channelRef.current === channel) {
-                channelRef.current = null;
-                subscribedPostIdRef.current = null;
-              }
-            } else if (status === 'TIMED_OUT') {
-              console.error(
-                `[useMemberList] Channel subscription timed out for post ${targetPostId}`
-              );
-              if (channelRef.current === channel) {
-                channelRef.current = null;
-                subscribedPostIdRef.current = null;
-              }
-            } else {
-              console.log(
-                `[useMemberList] Channel status changed to ${status} for post ${targetPostId}`
-              );
+              console.error('Channel error occurred');
             }
           });
 
