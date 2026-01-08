@@ -173,7 +173,8 @@
 }
 
 .statusOptionActive {
-  /* 선택된 상태 */
+  /* 선택된 상태 - 스타일은 필요시 추가 */
+  background-color: transparent;
 }
 
 .statusOptionText {
@@ -275,6 +276,33 @@
   border-radius: 50%;
   background-color: var(--color-icon-success);
   flex-shrink: 0;
+}
+
+.steamLinkButton {
+  padding: 4px 12px;
+  background-color: var(--color-bg-interactive-secondary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.steamLinkButton:hover {
+  background-color: var(--color-bg-interactive-secondary-hover);
+}
+
+.steamLinkButton:active {
+  background-color: var(--color-bg-interactive-secondary-pressed);
+}
+
+.steamLinkText {
+  font-family: var(--typo-body-sm-font-family);
+  font-size: var(--typo-body-sm-font-size);
+  line-height: var(--typo-body-sm-line-height);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-interactive-secondary);
+  white-space: nowrap;
 }
 
 /* 로그아웃 섹션 */

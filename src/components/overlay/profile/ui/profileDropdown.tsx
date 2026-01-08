@@ -10,6 +10,7 @@ import {
 } from '@/stores/user-status.store';
 import { useProfileBinding } from '../hooks/index.binding.hook';
 import { getAvatarImagePath } from '@/lib/avatar/getAvatarImagePath';
+import { useSteamOAuth } from '@/components/auth/hooks/useSteamOAuth.hook';
 import styles from './styles.module.css';
 
 type UserStatus = 'online' | 'away' | 'dnd' | 'offline';
@@ -42,6 +43,7 @@ export default function ProfileDropdown({ onClose }: ProfileDropdownProps) {
   const { logout, user: authUser } = useAuth();
   const { profileData } = useProfileBinding();
   const { myStatus, setMyManualStatus } = useUserStatusStore();
+  const { handleSteamLink } = useSteamOAuth();
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [currentStatus, setCurrentStatus] = useState<UserStatus>(
     (myStatus || 'online') as UserStatus
@@ -209,8 +211,16 @@ export default function ProfileDropdown({ onClose }: ProfileDropdownProps) {
               </div>
             </div>
           </div>
-          {user.isSteamConnected && (
+          {user.isSteamConnected ? (
             <div className={styles.connectedIndicator} />
+          ) : (
+            <button
+              className={styles.steamLinkButton}
+              onClick={handleSteamLink}
+              aria-label="스팀 연동하기"
+            >
+              <span className={styles.steamLinkText}>연동하기</span>
+            </button>
           )}
         </div>
       </div>
