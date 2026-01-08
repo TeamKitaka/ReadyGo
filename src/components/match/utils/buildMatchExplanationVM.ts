@@ -62,10 +62,12 @@ function mapLabelToReasonType(
     활동적: undefined,
     집중형: undefined,
     // 시간대
+    아침형: undefined,
     저녁형: undefined,
-    밤올빼미: undefined,
     오후형: undefined,
-    새벽형: undefined,
+    올빼미형: undefined,
+    유연형: undefined,
+    주말형: undefined,
     // Fallback
     좋은만남: undefined,
   };
@@ -123,8 +125,8 @@ export function buildMatchExplanationVM(
     // 동물 궁합 태그 (천생연분, 궁합좋음)
     const isAnimalCompatibility = ['천생연분', '궁합좋음'].includes(tag.label);
     
-    // 시간대 태그 (저녁형, 밤올빼미, 오후형, 새벽형)
-    const isTimeSlotTag = ['저녁형', '밤올빼미', '오후형', '새벽형'].includes(tag.label);
+    // 시간대 태그 (아침형, 저녁형, 오후형, 올빼미형, 유연형, 주말형)
+    const isTimeSlotTag = ['아침형', '저녁형', '오후형', '올빼미형', '유연형', '주말형'].includes(tag.label);
     
     // Trait 태그 (Target의 성향 특성)
     const isTraitTag = ['협동형', '탐험형', '전략형', '리더형', '사교형', '보완궁합'].includes(tag.label);

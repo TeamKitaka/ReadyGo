@@ -315,43 +315,71 @@ export const generateMatchTags = (
     tags.push({ label: '집중형' });
   }
 
-  // 16. 시간대별 태그 (저녁형, 밤올빼미, 오후형, 새벽형)
+  // 16. 시간대별 태그 (아침형, 저녁형, 올빼미형, 유연형, 주말형)
   if (targetSchedule.length > 0) {
-    // 주로 활동하는 시간대를 계산
+    // 시간대와 dayType 분석
     const timeSlotCounts: Record<string, number> = {
-      morning: 0, // 06-12
-      afternoon: 0, // 12-18
-      evening: 0, // 18-24
-      night: 0, // 00-06
+      morning: 0,    // 06-12 (아침형)
+      afternoon: 0,  // 12-18 (오후형)
+      evening: 0,    // 18-22 (저녁형)
+      lateNight: 0,  // 22-04 (올빼미형)
     };
+    
+    let weekdayCount = 0;
+    let weekendCount = 0;
 
     targetSchedule.forEach((slot) => {
       const timeSlot = slot.timeSlot;
       const [startTime] = timeSlot.split('-');
       const startHour = parseInt(startTime.split(':')[0], 10);
 
+      // 시간대 카운트
       if (startHour >= 6 && startHour < 12) {
         timeSlotCounts.morning++;
       } else if (startHour >= 12 && startHour < 18) {
         timeSlotCounts.afternoon++;
-      } else if (startHour >= 18 && startHour < 24) {
+      } else if (startHour >= 18 && startHour < 22) {
         timeSlotCounts.evening++;
-      } else {
-        timeSlotCounts.night++;
+      } else if (startHour >= 22 || startHour < 4) {
+        // 22-24시 또는 00-04시
+        timeSlotCounts.lateNight++;
+      }
+      
+      // 요일 카운트
+      if (slot.dayType === 'weekend') {
+        weekendCount++;
+      } else if (slot.dayType === 'weekday') {
+        weekdayCount++;
       }
     });
 
-    // 가장 많은 시간대에 태그 부여 (최소 2개 이상 슬롯)
-    const maxCount = Math.max(...Object.values(timeSlotCounts));
-    if (maxCount >= 2) {
-      if (timeSlotCounts.evening === maxCount) {
-        tags.push({ label: '저녁형' });
-      } else if (timeSlotCounts.night === maxCount) {
-        tags.push({ label: '밤올빼미' });
-      } else if (timeSlotCounts.afternoon === maxCount) {
-        tags.push({ label: '오후형' });
-      } else if (timeSlotCounts.morning === maxCount) {
-        tags.push({ label: '새벽형' });
+    // 16-1. 주말형 (weekend 비중이 높음)
+    if (weekendCount > 0 && weekendCount >= weekdayCount * 1.5) {
+      tags.push({ label: '주말형' });
+    }
+
+    // 16-2. 유연형 (시간대가 다양하고 고른 분포)
+    const totalSlots = targetSchedule.length;
+    const nonZeroCounts = Object.values(timeSlotCounts).filter(c => c > 0).length;
+    const maxTimeCount = Math.max(...Object.values(timeSlotCounts));
+    
+    // 4개 이상 시간대 + 특정 시간대 집중도가 낮음 (50% 미만)
+    if (totalSlots >= 4 && nonZeroCounts >= 3 && maxTimeCount / totalSlots < 0.5) {
+      tags.push({ label: '유연형' });
+    }
+    // 16-3. 특정 시간대형 (가장 많은 시간대, 최소 2개 이상)
+    else {
+      const maxCount = Math.max(...Object.values(timeSlotCounts));
+      if (maxCount >= 2) {
+        if (timeSlotCounts.lateNight === maxCount) {
+          tags.push({ label: '올빼미형' });
+        } else if (timeSlotCounts.evening === maxCount) {
+          tags.push({ label: '저녁형' });
+        } else if (timeSlotCounts.afternoon === maxCount) {
+          tags.push({ label: '오후형' });
+        } else if (timeSlotCounts.morning === maxCount) {
+          tags.push({ label: '아침형' });
+        }
       }
     }
   }
