@@ -1,0 +1,203 @@
+아래의 조건을 모두 적용하여, 아래의 요구사항을 모두 구현할 것.
+구현 결과를 체크리스트로 반환할 것.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하여 작업하고, 이 작업이 끝나면 해당 rules 적용 결과를 체크리스트로 반환할 것.
+            - @01-common.mdc
+            - @04-func.mdc
+
+==============================================
+
+조건-파일경로) 수정할 Hook 파일경로: src/components/chat/hooks/useChatList.hook.tsx
+
+==============================================
+
+핵심요구사항) useChatList.hook.tsx에서 채팅 목록의 안읽음 표시가 실시간으로 업데이트되지 않는 문제를 수정할 것.
+            A 채팅방에서 읽음 처리 후 B 채팅방으로 이동한 상태에서, A 채팅방에 새 메시지가 와도 채팅 목록의 안읽음 표시가 실시간으로 업데이트되지 않는 문제를 해결할 것.
+
+            [문제 상황]
+            - optimisticReadRoomsRef는 임시 상태이므로, 새 메시지가 오거나 DB의 실제 unreadCount가 증가하면 즉시 해제해야 함
+            - 새 메시지가 와도 optimisticReadRoomsRef에 해당 roomId가 있으면 unreadCount를 증가시키지 않음
+            - 낙관적 처리가 실제 새 메시지를 무시하게 됨
+            - DB에서 조회한 실제 unreadCount가 있어도, optimisticReadRoomsRef에 있으면 무조건 0으로 덮어씀
+
+            [해결 전략]
+            - 새 메시지 수신 시 optimisticReadRoomsRef에서 해당 roomId 즉시 제거
+            - refresh() 함수에서 DB 실제 unreadCount > 0인 경우 optimisticReadRoomsRef에서 제거 후 실제 값 반영
+            - DB 실제 unreadCount === 0이고 optimisticReadRoomsRef에 있는 경우: 낙관적 처리 유지 (0으로 설정)
+
+==============================================
+
+세부요구사항) 새 메시지 수신 시 optimisticReadRoomsRef 제거 로직 추가
+
+            1) 파일 위치
+                - src/components/chat/hooks/useChatList.hook.tsx
+                - chat_messages INSERT 구독 핸들러 내부 (약 376-419줄)
+
+            2) 수정 내용
+                - chat_messages INSERT 구독 핸들러에서, 상대방이 보낸 새 메시지가 감지되면 해당 messageRoomId를 optimisticReadRoomsRef에서 즉시 제거
+                - 제거 후 unreadCount 증가 로직 정상 실행되도록 보장
+                - 현재 열려있는 채팅방이 아닌 경우에만 unreadCount 증가
+
+            3) 수정 위치
+                - processPendingMessageUpdates 함수 내부 또는 chat_messages INSERT 핸들러 내부
+                - 새 메시지 처리 로직에서 optimisticReadRoomsRef.current.delete(messageRoomId) 호출
+                - 조건문 앞에 추가하여 낙관적 처리가 새 메시지를 무시하지 않도록 보장
+
+            4) 구현 예시
+                - 새 메시지가 감지되면 (상대방이 보낸 메시지):
+                    optimisticReadRoomsRef.current.delete(messageRoomId);
+                - 이후 unreadCount 증가 로직이 정상 실행되도록 보장
+
+            5) 주의사항
+                - 현재 접속 중인 채팅방(currentRoomId)인 경우는 제외
+                - 상대방이 보낸 메시지만 처리 (sender_id !== user?.id)
+                - 낙관적 처리가 실제 새 메시지를 무시하지 않도록 보장
+
+==============================================
+
+세부요구사항) refresh() 함수 로직 수정 - DB 실제 값 우선
+
+            1) 파일 위치
+                - src/components/chat/hooks/useChatList.hook.tsx
+                - refresh() 함수 내부 (약 208-220줄, 실제로는 234-246줄 근처)
+
+            2) 수정 내용
+                - DB에서 조회한 실제 unreadCount > 0인 경우: optimisticReadRoomsRef에서 해당 roomId 제거 후 실제 값 반영
+                - DB에서 조회한 실제 unreadCount === 0이고 optimisticReadRoomsRef에 있는 경우: 낙관적 처리 유지 (0으로 설정)
+                - 현재 접속 중인 채팅방은 항상 0으로 표시 (기존 로직 유지)
+
+            3) 수정 위치
+                - refresh() 함수 내부의 rooms.map 로직 (약 235-246줄)
+                - 기존 로직:
+                    const updatedRooms = rooms.map((room) => {
+                      const roomId = room.room.id || 0;
+                      const hasOptimisticRead = optimisticReadRoomsRef.current.has(roomId);
+                      
+                      // 현재 접속 중인 채팅방이거나 낙관적으로 읽음 처리된 채팅방은 UI에서 0으로 표시
+                      if (currentRoomId === roomId || hasOptimisticRead) {
+                        return { ...room, unreadCount: 0 };
+                      }
+                      
+                      return room;
+                    });
+                
+                - 수정 후 로직:
+                    const updatedRooms = rooms.map((room) => {
+                      const roomId = room.room.id || 0;
+                      const hasOptimisticRead = optimisticReadRoomsRef.current.has(roomId);
+                      
+                      // 현재 접속 중인 채팅방은 항상 0으로 표시
+                      if (currentRoomId === roomId) {
+                        return { ...room, unreadCount: 0 };
+                      }
+                      
+                      // DB에서 실제 unreadCount가 있으면 낙관적 처리 제거하고 실제 값 사용
+                      if (room.unreadCount > 0 && hasOptimisticRead) {
+                        optimisticReadRoomsRef.current.delete(roomId);
+                        return room; // 실제 unreadCount 반영
+                      }
+                      
+                      // 낙관적으로 읽음 처리되었고 DB에서도 0이면 유지
+                      if (hasOptimisticRead) {
+                        return { ...room, unreadCount: 0 };
+                      }
+                      
+                      return room;
+                    });
+
+            4) 구현 원칙
+                - DB 실제 값 우선: DB에서 조회한 unreadCount > 0이면 낙관적 처리 제거하고 실제 값 사용
+                - 낙관적 처리 유지: DB에서도 0이고 낙관적 처리가 있으면 유지
+                - 현재 접속 중인 채팅방은 항상 0으로 표시 (기존 로직 유지)
+
+            5) 주의사항
+                - optimisticReadRoomsRef.current.delete(roomId) 호출 시점 중요
+                - DB 실제 값이 있으면 낙관적 처리를 즉시 제거하여 실제 값 반영
+                - 새 메시지가 온 후 refresh()가 실행되어도 안읽음 표시가 정상적으로 나타나도록 보장
+
+==============================================
+
+세부요구사항) chat_message_reads 구독 로직 개선 (선택적, 현재 로직 유지 가능)
+
+            1) 현재 로직
+                - chat_message_reads INSERT 시 message_id로 room_id를 조회하여 optimisticReadRoomsRef에서 제거
+                - 이 로직은 유지하되, 위의 1-2번 수정으로도 충분히 해결 가능
+
+            2) 추가 개선 가능 사항 (필요시)
+                - 여러 메시지가 동시에 읽힐 때를 대비해 일괄 처리 로직 고려
+                - 하지만 현재 구조에서는 위 1-2번 수정만으로도 충분
+
+            3) 구현 우선순위
+                - 1단계와 2단계 수정이 우선
+                - chat_message_reads 구독 로직은 현재대로 유지 가능
+
+==============================================
+
+세부요구사항) 테스트 시나리오
+
+            1) 시나리오 1: 새 메시지 수신 시 실시간 업데이트
+                - A 채팅방에 안읽은 메시지 있음 → B 채팅방 화면 확인
+                - A 채팅방 실시간으로 새 메시지 도착 → 채팅 목록에서 안읽음 표시 즉시 업데이트 확인
+
+            2) 시나리오 2: 읽음 처리 후 새 메시지 수신
+                - A 채팅방으로 이동하여 읽음 처리 → B 채팅방으로 다시 이동
+                - A 채팅방에서 새 메시지 도착 → 채팅 목록에서 안읽음 표시 즉시 업데이트 확인
+
+            3) 시나리오 3: 새로고침 시 실제 값 반영
+                - A 채팅방에서 읽음 처리 후 B 채팅방에서 새로고침
+                - A 채팅방에 실제로 읽지 않은 메시지가 있으면 안읽음 표시 나타남 확인
+
+==============================================
+
+체크리스트) 구현이 완료되면 다음 항목을 포함한 체크리스트를 반환할 것.
+            - [ ] 커서룰 @01-common.mdc 적용 결과
+            - [ ] 커서룰 @04-func.mdc 적용 결과
+            - [ ] 새 메시지 수신 시 optimisticReadRoomsRef 제거 로직 추가 완료
+            - [ ] chat_messages INSERT 핸들러에서 optimisticReadRoomsRef.current.delete() 호출 완료
+            - [ ] 새 메시지 수신 시 unreadCount 증가 로직 정상 실행 확인 완료
+            - [ ] refresh() 함수에서 DB 실제 값 우선 로직 적용 완료
+            - [ ] DB unreadCount > 0인 경우 optimisticReadRoomsRef에서 제거 후 실제 값 반영 확인 완료
+            - [ ] DB unreadCount === 0이고 optimisticReadRoomsRef에 있는 경우 낙관적 처리 유지 확인 완료
+            - [ ] 현재 접속 중인 채팅방은 항상 0으로 표시하는 로직 유지 확인 완료
+            - [ ] 테스트 시나리오 1 통과 확인 (새 메시지 수신 시 실시간 업데이트)
+            - [ ] 테스트 시나리오 2 통과 확인 (읽음 처리 후 새 메시지 수신)
+            - [ ] 테스트 시나리오 3 통과 확인 (새로고침 시 실제 값 반영)
+            - [ ] 모든 린터 에러 해결 완료
+
+==============================================
+
+참고사항) 
+
+            1) 문제 해결 목표:
+               - A 채팅방에서 읽음 처리 후 B 채팅방으로 이동한 상태에서, A 채팅방에 새 메시지가 와도 채팅 목록의 안읽음 표시가 실시간으로 업데이트되도록 수정
+               - optimisticReadRoomsRef가 실제 새 메시지를 무시하지 않도록 보장
+               - DB 실제 값과 낙관적 처리 상태의 일관성 유지
+
+            2) optimisticReadRoomsRef 동작 원리:
+               - 사용자가 채팅방을 읽을 때 임시로 roomId를 저장
+               - 새 메시지가 오거나 DB의 실제 unreadCount가 증가하면 즉시 해제해야 함
+               - 낙관적 처리가 실제 새 메시지를 무시하게 되면 안됨
+
+            3) 수정 전략:
+               - 새 메시지 수신 시 optimisticReadRoomsRef에서 즉시 제거 (우선순위 최상)
+               - refresh() 함수에서 DB 실제 값 우선 (우선순위 상)
+               - 두 단계만으로도 문제가 해결됨
+
+            4) 구현 순서:
+               - 1단계: 새 메시지 수신 시 optimisticReadRoomsRef 제거 로직 추가 (우선순위 최상)
+               - 2단계: refresh() 함수에서 DB 실제 값 우선 로직 적용 (우선순위 상)
+
+            5) 주의사항:
+               - 현재 접속 중인 채팅방은 항상 0으로 표시하는 기존 로직 유지
+               - 상대방이 보낸 메시지만 처리 (sender_id !== user?.id)
+               - 낙관적 처리가 실제 새 메시지를 무시하지 않도록 보장
+               - DB 실제 값이 있으면 낙관적 처리를 즉시 제거하여 실제 값 반영
+
+            6) 테스트 포인트:
+               - 새 메시지 수신 시 실시간 업데이트 확인
+               - 읽음 처리 후 새 메시지 수신 시 업데이트 확인
+               - 새로고침 시 실제 값 반영 확인
+               - 현재 접속 중인 채팅방은 항상 0으로 표시 확인
+

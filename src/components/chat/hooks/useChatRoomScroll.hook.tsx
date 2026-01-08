@@ -25,6 +25,7 @@ export interface UseChatRoomScrollReturn {
   shouldShowScrollToBottomButton: (
     containerRef: React.RefObject<HTMLDivElement>
   ) => boolean;
+  isAtBottom: (containerRef: React.RefObject<HTMLDivElement>) => boolean;
   shouldScrollToBottom: boolean;
   shouldScrollToUnread: boolean;
   clearScrollTriggers: () => void;
@@ -189,6 +190,35 @@ export const useChatRoomScroll = (
   );
 
   /**
+   * 스크롤이 최하단에 있는지 확인
+   * (읽음 처리용: 사용자가 최하단까지 스크롤했는지 확인)
+   */
+  const isAtBottom = useCallback(
+    (containerRef: React.RefObject<HTMLDivElement>): boolean => {
+      if (!containerRef.current) {
+        return false;
+      }
+
+      const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+
+      // 스크롤 가능한 전체 높이 계산
+      const scrollableHeight = scrollHeight - clientHeight;
+
+      // 스크롤 가능한 높이가 없으면 최하단으로 간주 (모든 메시지가 화면에 보임)
+      if (scrollableHeight <= 0) {
+        return true;
+      }
+
+      // 현재 스크롤 위치가 하단에서 얼마나 떨어져 있는지 계산
+      const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+
+      // 하단까지의 거리가 50px 이하이면 최하단으로 간주 (약간의 여유 공간 허용)
+      return distanceFromBottom <= 50;
+    },
+    []
+  );
+
+  /**
    * 스크롤 트리거 초기화
    */
   const clearScrollTriggers = useCallback(() => {
@@ -252,6 +282,7 @@ export const useChatRoomScroll = (
     scrollToUnreadBoundary,
     getUnreadBoundaryMessageId,
     shouldShowScrollToBottomButton,
+    isAtBottom,
     shouldScrollToBottom,
     shouldScrollToUnread,
     clearScrollTriggers,
