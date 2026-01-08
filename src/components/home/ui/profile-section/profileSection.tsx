@@ -45,6 +45,8 @@ export default function ProfileSection({
     .filter(Boolean)
     .join(' ');
 
+  const isUnknown = animal === AnimalType.unknown;
+
   return (
     <div className={sectionClasses}>
       {/* Animal Card */}
@@ -62,7 +64,8 @@ export default function ProfileSection({
       />
 
       {/* Charts Container */}
-      <div className={styles.chartsContainer}>
+      {!isUnknown && (
+        <div className={styles.chartsContainer}>
         {/* Radar Chart Section */}
         <div className={styles.chartSection}>
           <div className={styles.chartHeader}>
@@ -92,7 +95,8 @@ export default function ProfileSection({
             />
           </div>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -22,6 +22,7 @@ export enum AnimalGroup {
   support = 'support',
   social = 'social',
   lone = 'lone',
+  uninitialized = 'uninitialized',
 }
 
 // ============================================
@@ -45,6 +46,7 @@ export enum AnimalType {
   rabbit = 'rabbit',
   leopard = 'leopard',
   cat = 'cat',
+  unknown = 'unknown',
 }
 
 // ============================================

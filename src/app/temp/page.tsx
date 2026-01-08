@@ -5,9 +5,13 @@ import { useChatRoom, useChatList } from '@/components/chat/hooks';
 import { useAuth } from '@/commons/providers/auth/auth.provider';
 import Button from '@/commons/components/button';
 import Input from '@/commons/components/input';
+import Icon from '@/commons/components/icon';
 import AnimalCard from '@/commons/components/animal-card';
 import { AnimalType } from '@/commons/constants/animal';
 import { TierType } from '@/commons/constants/tierType.enum';
+
+// Goose Goose Duck Steam App ID
+const GOOSE_GOOSE_DUCK_APP_ID = 1568590;
 
 // 테스트할 유저 UUID
 const TEST_USER_ID = 'da532b5d-60ac-46b8-a725-3c38845b15ac';
@@ -1095,20 +1099,26 @@ export default function RealtimeChatTestPage() {
           style={{
             maxHeight: '500px',
             overflowY: 'auto',
-            background: '#1a1a1a',
-            padding: '20px',
+            overflowX: 'hidden',
+            background: 'var(--color-bg-secondary, #1a1a1a)',
+            padding: '16px',
             borderRadius: '8px',
             marginBottom: '10px',
             minHeight: '300px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
           }}
         >
           {messages.length === 0 ? (
             <p
               style={{
-                color: '#999',
+                color: 'var(--color-text-interactive-secondary, #999)',
                 fontStyle: 'italic',
                 textAlign: 'center',
                 padding: '20px',
+                fontFamily: 'var(--typo-body-md-font-family)',
+                fontSize: 'var(--typo-body-md-font-size)',
               }}
             >
               수신된 메시지가 없습니다.
@@ -1118,8 +1128,7 @@ export default function RealtimeChatTestPage() {
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '12px',
-                padding: '10px',
+                gap: '16px',
               }}
             >
               {messages.map((message, index) => {
@@ -1140,77 +1149,127 @@ export default function RealtimeChatTestPage() {
                     key={message.id || index}
                     style={{
                       display: 'flex',
-                      justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
-                      alignItems: 'flex-end',
-                      gap: '8px',
+                      width: '100%',
+                      flexShrink: 0,
                     }}
                   >
-                    {!isOwnMessage && (
+                    {isOwnMessage ? (
                       <div
                         style={{
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '50%',
-                          background: '#ddd',
-                          flexShrink: 0,
-                        }}
-                      />
-                    )}
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: isOwnMessage ? 'flex-end' : 'flex-start',
-                        maxWidth: '70%',
-                      }}
-                    >
-                      <div
-                        style={{
-                          padding: '10px 14px',
-                          borderRadius: '12px',
-                          background: isOwnMessage ? '#4CAF50' : '#3a3a3a',
-                          color: '#fff',
-                          wordBreak: 'break-word',
-                          fontSize: '14px',
-                          lineHeight: '1.4',
-                        }}
-                      >
-                        {message.content}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: '11px',
-                          color: '#999',
-                          marginTop: '4px',
-                          padding: '0 4px',
                           display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
+                          alignItems: 'flex-end',
+                          justifyContent: 'flex-end',
+                          gap: '12px',
+                          marginLeft: 'auto',
+                          alignSelf: 'flex-end',
+                          maxWidth: '80%',
                         }}
                       >
-                        {timeString}
-                        {isOwnMessage && (
+                        <div
+                          style={{
+                            height: '100%',
+                            fontFamily: 'var(--typo-body-sm-font-family)',
+                            fontSize: 'var(--typo-body-sm-font-size)',
+                            lineHeight: 'var(--typo-body-sm-line-height)',
+                            fontWeight: 'var(--typo-body-sm-font-weight)',
+                            color: 'var(--color-text-interactive-secondary, #999)',
+                            whiteSpace: 'nowrap',
+                            flexShrink: 0,
+                            paddingBottom: '12px',
+                          }}
+                        >
+                          {timeString}
+                        </div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '12px 20px',
+                            background: 'var(--color-bg-interactive-primary-hover, #56e5ce)',
+                            borderRadius: '24px',
+                          }}
+                        >
                           <span
                             style={{
-                              fontSize: '10px',
-                              color: message.is_read ? '#4CAF50' : '#999',
+                              fontFamily: 'var(--typo-body-lg-font-family)',
+                              fontSize: 'var(--typo-body-lg-font-size)',
+                              lineHeight: 'var(--typo-body-lg-line-height)',
+                              fontWeight: 'var(--typo-body-lg-font-weight)',
+                              color: 'var(--color-text-interactive-inverse, #fff)',
+                              whiteSpace: 'normal',
+                              wordBreak: 'normal',
+                              overflowWrap: 'normal',
                             }}
                           >
-                            {message.is_read ? '✓✓' : '✓'}
+                            {message.content}
                           </span>
-                        )}
+                        </div>
                       </div>
-                    </div>
-                    {isOwnMessage && (
+                    ) : (
                       <div
                         style={{
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '50%',
-                          background: '#ddd',
-                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '12px',
+                          maxWidth: '80%',
                         }}
-                      />
+                      >
+                        <div
+                          style={{
+                            width: '40px',
+                            flexShrink: 0,
+                          }}
+                        />
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            gap: '12px',
+                            alignItems: 'flex-end',
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              padding: '12px 20px',
+                              background: 'var(--color-bg-tertiary, #3a3a3a)',
+                              borderRadius: '24px',
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontFamily: 'var(--typo-body-lg-font-family)',
+                                fontSize: 'var(--typo-body-lg-font-size)',
+                                lineHeight: 'var(--typo-body-lg-line-height)',
+                                fontWeight: 'var(--typo-body-lg-font-weight)',
+                                color: 'var(--color-text-primary, #fff)',
+                                whiteSpace: 'normal',
+                                wordBreak: 'normal',
+                                overflowWrap: 'normal',
+                              }}
+                            >
+                              {message.content}
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              height: '100%',
+                              fontFamily: 'var(--typo-body-sm-font-family)',
+                              fontSize: 'var(--typo-body-sm-font-size)',
+                              lineHeight: 'var(--typo-body-sm-line-height)',
+                              fontWeight: 'var(--typo-body-sm-font-weight)',
+                              color: 'var(--color-text-interactive-secondary, #999)',
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0,
+                              paddingBottom: '12px',
+                            }}
+                          >
+                            {timeString}
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 );
@@ -1241,27 +1300,38 @@ export default function RealtimeChatTestPage() {
       <div
         style={{
           marginBottom: '20px',
-          padding: '15px',
-          border: '1px solid #ddd',
+          padding: '20px 16px',
+          background: 'var(--color-bg-primary, #030712)',
           borderRadius: '4px',
         }}
       >
         <h2 style={{ marginTop: 0, marginBottom: '10px' }}>메시지 전송</h2>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <Input
-            placeholder="메시지 입력"
-            value={messageContent}
-            onChange={(e) => setMessageContent(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                e.stopPropagation();
-                handleSendMessage();
-              }
-            }}
-            style={{ flex: 1 }}
-          />
+        <div
+          style={{
+            display: 'flex',
+            gap: '16px',
+            alignItems: 'center',
+          }}
+        >
+          <div style={{ flex: 1, height: '48px', minWidth: 0 }}>
+            <Input
+              placeholder="메시지 입력"
+              value={messageContent}
+              onChange={(e) => setMessageContent(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSendMessage();
+                }
+              }}
+              style={{ width: '100%' }}
+            />
+          </div>
           <Button
+            variant="primary"
+            size="m"
+            shape="rectangle"
             data-testid="send-message-btn"
             onClick={handleSendMessage}
             disabled={
@@ -1272,6 +1342,38 @@ export default function RealtimeChatTestPage() {
             }
           >
             전송
+          </Button>
+          <Button
+            variant="primary"
+            size="m"
+            shape="rectangle"
+            data-testid="game-start-btn"
+            onClick={() => {
+              window.location.href = `steam://run/${GOOSE_GOOSE_DUCK_APP_ID}`;
+            }}
+            disabled={!roomId}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              height: '48px',
+              padding: '14px 20px',
+              background: 'var(--color-bg-interactive-primary, #56e5ce)',
+              border: 'none',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              flexShrink: 0,
+              color: 'var(--color-text-interactive-inverse, white)',
+              transition: 'background-color 0.2s',
+              fontFamily: 'var(--typo-body-lg-medium-font-family)',
+              fontSize: 'var(--typo-body-lg-medium-font-size)',
+              lineHeight: 'var(--typo-body-lg-medium-line-height)',
+              fontWeight: 'var(--typo-body-lg-medium-font-weight)',
+            }}
+          >
+            <Icon name="gamepad" size={20} />
+            <span style={{ whiteSpace: 'nowrap' }}>게임시작</span>
           </Button>
         </div>
         {roomId && (

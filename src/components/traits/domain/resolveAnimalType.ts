@@ -59,14 +59,16 @@ export type AnimalDistanceResult = {
 export const resolveAnimalTypeByVector = (
   userVector: TraitVector
 ): AnimalType => {
-  // 모든 동물과의 거리 계산
+  // 모든 동물과의 거리 계산 (unknown 제외)
   const distances = (
     Object.entries(ANIMAL_VECTORS) as [AnimalType, TraitVector][]
-  ).map(([animal, animalVector]) => ({
-    animal,
-    distance: calculateEuclideanDistance(userVector, animalVector),
-    vector: animalVector,
-  }));
+  )
+    .filter(([animal]) => animal !== AnimalType.unknown)
+    .map(([animal, animalVector]) => ({
+      animal,
+      distance: calculateEuclideanDistance(userVector, animalVector),
+      vector: animalVector,
+    }));
 
   // 가장 가까운 동물 선택 (거리가 짧을수록 유사함)
   const closest = distances.reduce((best, current) =>
@@ -100,11 +102,13 @@ export const getTopMatchingAnimals = (
 ): AnimalDistanceResult[] => {
   const distances = (
     Object.entries(ANIMAL_VECTORS) as [AnimalType, TraitVector][]
-  ).map(([animal, animalVector]) => ({
-    animal,
-    distance: calculateEuclideanDistance(userVector, animalVector),
-    vector: animalVector,
-  }));
+  )
+    .filter(([animal]) => animal !== AnimalType.unknown)
+    .map(([animal, animalVector]) => ({
+      animal,
+      distance: calculateEuclideanDistance(userVector, animalVector),
+      vector: animalVector,
+    }));
 
   // 거리가 짧은 순서로 정렬
   return distances.sort((a, b) => a.distance - b.distance).slice(0, topN);
@@ -144,6 +148,11 @@ export const analyzeVectorDifference = (
   animal: AnimalType
 ): TraitVector => {
   const animalVector = ANIMAL_VECTORS[animal];
+  if (!animalVector) {
+    throw new Error(
+      `Animal vector not found for type: ${animal}. Unknown type does not have a vector.`
+    );
+  }
 
   return {
     cooperation: userVector.cooperation - animalVector.cooperation,

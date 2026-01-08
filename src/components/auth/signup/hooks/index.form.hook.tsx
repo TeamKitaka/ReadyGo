@@ -101,8 +101,8 @@ export const useSignupForm = () => {
       // 2. 세션 동기화 (회원가입 API에서 세션이 자동으로 설정되었으므로 동기화만 수행)
       await syncSession();
 
-      // 3. 성공 페이지로 이동
-      router.push(URL_PATHS.SIGNUP_SUCCESS);
+      // 3. 홈 페이지로 직접 이동
+      router.push(URL_PATHS.HOME);
     } catch (error) {
       // 에러 모달 표시 (한 번만)
       if (!hasShownErrorModalRef.current) {

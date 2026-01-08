@@ -37,7 +37,7 @@ export type TraitVector = {
  *    - Hawk vs Cat: Exploration 차이 (58 vs 45)
  * 3. 극단값 완화: 3개 이상의 극단값을 가진 동물 조정
  */
-export const ANIMAL_VECTORS: Record<AnimalType, TraitVector> = {
+export const ANIMAL_VECTORS: Partial<Record<AnimalType, TraitVector>> = {
   // ========== ATTACK / DRIVE 그룹 ==========
   // Wolf: 리더십 + 드라이브 (Dog와 분화: leadership↑, social↓)
   [AnimalType.wolf]: {
@@ -179,9 +179,16 @@ export const ANIMAL_VECTORS: Record<AnimalType, TraitVector> = {
 
 /**
  * 특정 동물의 벡터를 반환
+ * unknown 타입은 벡터가 없으므로 에러를 던집니다.
  */
 export const getAnimalVector = (animal: AnimalType): TraitVector => {
-  return ANIMAL_VECTORS[animal];
+  const vector = ANIMAL_VECTORS[animal];
+  if (!vector) {
+    throw new Error(
+      `Animal vector not found for type: ${animal}. Unknown type does not have a vector.`
+    );
+  }
+  return vector;
 };
 
 /**

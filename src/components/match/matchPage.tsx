@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import styles from './styles.module.css';
 import { MatchList } from './ui';
 import { useMatchFilters } from './hooks/useMatchFilters';
@@ -10,6 +10,9 @@ import { useMatchResults } from '@/hooks/useMatchResults';
 import { MatchData } from './types/match.types';
 import { getEffectiveStatus } from '@/stores/user-status.store';
 import { usePresenceStore } from '@/stores/presence.store';
+import { useProfileBinding } from '@/components/overlay/profile/hooks/index.binding.hook';
+import { useSteamOAuth } from '@/components/auth/hooks/useSteamOAuth.hook';
+import { SteamAlert } from '@/commons/layout/ui/steamAlert';
 
 interface MatchResultWithProfile {
   targetUserId: string;
@@ -28,6 +31,59 @@ export default function Match() {
   // 현재 로그인한 사용자 정보
   const { user } = useAuthStore();
   const viewerId = user?.id;
+
+  // 스팀 연동 상태 확인
+  const { profileData: profileBindingData, isLoading: profileBindingLoading } =
+    useProfileBinding();
+
+  // 스팀 알림 배너 닫기 상태 관리
+  const [isSteamAlertDismissed, setIsSteamAlertDismissed] = useState(false);
+  const { handleSteamLink } = useSteamOAuth();
+
+  // localStorage에서 닫기 상태 확인
+  useEffect(() => {
+    const dismissed = localStorage.getItem('steam-alert-dismissed');
+    if (dismissed === 'true') {
+      setIsSteamAlertDismissed(true);
+    }
+  }, []);
+
+  // 스팀 알림 배너 닫기 핸들러
+  const handleSteamAlertClose = () => {
+    localStorage.setItem('steam-alert-dismissed', 'true');
+    setIsSteamAlertDismissed(true);
+  };
+
+  // 스팀 연동 여부 확인 (로딩 완료 후에만 확인)
+  const isSteamNotConnected =
+    !profileBindingLoading && profileBindingData.isSteamConnected === false;
+
+  // 스팀 알림 배너 표시 조건: 스팀 미연동 && 닫지 않음 && 로딩 완료
+  // 매칭 페이지에서는 테스트 완료 여부와 관계없이 스팀 미연동 회원에게 표시
+  const shouldShowSteamAlert =
+    !profileBindingLoading && isSteamNotConnected && !isSteamAlertDismissed;
+
+  // 디버깅용 로그 (개발 환경에서만)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.log('Steam Alert Debug:', {
+        profileBindingLoading,
+        isSteamNotConnected,
+        isSteamAlertDismissed,
+        shouldShowSteamAlert,
+        profileBindingData: {
+          isSteamConnected: profileBindingData.isSteamConnected,
+        },
+      });
+    }
+  }, [
+    profileBindingLoading,
+    isSteamNotConnected,
+    isSteamAlertDismissed,
+    shouldShowSteamAlert,
+    profileBindingData,
+  ]);
 
   // Presence 상태 구독 (Presence 변경 시 재정렬)
   const { presenceUserIds } = usePresenceStore();
@@ -107,6 +163,15 @@ export default function Match() {
 
   return (
     <div className={styles.container}>
+      {/* 스팀 연동 알림 배너 (레이아웃 헤더 아래, 매칭 찾기 타이틀 위) */}
+      {shouldShowSteamAlert && (
+        <SteamAlert
+          onConnect={handleSteamLink}
+          onClose={handleSteamAlertClose}
+          className={styles.steamAlertContainer}
+        />
+      )}
+
       <div className={styles.content}>
         {/* 헤더 섹션 */}
         <div className={styles.header}>

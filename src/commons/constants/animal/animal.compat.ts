@@ -3,7 +3,7 @@
  * 천생연분 / 궁합 데이터
  */
 
-import { AnimalType } from './animal.enum';
+import { AnimalType, getAllAnimalTypes } from './animal.enum';
 
 // ============================================
 // Compatibility Type Definition
@@ -139,6 +139,16 @@ export const animalCompatibilities: Record<AnimalType, AnimalCompatibility> = {
     goodMatches: [AnimalType.bear],
     neutralMatches: [AnimalType.owl, AnimalType.raven],
     challengingMatches: [AnimalType.hawk, AnimalType.dolphin],
+  },
+
+  // ========== uninitialized 그룹 ==========
+  [AnimalType.unknown]: {
+    bestMatches: [],
+    goodMatches: [],
+    neutralMatches: getAllAnimalTypes().filter(
+      (type) => type !== AnimalType.unknown
+    ),
+    challengingMatches: [],
   },
 };
 

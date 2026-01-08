@@ -2,12 +2,14 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import styles from './styles.module.css';
 import { HTMLAttributes } from 'react';
 import TierTag from '../tier-tag';
 import Icon from '../icon';
 import { TierType } from '../../constants/tierType.enum';
 import { AnimalType, getAnimalTypeMeta } from '../../constants/animal';
+import { URL_PATHS } from '../../constants/url';
 
 export type AnimalCardProperty = 'my' | 'user';
 
@@ -50,9 +52,15 @@ export default function AnimalCard({
   className = '',
   ...props
 }: AnimalCardProps) {
+  const router = useRouter();
   const animalMeta = getAnimalTypeMeta(animal);
+  const isUnknown = animal === AnimalType.unknown;
 
   const cardClasses = [styles.animalCard, className].filter(Boolean).join(' ');
+
+  const handleTraitsTestClick = () => {
+    router.push(URL_PATHS.TRAITS);
+  };
 
   return (
     <div className={cardClasses} {...props}>
@@ -61,11 +69,15 @@ export default function AnimalCard({
         <div className={styles.nicknameWrapper}>
           <p className={styles.nickname}>{nickname}</p>
         </div>
-        <TierTag tier={tier} />
+        {!isUnknown && <TierTag tier={tier} />}
       </div>
 
       {/* Animal Image */}
-      <div className={styles.animalImageWrapper}>
+      <div
+        className={`${styles.animalImageWrapper} ${
+          isUnknown ? styles.unknownBackground : ''
+        }`}
+      >
         <div className={styles.backgroundImage}>
           <Image
             src="/images/background.png"
@@ -80,7 +92,7 @@ export default function AnimalCard({
             alt={animalMeta.label}
             width={222}
             height={222}
-            className={styles.animalImg}
+            className={`${styles.animalImg} ${isUnknown ? styles.unknownImage : ''}`}
           />
         </div>
       </div>
@@ -92,58 +104,119 @@ export default function AnimalCard({
           <div className={styles.animalDescription}>
             <div className={styles.descriptionLabel}>
               <p className={styles.descriptionTitle}>
-                {animalMeta.description[0]}, {animalMeta.label}
+                {isUnknown
+                  ? animalMeta.description[0]
+                  : `${animalMeta.description[0]}, ${animalMeta.label}`}
               </p>
             </div>
-            <div className={styles.descriptionText}>
-              <p className={styles.descriptionSubtitle}>
-                {animalMeta.description[1]}
-              </p>
-            </div>
+            {!isUnknown && animalMeta.description[1] && (
+              <div className={styles.descriptionText}>
+                <p className={styles.descriptionSubtitle}>
+                  {animalMeta.description[1]}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* User Info Grid */}
-          <div className={styles.infoGrid}>
-            <div className={styles.infoRow}>
-              <div className={styles.infoItem}>
-                <div className={styles.infoIconLabel}>
-                  <Icon name="gaming" size={20} className={styles.icon} />
-                  <p className={styles.infoLabel}>선호 장르</p>
+          <div
+            className={`${styles.infoGrid} ${
+              isUnknown ? styles.unknownInfoGrid : ''
+            }`}
+          >
+            {isUnknown ? (
+              <div className={styles.infoRow}>
+                <div className={styles.infoItem}>
+                  <div
+                    className={`${styles.infoIconLabel} ${styles.unknownIcon}`}
+                  >
+                    <Icon name="sword-alt" size={20} className={styles.icon} />
+                    <p className={styles.infoLabel}>게임 성향</p>
+                  </div>
+                  <p className={`${styles.infoValue} ${styles.unknownValue}`}>
+                    분석 필요
+                  </p>
                 </div>
-                <p className={styles.infoValue}>{favoriteGenre}</p>
-              </div>
 
-              <div className={styles.infoItem}>
-                <div className={styles.infoIconLabel}>
-                  <Icon name="time" size={20} className={styles.icon} />
-                  <p className={styles.infoLabel}>활동 시간</p>
+                <div className={styles.infoItem}>
+                  <div
+                    className={`${styles.infoIconLabel} ${styles.unknownIcon}`}
+                  >
+                    <Icon name="time" size={20} className={styles.icon} />
+                    <p className={styles.infoLabel}>활동 시간</p>
+                  </div>
+                  <p className={`${styles.infoValue} ${styles.unknownValue}`}>
+                    분석 필요
+                  </p>
                 </div>
-                <p className={styles.infoValue}>{activeTime}</p>
               </div>
-            </div>
+            ) : (
+              <>
+                <div className={styles.infoRow}>
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIconLabel}>
+                      <Icon name="gaming" size={20} className={styles.icon} />
+                      <p className={styles.infoLabel}>선호 장르</p>
+                    </div>
+                    <p className={styles.infoValue}>{favoriteGenre}</p>
+                  </div>
 
-            <div className={styles.infoRow}>
-              <div className={styles.infoItem}>
-                <div className={styles.infoIconLabel}>
-                  <Icon name="sword-alt" size={20} className={styles.icon} />
-                  <p className={styles.infoLabel}>게임 성향</p>
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIconLabel}>
+                      <Icon name="time" size={20} className={styles.icon} />
+                      <p className={styles.infoLabel}>활동 시간</p>
+                    </div>
+                    <p className={styles.infoValue}>
+                      {activeTime || '분석 필요'}
+                    </p>
+                  </div>
                 </div>
-                <p className={styles.infoValue}>{gameStyle}</p>
-              </div>
 
-              <div className={styles.infoItem}>
-                <div className={styles.infoIconLabel}>
-                  <Icon
-                    name="bar-chart-square"
-                    size={20}
-                    className={styles.icon}
-                  />
-                  <p className={styles.infoLabel}>주간 평균</p>
+                <div className={styles.infoRow}>
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIconLabel}>
+                      <Icon
+                        name="sword-alt"
+                        size={20}
+                        className={styles.icon}
+                      />
+                      <p className={styles.infoLabel}>게임 성향</p>
+                    </div>
+                    <p className={styles.infoValue}>
+                      {gameStyle || '분석 필요'}
+                    </p>
+                  </div>
+
+                  <div className={styles.infoItem}>
+                    <div className={styles.infoIconLabel}>
+                      <Icon
+                        name="bar-chart-square"
+                        size={20}
+                        className={styles.icon}
+                      />
+                      <p className={styles.infoLabel}>주간 평균</p>
+                    </div>
+                    <p className={styles.infoValue}>{weeklyAverage}</p>
+                  </div>
                 </div>
-                <p className={styles.infoValue}>{weeklyAverage}</p>
-              </div>
-            </div>
+              </>
+            )}
           </div>
+
+          {/* Unknown Type: Test Link Button */}
+          {isUnknown && (
+            <div
+              className={styles.testLinkButton}
+              onClick={handleTraitsTestClick}
+            >
+              <p className={styles.testLinkText}>내 플레이 스타일 알아보기</p>
+              <Icon
+                name="arrow-right"
+                size={20}
+                className={styles.testLinkIcon}
+              />
+            </div>
+          )}
         </div>
 
         {/* Perfect Match Section */}
