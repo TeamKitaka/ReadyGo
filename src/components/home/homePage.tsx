@@ -5,6 +5,7 @@ import styles from './styles.module.css';
 import MatchSection from './ui/match-section/matchSection';
 import PartySection from './ui/party-section/partySection';
 import ProfileSection from './ui/profile-section/profileSection';
+import StartSection from './ui/start-section/startSection';
 import { MatchCardProps } from './ui/match-section/card/matchCard';
 import { PartyCardProps } from './ui/party-section/card/partyCard';
 import { AnimalType } from '@/commons/constants/animal';
@@ -161,20 +162,39 @@ export default function Home() {
     error: profileError,
   } = useProfile();
 
+  // 테스트 완료 여부 확인 (animalType이 unknown이 아니고 null/undefined가 아니며, 또는 traits가 존재하면 완료)
+  const isTestCompleted =
+    !profileLoading &&
+    profileViewModel !== null &&
+    profileViewModel !== undefined &&
+    ((profileViewModel.animalType !== null &&
+      profileViewModel.animalType !== undefined &&
+      profileViewModel.animalType !== AnimalType.unknown) ||
+      (profileViewModel.traits !== null &&
+        profileViewModel.traits !== undefined));
+
+  // 테스트 미완료 여부 확인 (로딩 중이 아니고, 프로필이 없거나 테스트가 완료되지 않은 경우)
+  const isTestNotCompleted = !profileLoading && !isTestCompleted;
+
   return (
     <div className={styles.container}>
       {/* 왼쪽 컨텐츠 영역 */}
       <div
         className={`${styles.leftSection} ${isOpen ? styles.sidePanelOpen : ''}`}
       >
-        {/* 매치 섹션 */}
-        <MatchSection
-          title="레전드 조합, ㄹㄷ? 🎲"
-          matches={mockMatchData}
-          className={styles.matchSection}
-        />
+        {/* 테스트 미완료: Start Section 표시, Match Section 숨김 */}
+        {isTestNotCompleted && <StartSection className={styles.startSection} />}
 
-        {/* 파티 섹션 */}
+        {/* 테스트 완료: Match Section 표시, Start Section 숨김 */}
+        {isTestCompleted && (
+          <MatchSection
+            title="레전드 조합, ㄹㄷ? 🎲"
+            matches={mockMatchData}
+            className={styles.matchSection}
+          />
+        )}
+
+        {/* 파티 섹션 (항상 표시) */}
         <PartySection
           title="너만 오면 ㄱ!🔥 "
           parties={mockPartyData}

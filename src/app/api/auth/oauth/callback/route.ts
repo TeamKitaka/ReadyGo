@@ -15,7 +15,7 @@ import { URL_PATHS } from '@/commons/constants/url';
  * 1. OAuth code로 세션 교환 (Supabase가 쿠키 자동 저장)
  * 2. 세션 및 사용자 정보 명시적 검증
  * 3. 프로필 확인 및 생성
- * 4. 신규 유저 → /signup-success, 기존 유저 → /home 리다이렉트
+ * 4. 신규 유저 → /home, 기존 유저 → /home 리다이렉트
  *
  * 중요: exchangeCodeForSession 후 세션을 명시적으로 확인하여
  * 쿠키가 제대로 설정되었는지 검증합니다.
@@ -179,16 +179,14 @@ export const GET = async function (request: NextRequest) {
     // 3. 프로필 확인 (동일 supabase 인스턴스 재사용)
     const hasProfile = await checkUserProfile(supabase, verifiedUser.id);
 
-    // 4. 신규 유저면 프로필 생성 후 /signup-success로, 기존 유저는 /home으로
+    // 4. 신규 유저면 프로필 생성 후 /home으로, 기존 유저는 /home으로
     if (!hasProfile) {
       try {
         await createUserProfile(supabase, verifiedUser.id);
-        const signupSuccessUrl = new URL(URL_PATHS.SIGNUP_SUCCESS, request.url);
+        const homeUrl = new URL(URL_PATHS.HOME, request.url);
 
         // ✅ 리다이렉트 응답 생성
-        const redirectResponse = NextResponse.redirect(
-          signupSuccessUrl.toString()
-        );
+        const redirectResponse = NextResponse.redirect(homeUrl.toString());
 
         // ✅ Supabase가 설정한 쿠키를 리다이렉트 응답에 추가
         supabaseCookies.forEach(({ name, value, options }) => {
@@ -196,8 +194,8 @@ export const GET = async function (request: NextRequest) {
         });
 
         // eslint-disable-next-line no-console
-        console.log('OAuth callback: Redirecting to signup-success', {
-          redirectUrl: signupSuccessUrl.toString(),
+        console.log('OAuth callback: Redirecting to home (new user)', {
+          redirectUrl: homeUrl.toString(),
           cookiesSet: supabaseCookies.length,
         });
         return redirectResponse;

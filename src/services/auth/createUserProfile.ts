@@ -22,7 +22,7 @@ export const createUserProfile = async function (
     nickname,
     avatar_url: null,
     bio: null,
-    animal_type: AnimalType.bear,
+    animal_type: AnimalType.unknown,
     tier: TierType.silver,
     temperature_score: 30,
     status_message: null,
