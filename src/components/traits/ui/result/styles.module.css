@@ -317,6 +317,45 @@
   margin: 0;
 }
 
+/* 스팀 연동 유도 섹션 */
+.steamPromotionSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 32px;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 42px;
+  width: 100%;
+}
+
+.steamPromotionContent {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.steamPromotionText {
+  font-family: var(--typo-body-md-font-family);
+  font-size: var(--typo-body-md-font-size);
+  font-weight: var(--typo-body-md-font-weight);
+  line-height: var(--typo-body-md-line-height);
+  color: var(--color-text-secondary);
+  margin: 0;
+  flex: 1;
+}
+
+.steamPromotionButton {
+  flex-shrink: 0;
+  border-color: var(--color-border-interactive-primary) !important;
+  color: var(--color-text-interactive-primary) !important;
+  background-color: transparent !important;
+}
+
 /* Bottom Cards */
 .bottomCards {
   display: flex;

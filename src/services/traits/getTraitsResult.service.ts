@@ -28,6 +28,7 @@ export type TraitsResultDTO = {
     dayTypes: string[];
     timeSlots: string[];
   };
+  isSteamConnected: boolean;
 };
 
 export const getTraitsResult = async (
@@ -41,10 +42,15 @@ export const getTraitsResult = async (
   }
   const userTraits = userTraitsResult.data;
 
-  // 2. user_profiles 조회 (animal_type, nickname)
+  // 2. user_profiles 조회 (animal_type, nickname, steam_id)
   const userProfileResult = await findUserProfile(client, userId);
   const animalType = userProfileResult.data?.animal_type || '';
   const nickname = userProfileResult.data?.nickname || '';
+  // steam_id가 null이 아니고 빈 문자열이 아니면 스팀 연동됨
+  const isSteamConnected =
+    userProfileResult.data?.steam_id !== null &&
+    userProfileResult.data?.steam_id !== undefined &&
+    userProfileResult.data?.steam_id !== '';
 
   // 3. user_play_schedules 조회
   const playSchedulesResult = await findPlaySchedules(client, userId);
@@ -81,5 +87,6 @@ export const getTraitsResult = async (
       dayTypes: Array.from(dayTypesSet),
       timeSlots: Array.from(timeSlotsSet),
     },
+    isSteamConnected,
   };
 };

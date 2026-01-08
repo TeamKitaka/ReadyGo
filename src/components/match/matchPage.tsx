@@ -13,8 +13,6 @@ import { usePresenceStore } from '@/stores/presence.store';
 import { useProfileBinding } from '@/components/overlay/profile/hooks/index.binding.hook';
 import { useSteamOAuth } from '@/components/auth/hooks/useSteamOAuth.hook';
 import { SteamAlert } from '@/commons/layout/ui/steamAlert';
-import { useProfile } from '@/components/home/hooks/useProfile';
-import { AnimalType } from '@/commons/constants/animal';
 
 interface MatchResultWithProfile {
   targetUserId: string;
@@ -33,9 +31,6 @@ export default function Match() {
   // 현재 로그인한 사용자 정보
   const { user } = useAuthStore();
   const viewerId = user?.id;
-
-  // 프로필 데이터 fetch + 상태 관리 (ProfileViewModel 반환)
-  const { data: profileViewModel, loading: profileLoading } = useProfile();
 
   // 스팀 연동 상태 확인
   const { profileData: profileBindingData, isLoading: profileBindingLoading } =
@@ -66,17 +61,13 @@ export default function Match() {
   // 스팀 알림 배너 표시 조건: 스팀 미연동 && 닫지 않음 && 로딩 완료
   // 매칭 페이지에서는 테스트 완료 여부와 관계없이 스팀 미연동 회원에게 표시
   const shouldShowSteamAlert =
-    !profileLoading &&
-    !profileBindingLoading &&
-    isSteamNotConnected &&
-    !isSteamAlertDismissed;
+    !profileBindingLoading && isSteamNotConnected && !isSteamAlertDismissed;
 
   // 디버깅용 로그 (개발 환경에서만)
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       // eslint-disable-next-line no-console
       console.log('Steam Alert Debug:', {
-        profileLoading,
         profileBindingLoading,
         isSteamNotConnected,
         isSteamAlertDismissed,
@@ -87,7 +78,6 @@ export default function Match() {
       });
     }
   }, [
-    profileLoading,
     profileBindingLoading,
     isSteamNotConnected,
     isSteamAlertDismissed,

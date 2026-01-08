@@ -33,7 +33,9 @@ export default function StartSection({ className = '' }: StartSectionProps) {
             </h2>
             <div className={styles.description}>
               <p>게임 성향 테스트로 나의 플레이 스타일을 분석하고,</p>
-              <p>분석 결과를 바탕으로 나와 잘 맞는 게임 친구를 추천받아보세요.</p>
+              <p>
+                분석 결과를 바탕으로 나와 잘 맞는 게임 친구를 추천받아보세요.
+              </p>
             </div>
           </div>
         </div>
@@ -95,4 +97,3 @@ export default function StartSection({ className = '' }: StartSectionProps) {
     </div>
   );
 }
-
