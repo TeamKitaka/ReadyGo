@@ -43,12 +43,49 @@ export function formatReason(reason: MatchReasonCoreDTO): FormattedReason {
       };
 
     case 'STYLE_SIMILARITY':
-      const traitLabel =
-        traitLabels[reason.detail.topTrait] || reason.detail.topTrait;
-      return {
-        icon: '🤝',
-        text: `${traitLabel} 성향이 비슷해요`,
-      };
+      // topTrait에 따라 구체적이고 설득력 있는 메시지 제공
+      // Domain에서 계산한 가장 유사한 성향을 활용
+      const topTrait = reason.detail.topTrait;
+      
+      switch (topTrait) {
+        case 'cooperation':
+          return {
+            icon: '🤝',
+            text: '팀플레이 스타일이 잘 맞아요',
+          };
+        
+        case 'exploration':
+          return {
+            icon: '🧭',
+            text: '새로운 것에 도전하는 성향이 비슷해요',
+          };
+        
+        case 'strategy':
+          return {
+            icon: '🎯',
+            text: '전략적으로 플레이하는 스타일이 비슷해요',
+          };
+        
+        case 'leadership':
+          return {
+            icon: '👑',
+            text: '게임을 이끌어가는 방식이 잘 맞아요',
+          };
+        
+        case 'social':
+          return {
+            icon: '💬',
+            text: '소통하며 함께 즐기는 스타일이 비슷해요',
+          };
+        
+        default:
+          // fallback (안전장치)
+          const traitLabel = traitLabels[topTrait] || topTrait;
+          return {
+            icon: '🤝',
+            text: `${traitLabel} 성향이 비슷해요`,
+          };
+      }
 
     case 'ACTIVITY_PATTERN':
       // commonTimeSlots 객체 배열을 읽기 쉽게 변환
