@@ -56,12 +56,30 @@ export function formatReason(reason: MatchReasonCoreDTO): FormattedReason {
       if (slots.length === 0) {
         return { icon: '⏰', text: '비슷한 시간대에 활동해요' };
       }
+      
       // slots는 { dayType: string, timeSlot: string }[] 형태
       // 예: [{ dayType: 'weekday', timeSlot: '22:00-00:00' }]
-      const timeSlotStr = slots[0].timeSlot;
-      const [startTime, endTime] = timeSlotStr.split('-');
-      const startHour = startTime.split(':')[0];
-      const endHour = endTime.split(':')[0];
+      const timeSlotStr = slots[0]?.timeSlot;
+      if (!timeSlotStr || typeof timeSlotStr !== 'string') {
+        return { icon: '⏰', text: '비슷한 시간대에 활동해요' };
+      }
+      
+      const parts = timeSlotStr.split('-');
+      if (parts.length !== 2) {
+        return { icon: '⏰', text: '비슷한 시간대에 활동해요' };
+      }
+      
+      const [startTime, endTime] = parts;
+      const startParts = startTime.split(':');
+      const endParts = endTime.split(':');
+      
+      if (startParts.length === 0 || endParts.length === 0) {
+        return { icon: '⏰', text: '비슷한 시간대에 활동해요' };
+      }
+      
+      const startHour = startParts[0];
+      const endHour = endParts[0];
+      
       return {
         icon: '⏰',
         text: `${startHour}시~${endHour}시에 함께 플레이할 수 있어요`,
