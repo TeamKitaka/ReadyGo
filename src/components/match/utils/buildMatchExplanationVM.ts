@@ -41,9 +41,17 @@ function mapLabelToReasonType(
     스타일유사: 'STYLE_SIMILARITY',
     시간대일치: 'ACTIVITY_PATTERN',
     지금온라인: 'ONLINE_NOW',
-    신뢰높음: 'RELIABILITY',
+    매너좋음: 'RELIABILITY', // 신뢰높음 → 매너좋음으로 변경
     장르일치: 'STEAM_GENRE',
     플스타일유사: 'STEAM_PLAYSTYLE',
+    // 새로운 태그들은 reason type이 없으므로 undefined 반환
+    천생연분: undefined,
+    궁합좋음: undefined,
+    파티러버: undefined,
+    베테랑: undefined,
+    활동적: undefined,
+    좋은만남: undefined,
+    경험유사: undefined,
   };
   return mapping[label];
 }
@@ -95,14 +103,21 @@ export function buildMatchExplanationVM(
     const isHighPriority = tagType
       ? ['STYLE_SIMILARITY', 'ACTIVITY_PATTERN', 'ONLINE_NOW'].includes(tagType)
       : false;
+    
+    // 동물 궁합 태그 (천생연분, 궁합좋음)
+    const isAnimalCompatibility = ['천생연분', '궁합좋음'].includes(tag.label);
 
     let emphasis: 'primary' | 'secondary' = 'secondary';
 
-    // Steam 연동 시 Steam 관련 태그 강조
-    if (isSteamConnected && isSteamRelated) {
+    // 1순위: 동물 궁합 태그 (항상 강조)
+    if (isAnimalCompatibility) {
       emphasis = 'primary';
     }
-    // 고우선순위 태그 강조
+    // 2순위: Steam 연동 시 Steam 관련 태그 강조
+    else if (isSteamConnected && isSteamRelated) {
+      emphasis = 'primary';
+    }
+    // 3순위: 고우선순위 태그 강조
     else if (isHighPriority) {
       emphasis = 'primary';
     }

@@ -126,7 +126,7 @@ export default function MatchCard({
                   style={tag.emphasis === 'primary' ? 'primary' : 'duotone'}
                   className={styles.tag}
                 >
-                  #{tag.label}
+                  {tag.label}
                 </Tag>
               ))}
             </div>

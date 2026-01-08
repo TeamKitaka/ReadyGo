@@ -25,6 +25,8 @@ import type { MatchTagCoreDTO } from '@/commons/types/match/matchTagCore.dto';
 import { calculateTraitsSimilarity } from '../utils/traitsSimilarity';
 import { calculateScheduleSimilarity } from '../utils/scheduleSimilarity';
 import { calculateGenreSimilarity } from '../utils/steamGenreSimilarity';
+import { animalCompatibilities } from '@/commons/constants/animal/animal.compat';
+import { AnimalType } from '@/commons/constants/animal';
 
 /**
  * 매칭 태그 생성
@@ -152,10 +154,10 @@ export const generateMatchTags = (
     tags.push({ label: '지금온라인' });
   }
 
-  // 6. 신뢰높음 (신뢰도 점수)
+  // 6. 매너좋음 (신뢰도 점수 - 서비스 내 매너 점수)
   const reliabilityScore = context.target.reliability?.reliabilityScore;
   if (reliabilityScore !== undefined && reliabilityScore >= 70) {
-    tags.push({ label: '신뢰높음' });
+    tags.push({ label: '매너좋음' });
   }
 
   // 7. 경험유사 (파티 경험 유사)
@@ -213,19 +215,68 @@ export const generateMatchTags = (
     }
   }
 
+  // 8. 천생연분 / 궁합좋음 (동물 궁합)
+  const viewerAnimal = context.viewer.traits?.animalType as AnimalType | undefined;
+  const targetAnimal = context.target.traits?.animalType as AnimalType | undefined;
+  
+  if (
+    viewerAnimal &&
+    targetAnimal &&
+    viewerAnimal !== AnimalType.unknown &&
+    targetAnimal !== AnimalType.unknown
+  ) {
+    const compatibility = animalCompatibilities[viewerAnimal];
+    if (compatibility) {
+      if (compatibility.bestMatches.includes(targetAnimal)) {
+        tags.push({ label: '천생연분' });
+      } else if (compatibility.goodMatches.includes(targetAnimal)) {
+        tags.push({ label: '궁합좋음' });
+      }
+    }
+  }
+
+  // 9. 파티러버 (파티 경험이 많은 경우)
+  const targetPartyCount = context.target.reliability?.partyCount;
+  if (targetPartyCount !== undefined && targetPartyCount >= 20) {
+    tags.push({ label: '파티러버' });
+  }
+
+  // 10. 베테랑 (높은 신뢰도 + 많은 파티 경험)
+  if (
+    reliabilityScore !== undefined &&
+    reliabilityScore >= 80 &&
+    targetPartyCount !== undefined &&
+    targetPartyCount >= 30
+  ) {
+    tags.push({ label: '베테랑' });
+  }
+
+  // 11. 활동적 (플레이 시간대가 다양함)
+  if (targetSchedule.length >= 4) {
+    tags.push({ label: '활동적' });
+  }
+
   // 최소 3개 보장: 부족하면 기본 Tag 추가
   if (tags.length < 3) {
+    // '천생연분' 또는 '궁합좋음'이 없으면 '좋은만남' 추가 (기본)
+    if (
+      !tags.some((t) =>
+        ['천생연분', '궁합좋음'].includes(t.label)
+      ) &&
+      viewerAnimal &&
+      targetAnimal &&
+      viewerAnimal !== AnimalType.unknown &&
+      targetAnimal !== AnimalType.unknown
+    ) {
+      tags.push({ label: '좋은만남' });
+    }
     // '스타일유사'가 없으면 추가 (기본)
-    if (!tags.some((t) => t.label === '스타일유사')) {
+    if (!tags.some((t) => t.label === '스타일유사') && tags.length < 3) {
       tags.push({ label: '스타일유사' });
     }
-    // '활동패턴'이 없으면 추가 (기본)
-    if (!tags.some((t) => t.label === '활동패턴') && tags.length < 3) {
-      tags.push({ label: '활동패턴' });
-    }
-    // '신뢰높음'이 없으면 추가 (기본)
-    if (!tags.some((t) => t.label === '신뢰높음') && tags.length < 3) {
-      tags.push({ label: '신뢰높음' });
+    // '매너좋음'이 없으면 추가 (기본)
+    if (!tags.some((t) => t.label === '매너좋음') && tags.length < 3) {
+      tags.push({ label: '매너좋음' });
     }
   }
 
