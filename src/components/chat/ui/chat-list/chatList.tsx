@@ -111,7 +111,6 @@ const ChatListItem = ({
 };
 
 export default function ChatList() {
-  const router = useRouter();
   const pathname = usePathname();
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
   const { formattedChatRooms, isLoading, error, markRoomAsReadOptimistic } =
