@@ -395,14 +395,18 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
       };
     });
 
-    // 최신 메시지 순으로 정렬
+    // 최신 메시지 순으로 정렬 (메시지가 없으면 채팅방 생성 시각 사용)
     updatedRooms.sort((a, b) => {
       const aTime = a.lastMessage?.created_at
         ? new Date(a.lastMessage.created_at).getTime()
-        : 0;
+        : a.room.created_at
+          ? new Date(a.room.created_at).getTime()
+          : 0;
       const bTime = b.lastMessage?.created_at
         ? new Date(b.lastMessage.created_at).getTime()
-        : 0;
+        : b.room.created_at
+          ? new Date(b.room.created_at).getTime()
+          : 0;
       return bTime - aTime;
     });
 
@@ -624,14 +628,18 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
                           return room;
                         });
 
-                        // 최신 메시지 순으로 정렬
+                        // 최신 메시지 순으로 정렬 (메시지가 없으면 채팅방 생성 시각 사용)
                         updated.sort((a, b) => {
                           const aTime = a.lastMessage?.created_at
                             ? new Date(a.lastMessage.created_at).getTime()
-                            : 0;
+                            : a.room.created_at
+                              ? new Date(a.room.created_at).getTime()
+                              : 0;
                           const bTime = b.lastMessage?.created_at
                             ? new Date(b.lastMessage.created_at).getTime()
-                            : 0;
+                            : b.room.created_at
+                              ? new Date(b.room.created_at).getTime()
+                              : 0;
                           return bTime - aTime;
                         });
 
