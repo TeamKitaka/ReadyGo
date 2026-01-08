@@ -70,6 +70,8 @@ export interface UseChatRoomReturn {
   isBlocked: boolean; // 차단 상태
   sendMessage: (content: string, contentType?: string) => Promise<void>;
   markAsRead: (messageIds: number[]) => Promise<void>;
+  markAsReadOnScroll: (containerRef: React.RefObject<HTMLDivElement>) => void; // 스크롤 기반 읽음 처리
+  setMessageListContainerRef: (ref: React.RefObject<HTMLDivElement>) => void; // 메시지 리스트 컨테이너 ref 설정
   isLoading: boolean;
   error: string | null;
   isConnected: boolean;
@@ -126,6 +128,9 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
   const triggerScrollToBottomRef = useRef<(() => void) | null>(null); // 스크롤 트리거 함수 ref
   const shouldAutoScrollRef = useRef(true); // 자동 스크롤 여부 (사용자가 수동 스크롤 시 false)
   const isInitialLoadRef = useRef(false); // 초기 로드 플래그
+  const readTimerRef = useRef<NodeJS.Timeout | null>(null); // 읽음 처리 타이머
+  const hasMarkedAsReadRef = useRef(false); // 이미 읽음 처리했는지 추적
+  const messageListContainerRef = useRef<React.RefObject<HTMLDivElement> | null>(null); // 메시지 리스트 컨테이너 ref
 
   // onMessage ref 업데이트 (최신 콜백 유지)
   useEffect(() => {
@@ -152,11 +157,26 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         triggerScrollToBottomRef.current?.();
       }
 
-      // 채팅방이 열려있는 상태에서 상대방 메시지가 들어오면 채팅 목록의 안읽은 표시 즉시 제거
-      // (실제 읽음 처리는 markRoomAsRead에서 처리되지만, UI는 즉시 업데이트)
+      // 채팅방이 열려있는 상태에서 상대방 메시지가 들어오면 읽음 처리 고려
+      // 스크롤이 최하단에 있으면 즉시 읽음 처리, 그렇지 않으면 안읽음 표시 유지
       if (message.sender_id !== user?.id && message.room_id) {
-        // 낙관적 업데이트: 채팅 목록의 안읽은 표시 즉시 제거
-        markRoomAsReadOptimistic(message.room_id);
+        // 메시지 리스트 컨테이너가 있고 스크롤이 최하단에 있는지 확인
+        if (messageListContainerRef.current?.current) {
+          const container = messageListContainerRef.current.current;
+          const { scrollTop, scrollHeight, clientHeight } = container;
+          const scrollableHeight = scrollHeight - clientHeight;
+          const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+
+          // 스크롤이 최하단에 있으면 (50px 이내) 즉시 읽음 처리
+          if (scrollableHeight <= 0 || distanceFromBottom <= 50) {
+            if (!hasMarkedAsReadRef.current) {
+              markRoomAsRead(message.room_id).catch((error) => {
+                console.error('Failed to mark room as read on new message:', error);
+              });
+            }
+          }
+          // 스크롤이 최하단에 없으면 안읽음 표시 유지 (낙관적 업데이트 하지 않음)
+        }
       }
 
       setMessages((prev) => {
@@ -448,6 +468,11 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         return;
       }
 
+      // 이미 읽음 처리했으면 중복 호출 방지
+      if (hasMarkedAsReadRef.current && previousRoomIdRef.current === targetRoomId) {
+        return;
+      }
+
       try {
         const response = await fetch('/api/chat/message/read', {
           method: 'POST',
@@ -486,12 +511,50 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
 
         // 채팅 목록의 안읽은 표시 즉시 업데이트
         markRoomAsReadOptimistic(targetRoomId);
+        
+        // 읽음 처리 완료 표시
+        hasMarkedAsReadRef.current = true;
       } catch (error) {
         console.error('Failed to mark room as read:', error);
         // 백그라운드 처리이므로 사용자에게 에러 표시하지 않음
       }
     },
     [user?.id, markRoomAsReadOptimistic]
+  );
+
+  /**
+   * 스크롤 기반 읽음 처리
+   * 스크롤이 최하단에 도달했을 때 호출
+   */
+  const markAsReadOnScroll = useCallback(
+    (containerRef: React.RefObject<HTMLDivElement>) => {
+      if (!roomId || roomId <= 0 || !user?.id) {
+        return;
+      }
+
+      // 이미 읽음 처리했으면 중복 호출 방지
+      if (hasMarkedAsReadRef.current) {
+        return;
+      }
+
+      // 스크롤이 최하단에 있는지 확인
+      const { scrollTop, scrollHeight, clientHeight } = containerRef.current || {};
+      if (!containerRef.current || scrollTop === undefined || scrollHeight === undefined || clientHeight === undefined) {
+        return;
+      }
+
+      const scrollableHeight = scrollHeight - clientHeight;
+      const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+
+      // 스크롤 가능한 높이가 없거나 하단에서 50px 이내이면 최하단으로 간주
+      if (scrollableHeight <= 0 || distanceFromBottom <= 50) {
+        // 읽음 처리
+        markRoomAsRead(roomId).catch((error) => {
+          console.error('Failed to mark room as read on scroll:', error);
+        });
+      }
+    },
+    [roomId, user?.id, markRoomAsRead]
   );
 
   /**
@@ -592,8 +655,14 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     // 현재 roomId를 이전 roomId로 저장
     previousRoomIdRef.current = roomId;
 
-    // 채팅방에 접속하자마자 즉시 낙관적 업데이트 (안읽음 표시 즉시 제거)
-    markRoomAsReadOptimistic(roomId);
+    // 읽음 처리 상태 리셋
+    hasMarkedAsReadRef.current = false;
+    
+    // 기존 타이머 정리
+    if (readTimerRef.current) {
+      clearTimeout(readTimerRef.current);
+      readTimerRef.current = null;
+    }
 
     // 이전 채널 정리
     cleanupChannel();
@@ -610,15 +679,18 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     setError(null);
 
     // 초기 메시지 로드
-    loadMessages(roomId).then(async () => {
+    loadMessages(roomId).then(() => {
       // postgres_changes 구독
       subscribeToPostgresChanges(roomId);
-      // 백그라운드에서 실제 읽음 처리 (낙관적 업데이트는 이미 완료됨)
-      try {
-        await markRoomAsRead(roomId);
-      } catch (error) {
-        console.error('Failed to mark room as read:', error);
-      }
+      
+      // 타이머 기반 읽음 처리: 채팅방 접속 후 3초 후 읽음 처리
+      readTimerRef.current = setTimeout(() => {
+        if (!hasMarkedAsReadRef.current && previousRoomIdRef.current === roomId) {
+          markRoomAsRead(roomId).catch((error) => {
+            console.error('Failed to mark room as read on timer:', error);
+          });
+        }
+      }, 3000); // 3초 후 읽음 처리
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, user?.id]);
@@ -631,10 +703,26 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
   }, [roomId]);
 
   /**
+   * 메시지 리스트 컨테이너 ref 설정 함수
+   */
+  const setMessageListContainerRef = useCallback(
+    (ref: React.RefObject<HTMLDivElement>) => {
+      messageListContainerRef.current = ref;
+    },
+    []
+  );
+
+  /**
    * 컴포넌트 언마운트 시 cleanup
    */
   useEffect(() => {
     return () => {
+      // 타이머 정리
+      if (readTimerRef.current) {
+        clearTimeout(readTimerRef.current);
+        readTimerRef.current = null;
+      }
+      
       // 언마운트 시 현재 채팅방 읽음 처리
       const currentRoomId = previousRoomIdRef.current;
       if (currentRoomId && currentRoomId > 0 && user?.id) {
@@ -885,6 +973,8 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     isBlocked,
     sendMessage,
     markAsRead,
+    markAsReadOnScroll,
+    setMessageListContainerRef,
     isLoading,
     error,
     isConnected: false, // Realtime 연결 상태는 더 이상 사용하지 않음

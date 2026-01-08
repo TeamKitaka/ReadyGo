@@ -192,7 +192,9 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
   const autoRefreshTimerRef = useRef<NodeJS.Timeout | null>(null);
   const optimisticReadRoomsRef = useRef<Set<number>>(new Set()); // 낙관적으로 읽음 처리된 채팅방 ID들
   const chatRoomsRef = useRef<ChatRoomListItem[]>([]); // 최신 chatRooms 상태 추적용 ref
-  const pendingMessageUpdatesRef = useRef<Map<number, { message: any; count: number }>>(new Map()); // 배치 처리용 대기 중인 메시지 업데이트
+  const pendingMessageUpdatesRef = useRef<
+    Map<number, { message: any; count: number }>
+  >(new Map()); // 배치 처리용 대기 중인 메시지 업데이트
   const messageUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   /**
@@ -354,7 +356,9 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
             room_id: roomId,
             sender_id: update.message.sender_id || '',
             content: update.message.content || null,
-            content_type: (update.message.content_type as 'text' | 'image' | 'system') || 'text',
+            content_type:
+              (update.message.content_type as 'text' | 'image' | 'system') ||
+              'text',
             created_at: update.message.created_at || new Date().toISOString(),
             is_read: update.message.is_read || false,
           }
@@ -363,7 +367,7 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
       // unreadCount 계산
       const isFromOther = update.message.sender_id !== user?.id;
       const isCurrentRoom = currentRoomId === roomId;
-      
+
       let newUnreadCount: number;
       if (isCurrentRoom) {
         // 현재 열려있는 채팅방이면 unreadCount를 0으로 설정 (실시간으로 보고 있으므로)
@@ -414,37 +418,40 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
   /**
    * 메시지 업데이트를 스케줄링하는 함수
    */
-  const scheduleMessageUpdate = useCallback((newMessage: any) => {
-    if (!newMessage || !newMessage.room_id) {
-      return;
-    }
-
-    const roomId = newMessage.room_id;
-    const existing = pendingMessageUpdatesRef.current.get(roomId);
-    const isFromOther = newMessage.sender_id !== user?.id;
-
-    if (existing) {
-      // 같은 채팅방의 메시지가 이미 대기 중이면 카운트만 증가 (상대방 메시지만)
-      if (isFromOther) {
-        existing.count += 1;
+  const scheduleMessageUpdate = useCallback(
+    (newMessage: any) => {
+      if (!newMessage || !newMessage.room_id) {
+        return;
       }
-      // 항상 최신 메시지로 업데이트
-      existing.message = newMessage;
-    } else {
-      // 새로운 업데이트 추가
-      pendingMessageUpdatesRef.current.set(roomId, {
-        message: newMessage,
-        count: isFromOther ? 1 : 0,
-      });
-    }
 
-    // 타이머가 없으면 새로 설정 (50ms 후 배치 처리)
-    if (!messageUpdateTimerRef.current) {
-      messageUpdateTimerRef.current = setTimeout(() => {
-        processPendingMessageUpdates();
-      }, 50);
-    }
-  }, [user?.id, processPendingMessageUpdates]);
+      const roomId = newMessage.room_id;
+      const existing = pendingMessageUpdatesRef.current.get(roomId);
+      const isFromOther = newMessage.sender_id !== user?.id;
+
+      if (existing) {
+        // 같은 채팅방의 메시지가 이미 대기 중이면 카운트만 증가 (상대방 메시지만)
+        if (isFromOther) {
+          existing.count += 1;
+        }
+        // 항상 최신 메시지로 업데이트
+        existing.message = newMessage;
+      } else {
+        // 새로운 업데이트 추가
+        pendingMessageUpdatesRef.current.set(roomId, {
+          message: newMessage,
+          count: isFromOther ? 1 : 0,
+        });
+      }
+
+      // 타이머가 없으면 새로 설정 (50ms 후 배치 처리)
+      if (!messageUpdateTimerRef.current) {
+        messageUpdateTimerRef.current = setTimeout(() => {
+          processPendingMessageUpdates();
+        }, 50);
+      }
+    },
+    [user?.id, processPendingMessageUpdates]
+  );
 
   /**
    * postgres_changes 채널 정리 함수
@@ -455,7 +462,7 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
       channelRef.current = null;
     }
     subscribedUserIdRef.current = null;
-    
+
     // 대기 중인 메시지 업데이트 타이머 정리
     if (messageUpdateTimerRef.current) {
       clearTimeout(messageUpdateTimerRef.current);
@@ -580,53 +587,61 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
                       ? parseInt(currentRoomIdMatch[1], 10)
                       : null;
 
-                  // 현재 열려있는 채팅방이고 상대방 메시지면 즉시 낙관적 읽음 처리
-                  const isFromOther = newMessage.sender_id !== user?.id;
-                  if (currentRoomId === newMessage.room_id && isFromOther) {
-                    // 채팅방이 열려있고 상대방 메시지면 즉시 낙관적 읽음 처리
-                    optimisticReadRoomsRef.current.add(newMessage.room_id);
-                    // 채팅 목록에서 즉시 unreadCount를 0으로 설정
-                    setChatRooms((prev) => {
-                      const updated = prev.map((room) => {
-                        if (room.room.id === newMessage.room_id) {
-                          const lastMessage: ChatMessage | undefined = newMessage.id
-                            ? {
-                                id: newMessage.id,
-                                room_id: newMessage.room_id,
-                                sender_id: newMessage.sender_id || '',
-                                content: newMessage.content || null,
-                                content_type: (newMessage.content_type as 'text' | 'image' | 'system') || 'text',
-                                created_at: newMessage.created_at || new Date().toISOString(),
-                                is_read: newMessage.is_read || false,
-                              }
-                            : undefined;
+                    // 현재 열려있는 채팅방이고 상대방 메시지면 즉시 낙관적 읽음 처리
+                    const isFromOther = newMessage.sender_id !== user?.id;
+                    if (currentRoomId === newMessage.room_id && isFromOther) {
+                      // 채팅방이 열려있고 상대방 메시지면 즉시 낙관적 읽음 처리
+                      optimisticReadRoomsRef.current.add(newMessage.room_id);
+                      // 채팅 목록에서 즉시 unreadCount를 0으로 설정
+                      setChatRooms((prev) => {
+                        const updated = prev.map((room) => {
+                          if (room.room.id === newMessage.room_id) {
+                            const lastMessage: ChatMessage | undefined =
+                              newMessage.id
+                                ? {
+                                    id: newMessage.id,
+                                    room_id: newMessage.room_id,
+                                    sender_id: newMessage.sender_id || '',
+                                    content: newMessage.content || null,
+                                    content_type:
+                                      (newMessage.content_type as
+                                        | 'text'
+                                        | 'image'
+                                        | 'system') || 'text',
+                                    created_at:
+                                      newMessage.created_at ||
+                                      new Date().toISOString(),
+                                    is_read: newMessage.is_read || false,
+                                  }
+                                : undefined;
 
-                          return {
-                            ...room,
-                            lastMessage,
-                            unreadCount: 0, // 즉시 0으로 설정
-                          };
-                        }
-                        return room;
+                            return {
+                              ...room,
+                              lastMessage,
+                              unreadCount: 0, // 즉시 0으로 설정
+                            };
+                          }
+                          return room;
+                        });
+
+                        // 최신 메시지 순으로 정렬
+                        updated.sort((a, b) => {
+                          const aTime = a.lastMessage?.created_at
+                            ? new Date(a.lastMessage.created_at).getTime()
+                            : 0;
+                          const bTime = b.lastMessage?.created_at
+                            ? new Date(b.lastMessage.created_at).getTime()
+                            : 0;
+                          return bTime - aTime;
+                        });
+
+                        chatRoomsRef.current = updated;
+                        return updated;
                       });
-
-                      // 최신 메시지 순으로 정렬
-                      updated.sort((a, b) => {
-                        const aTime = a.lastMessage?.created_at
-                          ? new Date(a.lastMessage.created_at).getTime()
-                          : 0;
-                        const bTime = b.lastMessage?.created_at
-                          ? new Date(b.lastMessage.created_at).getTime()
-                          : 0;
-                        return bTime - aTime;
-                      });
-
-                      chatRoomsRef.current = updated;
-                      return updated;
-                    });
-                  } else {
-                    // 다른 채팅방이거나 내 메시지면 배치 처리로 스케줄링
-                    scheduleMessageUpdate(newMessage);
+                    } else {
+                      // 다른 채팅방이거나 내 메시지면 배치 처리로 스케줄링
+                      scheduleMessageUpdate(newMessage);
+                    }
                   }
                 }
 
@@ -714,7 +729,14 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
 
       await setupRealtimeSubscription();
     },
-    [cleanupChannel, debouncedRefresh, markRoomAsReadOptimistic, pathname, scheduleMessageUpdate, processPendingMessageUpdates]
+    [
+      cleanupChannel,
+      debouncedRefresh,
+      markRoomAsReadOptimistic,
+      pathname,
+      scheduleMessageUpdate,
+      processPendingMessageUpdates,
+    ]
   );
 
   /**
