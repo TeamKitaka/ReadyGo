@@ -3,7 +3,9 @@ import type { Database } from '@/types/supabase';
 import * as userProfilesRepository from '@/repositories/userProfiles.repository';
 import * as steamUserGamesRepository from '@/repositories/steamUserGamesRepository';
 import * as steamSyncLogRepository from '@/repositories/steamSyncLogRepository';
+import * as steamGameRepository from '@/repositories/steamGame.repository';
 import * as steamApiClient from './steamApiClient';
+import * as steamStoreApiClient from './steamStoreApiClient';
 
 /**
  * syncSteamGames Service
@@ -146,11 +148,89 @@ export const syncSteamGames = async (
     return result;
   }
 
-  const { games } = apiResult;
+  const { games: allGames } = apiResult;
 
-  // 4. 응답 매핑 (Steam API 형식 → DB 형식)
-  const gameInputs: steamUserGamesRepository.SteamUserGameInput[] = games.map(
-    (game) => ({
+  // 4. 게임 필터링: 점진적 검증 (Incremental Validation)
+  // 4-1. 캐시 조회 (배치 - 빠름)
+  const appIds = allGames.map((g) => g.appid);
+  const existingGameIds = await steamGameRepository.checkGameExists(appIds);
+  const existingSet = new Set(existingGameIds);
+
+  // 4-2. 캐시 히트 게임 분리
+  const cachedGames = allGames.filter((g) => existingSet.has(g.appid));
+  const uncachedGames = allGames.filter((g) => !existingSet.has(g.appid));
+
+  // 4-3. 캐시 히트 게임 정렬 (최근성 우선)
+  const sortedCachedGames = [
+    ...cachedGames
+      .filter((g) => g.playtime_2weeks && g.playtime_2weeks > 0)
+      .sort((a, b) => b.playtime_2weeks! - a.playtime_2weeks!),
+    ...cachedGames
+      .filter((g) => !g.playtime_2weeks || g.playtime_2weeks === 0)
+      .sort((a, b) => b.playtime_forever - a.playtime_forever),
+  ];
+
+  // 4-4. 1000개 채우기 위해 필요한 만큼만 미검증 게임 검증
+  const TARGET_GAME_COUNT = 1000;
+  const validatedGames = [...sortedCachedGames];
+  const needed = TARGET_GAME_COUNT - sortedCachedGames.length;
+
+  if (needed > 0 && uncachedGames.length > 0) {
+    // 미검증 게임도 최근성 기준 정렬
+    const sortedUncached = [
+      ...uncachedGames
+        .filter((g) => g.playtime_2weeks && g.playtime_2weeks > 0)
+        .sort((a, b) => b.playtime_2weeks! - a.playtime_2weeks!),
+      ...uncachedGames
+        .filter((g) => !g.playtime_2weeks || g.playtime_2weeks === 0)
+        .sort((a, b) => b.playtime_forever - a.playtime_forever),
+    ];
+
+    // 필요한 개수 + 50% 여유분만큼 검증 (일부는 게임이 아닐 수 있음)
+    const toValidate = sortedUncached.slice(0, Math.ceil(needed * 1.5));
+    let storeApiCallCount = 0;
+    let validatedCount = 0;
+
+    for (const game of toValidate) {
+      // 충분히 채웠으면 중단
+      if (validatedCount >= needed) {
+        break;
+      }
+
+      storeApiCallCount++;
+      const storeResult = await steamStoreApiClient.fetchGameDetails(
+        game.appid
+      );
+
+      if (storeResult.ok) {
+        // 게임이면 steam_game_info에 저장
+        try {
+          await steamGameRepository.upsertSteamGame(storeResult.gameInfo);
+          validatedGames.push(game);
+          validatedCount++;
+        } catch (error) {
+          console.error(
+            `Failed to save game info for app_id ${game.appid}:`,
+            error
+          );
+          // 저장 실패해도 계속 진행
+        }
+      }
+      // storeResult.ok === false면 무시 (게임 아님)
+
+      // Rate limit 방지: 100ms 대기
+      if (storeApiCallCount % 10 === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
+  }
+
+  // 4-5. 최종 1000개 선택
+  const finalGames = validatedGames.slice(0, TARGET_GAME_COUNT);
+
+  // 5. 응답 매핑 (Steam API 형식 → DB 형식)
+  const gameInputs: steamUserGamesRepository.SteamUserGameInput[] =
+    finalGames.map((game) => ({
       app_id: game.appid,
       name: game.name ?? null,
       playtime_forever: game.playtime_forever,
@@ -158,10 +238,9 @@ export const syncSteamGames = async (
       last_played: game.rtime_last_played
         ? convertUnixToTimestamptz(game.rtime_last_played)
         : null,
-    })
-  );
+    }));
 
-  // 5. DB 저장 (bulk upsert)
+  // 6. DB 저장 (bulk upsert)
   const upsertResult = await steamUserGamesRepository.bulkUpsert(
     client,
     userId,
@@ -175,14 +254,14 @@ export const syncSteamGames = async (
 
   const syncedCount = gameInputs.length;
 
-  // 6. 로그 기록 (성공)
+  // 7. 로그 기록 (성공)
   await steamSyncLogRepository.insertLog(client, {
     userId,
     status: 'success',
     syncedGamesCount: syncedCount,
   });
 
-  // 7. Result 반환
+  // 8. Result 반환
   return {
     status: 'success',
     syncedGamesCount: syncedCount,

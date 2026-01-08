@@ -1,0 +1,118 @@
+아래의 조건을 모두 적용하여, 아래의 요구사항을 모두 구현할 것.
+구현 결과를 체크리스트로 반환할 것.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하여 작업하고, 이 작업이 끝나면 해당 rules 적용 결과를 체크리스트로 반환할 것.
+	- 외부 API 호출 전담 Client Layer
+	- 비즈니스 로직 포함 금지
+	- DB 접근 금지
+	- throw 금지, Result 객체로 성공/실패 반환
+	- named export만 허용
+
+==============================================
+
+조건-파일경로) 참고 및 기준 파일 경로는 다음과 같다.
+	- 구현 대상
+		- src/services/steam/steamStoreApiClient.ts
+		- supabase/functions/_shared/services/steam/steamStoreApiClient.ts (Deno용)
+
+==============================================
+
+조건-구현참고) 반드시 참고할 기존 구현 패턴은 다음과 같다.
+	- steamApiClient와 동일한 Result 패턴 사용
+	- fetch 에러는 catch하여 Result 객체로 변환
+	- 게임 타입 검증 로직 포함
+
+==============================================
+
+핵심요구사항) 다음 기능을 step-by-step으로 구현하고, 각 항목의 적용 여부를 체크리스트로 반환할 것.
+
+1. 함수 정의
+	- fetchGameDetails(appId: number): Promise<FetchGameDetailsResult>
+	- 단일 public 함수만 export
+
+2. Steam Store API 호출
+	- 엔드포인트: /api/appdetails
+	- URL: https://store.steampowered.com/api/appdetails
+	- Method: GET
+	- Query Parameters:
+		- appids: appId
+		- cc: us
+		- l: en
+	- API Key 불필요 (Public API)
+
+3. 반환 타입
+	- Result 패턴 사용
+	- 성공 시:
+		type FetchGameDetailsResult = {
+		  ok: true;
+		  gameInfo: GameInfo;
+		}
+		
+		type GameInfo = {
+		  app_id: number;
+		  name: string;
+		  short_description: string | null;
+		  header_image: string | null;
+		  genres: string[];
+		  categories: SteamCategoryJson[];
+		}
+	
+	- 실패 시:
+		type FetchGameDetailsResult = {
+		  ok: false;
+		  reason: "not_found" | "not_a_game" | "network_error";
+		}
+
+4. 게임 타입 검증 ⭐ 핵심
+	- response.data.type === 'game' 확인
+	- type이 'game'이 아니면 reason: "not_a_game" 반환
+	- 예시:
+		- type='dlc' → not_a_game
+		- type='software' → not_a_game
+		- type='music' → not_a_game
+		- type='game' → 성공
+
+5. 데이터 매핑
+	- Steam Store API 응답 → GameInfo 변환
+	- app_id: appId (파라미터)
+	- name: detail.name
+	- short_description: detail.short_description ?? null
+	- header_image: detail.header_image ?? null
+	- genres: detail.genres.map(g => g.description) ?? []
+	- categories: detail.categories.map(c => ({ id: Number(c.id), label: c.description })) ?? []
+
+6. 에러 처리
+	- HTTP 4xx/5xx → reason: "network_error"
+	- success=false 또는 data 없음 → reason: "not_found"
+	- type != 'game' → reason: "not_a_game"
+	- fetch 에러 → reason: "network_error"
+	- throw 절대 금지
+
+7. Headers
+	- User-Agent: "ReadyGo/1.0 (Steam Game Service)"
+
+==============================================
+
+조건-Hook 책임)
+	- 해당 없음
+
+==============================================
+
+조건-UI 책임)
+	- 해당 없음
+
+==============================================
+
+구현 완료 후 반환) 아래 체크리스트를 반드시 반환할 것.
+	- fetchGameDetails 함수만 export 한다
+	- Steam Store API를 호출한다
+	- type='game' 검증을 수행한다
+	- 비게임 항목을 reason: "not_a_game"으로 반환한다
+	- GameInfo 형식으로 데이터를 매핑한다
+	- Result 객체로 성공/실패를 반환한다
+	- throw를 사용하지 않는다
+	- 비즈니스 로직이 포함되지 않았다
+	- DB 접근이 없다
+

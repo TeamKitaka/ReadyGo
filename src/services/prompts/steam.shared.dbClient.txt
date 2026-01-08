@@ -1,0 +1,107 @@
+아래의 조건을 모두 적용하여, 아래의 요구사항을 모두 구현할 것.
+구현 결과를 체크리스트로 반환할 것.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하여 작업하고, 이 작업이 끝나면 해당 rules 적용 결과를 체크리스트로 반환할 것.
+	- Type-only 인터페이스 정의
+	- 런타임 로직 포함 금지
+	- 최소한의 메서드만 포함
+	- SupabaseClient 호환 API 정의
+
+==============================================
+
+조건-파일경로) 참고 및 기준 파일 경로는 다음과 같다.
+	- 구현 대상
+		- supabase/functions/_shared/types/dbClient.ts
+
+==============================================
+
+조건-구현참고) 반드시 참고할 기존 구현 패턴은 다음과 같다.
+	- Node.js 환경: SupabaseClient<Database>
+	- Deno 환경: DbClient 인터페이스
+	- 실제 구현은 createClient()가 제공
+	- Repository는 DbClient만 의존
+
+==============================================
+
+핵심요구사항) 다음 기능을 step-by-step으로 구현하고, 각 항목의 적용 여부를 체크리스트로 반환할 것.
+
+1. DbClient 인터페이스 정의
+	- from(table: string) 메서드
+	- DbQueryBuilder 반환
+
+2. DbQueryBuilder 인터페이스 정의
+	- select(columns?: string): DbSelectBuilder
+	- insert(values: any): Promise<DbResponse>
+	- upsert(values: any, options?: { onConflict?: string }): Promise<DbResponse>
+
+3. DbSelectBuilder 인터페이스 정의 ⭐ 핵심
+	- eq(column: string, value: any): DbSelectBuilder
+	- not(column: string, operator: string, value: any): DbSelectBuilder
+	- in(column: string, values: any[]): DbSelectBuilder
+	- limit(count: number): DbSelectBuilder
+	- maybeSingle(): Promise<DbResponse>
+	- then(onfulfilled?: (value: DbResponse) => any): Promise<any>
+	
+	- in() 메서드가 필수인 이유:
+		- checkGameExists에서 배치 조회에 사용
+		- WHERE app_id IN (...) SQL 생성
+
+4. DbResponse 타입 정의
+	- type DbResponse = { data: any | null; error: any | null }
+	- Supabase 응답 형식과 동일
+
+5. 사용 예시
+	```typescript
+	// Node.js (src/repositories/)
+	import type { SupabaseClient } from '@supabase/supabase-js';
+	import type { Database } from '@/types/supabase';
+	
+	export const findByUserId = async (
+	  client: SupabaseClient<Database>,
+	  userId: string
+	) => { ... }
+	
+	// Deno (supabase/functions/_shared/repositories/)
+	import type { DbClient } from '../types/dbClient.ts';
+	
+	export const findByUserId = async (
+	  client: DbClient,
+	  userId: string
+	) => { ... }
+	```
+
+6. 설계 원칙
+	- 최소 인터페이스 (ISP - Interface Segregation)
+	- Repository에서 실제 사용하는 메서드만 포함
+	- 타입 안정성 보장
+	- 런타임 오버헤드 0 (type-only)
+
+7. 확장 시 주의사항
+	- 새로운 쿼리 메서드 필요 시 인터페이스에 추가
+	- Node/Deno 양쪽 Repository 동시 업데이트
+	- SupabaseClient API와 호환성 유지
+
+==============================================
+
+조건-Hook 책임)
+	- 해당 없음
+
+==============================================
+
+조건-UI 책임)
+	- 해당 없음
+
+==============================================
+
+구현 완료 후 반환) 아래 체크리스트를 반드시 반환할 것.
+	- DbClient 인터페이스가 정의되어 있다
+	- from() 메서드가 포함되어 있다
+	- select(), insert(), upsert() 메서드가 포함되어 있다
+	- eq(), not(), in(), limit() 메서드가 포함되어 있다
+	- in() 메서드가 배열 파라미터를 받는다
+	- DbResponse 타입이 { data, error } 구조다
+	- Type-only 정의로 런타임 오버헤드가 없다
+	- SupabaseClient API와 호환된다
+

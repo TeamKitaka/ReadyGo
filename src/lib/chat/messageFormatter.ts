@@ -139,4 +139,3 @@ export const formatMessageContent = (message: ChatMessage | null): string => {
 
   return content;
 };
-

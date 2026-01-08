@@ -22,6 +22,7 @@ export interface DbQueryBuilder {
 export interface DbSelectBuilder {
   eq: (column: string, value: any) => DbSelectBuilder;
   not: (column: string, operator: string, value: any) => DbSelectBuilder;
+  in: (column: string, values: any[]) => DbSelectBuilder;
   limit: (count: number) => DbSelectBuilder;
   maybeSingle: () => Promise<DbResponse>;
   then: (onfulfilled?: (value: DbResponse) => any) => Promise<any>;

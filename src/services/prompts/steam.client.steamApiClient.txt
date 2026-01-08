@@ -69,14 +69,20 @@
 	    rtime_last_played?: number;
 	  }
 
-5. 에러 처리
+5. 응답 처리
+	- 전체 게임 목록을 그대로 반환 (정렬/필터링 금지)
+	- 게임/비게임 구분 없이 모두 반환
+	- 정렬 및 필터링은 syncSteamGames Service에서 수행
+	- 이유: 캐시 기반 점진적 검증을 위해 전체 목록 필요
+
+6. 에러 처리
 	- 네트워크 에러 → reason: "network_error"
 	- 타임아웃 (10초) → reason: "timeout"
 	- response.games 없음 → reason: "private"
 	- HTTP 4xx/5xx → reason: "network_error"
 	- throw 절대 금지
 
-6. Headers
+7. Headers
 	- User-Agent: "ReadyGo/1.0 (Steam Sync Service)"
 	- Accept: "application/json"
 

@@ -45,6 +45,8 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
     shouldScrollToUnread,
     clearScrollTriggers,
     shouldShowScrollToBottomButton,
+    markAsReadOnScroll,
+    setMessageListContainerRef,
     roomCreatedAt,
   } = useChatRoom({ roomId: roomIdNumber });
 
@@ -95,13 +97,20 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
     clearScrollTriggers,
   ]);
 
-  // 스크롤 위치 감지
+  // 메시지 리스트 컨테이너 ref를 hook에 등록
+  useEffect(() => {
+    setMessageListContainerRef(messageListRef);
+  }, [setMessageListContainerRef]);
+
+  // 스크롤 위치 감지 및 읽음 처리
   const handleScroll = useCallback(() => {
     if (messageListRef.current) {
       const shouldShow = shouldShowScrollToBottomButton(messageListRef);
       setShowScrollToBottomButton(shouldShow);
+      // 스크롤 기반 읽음 처리
+      markAsReadOnScroll(messageListRef);
     }
-  }, [shouldShowScrollToBottomButton]);
+  }, [shouldShowScrollToBottomButton, markAsReadOnScroll]);
 
   // 스크롤 이벤트 리스너 등록
   useEffect(() => {
@@ -265,7 +274,6 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
             // message 타입인 경우
             const {
               message,
-              isConsecutive,
               isGroupStart,
               isGroupEnd,
               isOwnMessage,
