@@ -29,6 +29,20 @@ import { animalCompatibilities } from '@/commons/constants/animal/animal.compat'
 import { AnimalType } from '@/commons/constants/animal';
 
 /**
+ * 태그 중복 방지 헬퍼 함수
+ * 
+ * 이미 존재하는 태그가 아닌 경우에만 추가
+ * 
+ * @param tags - 현재 태그 배열
+ * @param label - 추가할 태그 레이블
+ */
+function addTagIfNotExists(tags: MatchTagCoreDTO[], label: string): void {
+  if (!tags.some((t) => t.label === label)) {
+    tags.push({ label });
+  }
+}
+
+/**
  * 매칭 태그 생성
  *
  * @param context - MatchContext 입력
@@ -185,10 +199,7 @@ export const generateMatchTags = (
   // 조건 완화: reliabilityScore >= 70 → >= 40 (성향 불필요, 행동 기반)
   const reliabilityScore = context.target.reliability?.reliabilityScore;
   if (reliabilityScore !== undefined && reliabilityScore >= 40) {
-    // 중복 방지: 이미 추가된 태그는 스킵
-    if (!tags.some((t) => t.label === '매너좋음')) {
-      tags.push({ label: '매너좋음' });
-    }
+    addTagIfNotExists(tags, '매너좋음');
   }
 
   // 7. 경험유사 (파티 경험 유사)
@@ -288,10 +299,7 @@ export const generateMatchTags = (
   // 11. 활동적 (플레이 시간대가 있음)
   // 조건 완화: 4개 이상 → 2개 이상 (성향 테스트 없는 유저도 받을 수 있도록)
   if (targetSchedule.length >= 2) {
-    // 중복 방지: 이미 추가된 태그는 스킵
-    if (!tags.some((t) => t.label === '활동적')) {
-      tags.push({ label: '활동적' });
-    }
+    addTagIfNotExists(tags, '활동적');
   }
 
   // 12. 꾸준함 (신뢰도 데이터 존재 또는 파티 경험 존재)
@@ -300,10 +308,7 @@ export const generateMatchTags = (
   const hasReliabilityData = reliabilityScore !== undefined && reliabilityScore > 0;
   const hasPartyExperience = targetPartyCount !== undefined && targetPartyCount >= 5;
   if (hasReliabilityData || hasPartyExperience) {
-    // 중복 방지: 이미 추가된 태그는 스킵
-    if (!tags.some((t) => t.label === '꾸준함')) {
-      tags.push({ label: '꾸준함' });
-    }
+    addTagIfNotExists(tags, '꾸준함');
   }
 
   // 13-14. 협동형, 전략형, 리더형, 사교형 태그는 Line 125-147에서 topTrait 로직으로 이미 처리됨
@@ -404,10 +409,7 @@ export const generateMatchTags = (
       if (tags.length >= 3) {
         break; // 3개 이상이면 중단
       }
-      // 중복 방지: 이미 있는 태그는 추가하지 않음
-      if (!tags.some((t) => t.label === fallbackLabel)) {
-        tags.push({ label: fallbackLabel });
-      }
+      addTagIfNotExists(tags, fallbackLabel);
     }
   }
 
