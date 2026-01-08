@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import * as steamUserStatsRepository from './steamUserStats.repository';
+import * as steamUserStatsRepository from '../steamUserStats.repository';
 
 describe('steamUserStats.repository', () => {
   describe('findByUserId', () => {
