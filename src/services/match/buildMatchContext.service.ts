@@ -43,6 +43,7 @@ import type { TraitVector } from '@/commons/constants/animal/animal.vector';
 import * as userProfilesRepository from '@/repositories/userProfiles.repository';
 import * as userTraitsRepository from '@/repositories/userTraits.repository';
 import * as userPlaySchedulesRepository from '@/repositories/userPlaySchedules.repository';
+import * as steamUserStatsRepository from '@/repositories/steamUserStats.repository';
 
 /**
  * MatchContext를 조립한다
@@ -92,19 +93,11 @@ export const buildMatchContext = async (
     userProfilesRepository.findByUserId(client, viewerId),
     userTraitsRepository.findByUserId(client, viewerId),
     userPlaySchedulesRepository.findByUserId(client, viewerId),
-    client
-      .from('steam_user_stats')
-      .select('play_style, avg_weekly_playtime, main_genres')
-      .eq('user_id', viewerId)
-      .maybeSingle(),
+    steamUserStatsRepository.findByUserId(client, viewerId),
     userProfilesRepository.findByUserId(client, targetUserId),
     userTraitsRepository.findByUserId(client, targetUserId),
     userPlaySchedulesRepository.findByUserId(client, targetUserId),
-    client
-      .from('steam_user_stats')
-      .select('play_style, avg_weekly_playtime, main_genres')
-      .eq('user_id', targetUserId)
-      .maybeSingle(),
+    steamUserStatsRepository.findByUserId(client, targetUserId),
   ]);
 
   // 2. viewer의 하위 Context 조립
@@ -267,9 +260,6 @@ const assembleSteamContext = (
   // SteamContextInput 반환
   return {
     mainGenres: steamStatsData.main_genres || [],
-    playStyle: steamStatsData.play_style as
-      | 'casual'
-      | 'regular'
-      | 'hardcore',
+    playStyle: steamStatsData.play_style as 'casual' | 'regular' | 'hardcore',
   };
 };

@@ -13,7 +13,7 @@
  * - DB 직접 접근 (repository를 통해 접근)
  */
 
-import { createClient } from '@/lib/supabase/client';
+import { supabase as createClient } from '@/lib/supabase/client';
 
 /**
  * 정제된 게임 데이터
@@ -52,7 +52,7 @@ export interface FilteredGame {
 export const filterMeaningfulGames = async (
   userId: string
 ): Promise<FilteredGame[]> => {
-  const supabase = createClient();
+  const supabase = createClient;
 
   // 1. 유저의 모든 게임 조회
   const { data: userGames, error: gamesError } = await supabase

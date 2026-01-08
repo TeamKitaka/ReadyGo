@@ -12,7 +12,7 @@
  * - DB 직접 접근 (repository를 통해 접근)
  */
 
-import { createClient } from '@/lib/supabase/client';
+import { supabase as createClient } from '@/lib/supabase/client';
 import {
   type FilteredGame,
   calculateWeightedPlaytime,
@@ -120,7 +120,7 @@ export const analyzeGenreProfile = async (
     };
   }
 
-  const supabase = createClient();
+  const supabase = createClient;
 
   // 1. steam_game_info에서 장르 정보 조회
   const appIds = games.map((g) => g.appId);
@@ -240,7 +240,7 @@ export const updateSteamUserStats = async (
   const playStyle = classifyPlayStyle(activityMetrics);
 
   // 4. steam_user_stats 업데이트
-  const supabase = createClient();
+  const supabase = createClient;
 
   const { error } = await supabase.from('steam_user_stats').upsert(
     {

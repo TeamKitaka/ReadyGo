@@ -292,7 +292,7 @@ export const generateMatchReasons = (
         );
 
         if (commonGenres.length > 0) {
-          const genreName = commonGenres[0]; // 첫 번째 공통 장르
+          const [genreName] = commonGenres; // 첫 번째 공통 장르
           reasons.push({
             detail: {
               type: 'STEAM_GENRE',

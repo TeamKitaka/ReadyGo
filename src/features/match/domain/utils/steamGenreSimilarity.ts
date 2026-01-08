@@ -52,11 +52,11 @@ export const calculateGenreSimilarity = (
 
   // 교집합 (공통 장르)
   const intersection = new Set(
-    [...viewerSet].filter((genre) => targetSet.has(genre))
+    Array.from(viewerSet).filter((genre) => targetSet.has(genre))
   );
 
   // 합집합 (전체 장르, 중복 제거)
-  const union = new Set([...viewerSet, ...targetSet]);
+  const union = new Set([...Array.from(viewerSet), ...Array.from(targetSet)]);
 
   // Jaccard 유사도 계산
   const similarity = intersection.size / union.size;

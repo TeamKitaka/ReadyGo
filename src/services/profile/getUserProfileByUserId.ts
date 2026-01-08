@@ -1,6 +1,7 @@
 import * as userProfilesRepository from '@/repositories/userProfiles.repository';
 import * as userTraitsRepository from '@/repositories/userTraits.repository';
 import * as userPlaySchedulesRepository from '@/repositories/userPlaySchedules.repository';
+import * as steamUserStatsRepository from '@/repositories/steamUserStats.repository';
 import {
   ProfileCoreDTO,
   PlayScheduleItem,
@@ -76,11 +77,11 @@ export const getUserProfileByUserId = async (
   }
 
   // 4. steam_user_stats 조회
-  const { data: steamStatsRow, error: steamStatsError } = await client
-    .from('steam_user_stats')
-    .select('play_style, avg_weekly_playtime, main_genres')
-    .eq('user_id', targetUserId)
-    .maybeSingle();
+  const steamStatsResult = await steamUserStatsRepository.findByUserId(
+    client,
+    targetUserId
+  );
+  const { data: steamStatsRow, error: steamStatsError } = steamStatsResult;
 
   // 4-1. Repository 에러 처리 (에러는 무시하고 null로 처리)
   if (steamStatsError) {

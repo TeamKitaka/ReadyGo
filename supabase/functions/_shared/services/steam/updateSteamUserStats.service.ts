@@ -7,6 +7,7 @@
  */
 
 import type { DbClient } from '../../types/dbClient.ts';
+import * as steamUserStatsRepository from '../../repositories/steamUserStats.repository.ts';
 
 export type PlayStyle = 'casual' | 'regular' | 'hardcore';
 
@@ -292,19 +293,13 @@ export const updateSteamUserStats = async (
   console.log(`[UpdateStats] Play style: ${playStyle}`);
 
   // 5. steam_user_stats 업데이트
-  const { error } = await client.from('steam_user_stats').upsert(
-    {
-      user_id: userId,
-      play_style: playStyle,
-      avg_weekly_playtime: activityMetrics.avgWeeklyPlaytimeHours || 0,
-      main_genres: genreProfile.mainGenres,
-      active_time_slots: [],
-      updated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: 'user_id',
-    }
-  );
+  const { error } = await steamUserStatsRepository.upsert(client, {
+    userId,
+    playStyle,
+    avgWeeklyPlaytime: activityMetrics.avgWeeklyPlaytimeHours || 0,
+    mainGenres: genreProfile.mainGenres,
+    activeTimeSlots: [],
+  });
 
   if (error) {
     throw new Error(`Failed to update steam_user_stats: ${error.message}`);
