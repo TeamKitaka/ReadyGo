@@ -8,6 +8,7 @@ import Button from '@/commons/components/button';
 import Tag from '@/commons/components/tag';
 import Icon from '@/commons/components/icon';
 import { AnimalType } from '@/commons/constants/animal';
+import { useModal } from '@/commons/providers/modal/modal.provider';
 
 export interface PartyCardProps {
   /**
@@ -65,6 +66,22 @@ export interface PartyCardProps {
    * 파티 ID (data-testid 생성용)
    */
   partyId?: number | string;
+  /**
+   * 시작 날짜 (YYYY-MM-DD 형식)
+   */
+  startDate?: string;
+  /**
+   * 시작 시간 (HH:mm:ss 형식)
+   */
+  startTime?: string;
+  /**
+   * 생성 시간 (ISO 형식)
+   */
+  createdAt?: string;
+  /**
+   * 현재 사용자가 해당 파티에 참가했는지 여부
+   */
+  isParticipant?: boolean;
 }
 
 export default function Card({
@@ -80,8 +97,12 @@ export default function Card({
   onJoinClick,
   className = '',
   partyId,
+  startDate,
+  startTime,
+  isParticipant = false,
 }: PartyCardProps) {
   const router = useRouter();
+  const { openModal, closeModal } = useModal();
   const containerClasses = [styles.card, className].filter(Boolean).join(' ');
 
   // 표시할 아바타 개수 (최대 4개)
@@ -128,7 +149,7 @@ export default function Card({
     }
   };
 
-  const isDisabled = isStartTimePassed(_categories.startTime);
+  const isExpired = isStartTimePassed(_categories.startTime);
 
   // 시작 시간에서 "새벽"을 "오전"으로 변환하는 함수
   const formatStartTime = (startTime: string): string => {
@@ -162,15 +183,23 @@ export default function Card({
     : undefined;
 
   const handleDetailClick = () => {
-    // 시작 시간이 지났으면 클릭 무시
-    if (isDisabled) {
+    // 시작 시간이 지났고 참가하지 않은 경우 모달 표시
+    if (isExpired && !isParticipant) {
+      openModal({
+        variant: 'dual',
+        title: '알림',
+        description: '이미 종료된 파티입니다',
+        onConfirm: () => {
+          closeModal();
+        },
+      });
       return;
     }
-    // onJoinClick이 있으면 먼저 실행
+
+    // 참가한 경우 또는 아직 시작하지 않은 경우 상세 페이지로 이동
     if (onJoinClick) {
       onJoinClick();
     }
-    // partyId가 있으면 상세 페이지로 이동
     if (partyId) {
       router.push(`/party/${partyId}`);
     }
@@ -263,7 +292,9 @@ export default function Card({
               <span className={styles.categoryLabel}>시작 시간</span>
             </div>
             <span
-              className={styles.categoryValue}
+              className={`${styles.categoryValue} ${
+                isExpired ? styles.startTimeExpired : ''
+              }`}
               data-testid={startTimeTestId}
             >
               {formatStartTime(_categories.startTime)}
@@ -324,12 +355,12 @@ export default function Card({
 
         {/* Button 영역 */}
         <Button
-          variant={isDisabled ? 'outline' : 'primary'}
+          variant={isExpired ? 'secondary' : 'primary'}
           size="m"
           shape="round"
           className={styles.joinButton}
           onClick={handleDetailClick}
-          disabled={isDisabled}
+          disabled={false}
           data-testid={joinButtonTestId}
         >
           상세보기

@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import Icon from '@/commons/components/icon';
 import { URL_PATHS } from '@/commons/constants/url';
 import { useAuth } from '@/commons/providers/auth/auth.provider';
+import { useModal } from '@/commons/providers/modal/modal.provider';
 import ChatNull from './ui/chat-null/chatNull';
 import ChatRoom from './ui/chat-room/chatRoom';
 import MemberList from './ui/member-list/memberList';
@@ -24,6 +25,7 @@ export default function PartyDetail() {
   const { data, isLoading, error, refetch, currentUserRole } =
     usePartyBinding();
 
+  const { openModal, closeModal } = useModal();
   const { openUpdateModal } = useLinkUpdateModal({ onRefetch: refetch });
   const { openDeleteModal } = useDeleteParty({ onRefetch: refetch });
   const { joinParty } = useJoinParty({ onRefetch: refetch });
@@ -31,6 +33,28 @@ export default function PartyDetail() {
 
   // 작성자 여부 확인
   const isCreator = data?.creator_id === user?.id;
+
+  // 시작시간이 지났는지 확인하는 함수
+  const isStartTimeExpired = (): boolean => {
+    if (!data?.start_date_raw || !data?.start_time_raw) {
+      return false;
+    }
+
+    try {
+      // 원본 데이터 사용: start_date_raw는 "YYYY-MM-DD", start_time_raw는 "HH:mm:ss"
+      const startDateTime = new Date(
+        `${data.start_date_raw} ${data.start_time_raw}`
+      );
+      const now = new Date();
+
+      return startDateTime < now;
+    } catch (error) {
+      console.error('시작 시간 파싱 오류:', error);
+      return false;
+    }
+  };
+
+  const isExpired = isStartTimeExpired();
 
   const handleJoinClick = async () => {
     if (partyId) {
@@ -53,10 +77,32 @@ export default function PartyDetail() {
   };
 
   const handleEditClick = () => {
+    if (isExpired) {
+      openModal({
+        variant: 'dual',
+        title: '알림',
+        description: '이미 지난 파티입니다',
+        onConfirm: () => {
+          closeModal();
+        },
+      });
+      return;
+    }
     openUpdateModal();
   };
 
   const handleDeleteClick = () => {
+    if (isExpired) {
+      openModal({
+        variant: 'dual',
+        title: '알림',
+        description: '이미 지난 파티입니다',
+        onConfirm: () => {
+          closeModal();
+        },
+      });
+      return;
+    }
     openDeleteModal();
   };
 
@@ -126,7 +172,7 @@ export default function PartyDetail() {
       </div>
       <div className={styles.mainArea}>
         {currentUserRole === 'leader' || currentUserRole === 'member' ? (
-          <ChatRoom />
+          <ChatRoom isExpired={isExpired} />
         ) : (
           <ChatNull />
         )}
