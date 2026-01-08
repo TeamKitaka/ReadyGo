@@ -127,6 +127,14 @@ export const animalProfiles: Record<AnimalType, AnimalProfile> = {
     secondaryTraits: ['exploration'],
     avoidTraits: ['cooperation', 'leadership', 'social'],
   },
+
+  // ========== uninitialized 그룹 ==========
+  [AnimalType.unknown]: {
+    group: AnimalGroup.uninitialized,
+    dominantTraits: [],
+    secondaryTraits: [],
+    avoidTraits: [],
+  },
 } as const;
 
 // ============================================
