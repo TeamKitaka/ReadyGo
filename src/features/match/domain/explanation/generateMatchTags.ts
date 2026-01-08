@@ -122,16 +122,43 @@ export const generateMatchTags = (
     }
   }
 
-  // 3. 스타일유사 (Traits 유사도)
+  // 3. Target의 Trait 기반 태그 (구체적 성향 태그)
+  // Tag는 "상대방의 특성"을 나타냄
   const viewerTraits = context.viewer.traits?.traits;
   const targetTraits = context.target.traits?.traits;
-  if (viewerTraits && targetTraits) {
-    const similarityScore = calculateTraitsSimilarity(
-      viewerTraits,
-      targetTraits
+  if (targetTraits) {
+    // 3-1. Target의 가장 높은 trait 찾기
+    const traits = [
+      { key: 'cooperation', value: targetTraits.cooperation, label: '협동형' },
+      { key: 'exploration', value: targetTraits.exploration, label: '탐험형' },
+      { key: 'strategy', value: targetTraits.strategy, label: '전략형' },
+      { key: 'leadership', value: targetTraits.leadership, label: '리더형' },
+      { key: 'social', value: targetTraits.social, label: '사교형' },
+    ];
+    
+    // 가장 높은 trait 찾기
+    const topTrait = traits.reduce((max, trait) => 
+      trait.value > max.value ? trait : max
     );
-    if (similarityScore >= 70) {
-      tags.push({ label: '스타일유사' });
+    
+    // Target의 특성이 명확하면 (60 이상) 태그 추가
+    if (topTrait.value >= 60) {
+      tags.push({ label: topTrait.label });
+    }
+    
+    // 3-2. 상호보완적인 trait 찾기 (viewer가 낮고 target이 높은 경우)
+    if (viewerTraits) {
+      const complementaryTraits = traits.filter(trait => {
+        const viewerValue = viewerTraits[trait.key as keyof typeof viewerTraits];
+        const targetValue = trait.value;
+        // viewer가 50 이하이고, target이 70 이상이면 상호보완적
+        return viewerValue <= 50 && targetValue >= 70;
+      });
+      
+      // 상호보완적인 trait가 있으면 태그 추가
+      if (complementaryTraits.length > 0) {
+        tags.push({ label: '보완궁합' });
+      }
     }
   }
 
@@ -340,7 +367,7 @@ export const generateMatchTags = (
       '매너좋음',      // 2순위: 기본 매너 (긍정 이미지)
       '활동적',        // 3순위: 활동성 (일반적 표현)
       '꾸준함',        // 4순위: 지속성 (긍정 신호)
-      '스타일유사',    // 5순위: 일반적 궁합
+      '협동형',        // 5순위: 기본 성향 (구체적)
     ];
 
     // 이미 추가되지 않은 fallback 태그를 순서대로 추가
