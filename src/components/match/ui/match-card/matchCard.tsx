@@ -6,6 +6,9 @@ import Avatar from '@/commons/components/avatar';
 import Button from '@/commons/components/button';
 import Tag from '@/commons/components/tag';
 import { AnimalType } from '@/commons/constants/animal';
+import type { MatchReasonCoreDTO } from '@/commons/types/match/matchReasonCore.dto';
+import type { MatchTagCoreDTO } from '@/commons/types/match/matchTagCore.dto';
+import { buildMatchExplanationVM } from '../../utils/buildMatchExplanationVM';
 
 export interface MatchCardProps {
   /**
@@ -33,9 +36,21 @@ export interface MatchCardProps {
    */
   animalType?: string;
   /**
-   * 태그 목록
+   * 태그 목록 (하위 호환용)
    */
   tags: string[];
+  /**
+   * 매칭 이유 (CoreDTO)
+   */
+  reasons: MatchReasonCoreDTO[];
+  /**
+   * 매칭 태그 (CoreDTO)
+   */
+  tagsV2: MatchTagCoreDTO[];
+  /**
+   * Steam 연동 여부 (태그 강조도 계산용)
+   */
+  isSteamConnected: boolean;
   /**
    * 프로필 보기 버튼 클릭 핸들러
    */
@@ -58,6 +73,9 @@ export default function MatchCard({
   avatarUrl,
   animalType,
   tags,
+  reasons,
+  tagsV2,
+  isSteamConnected,
   onProfileClick,
   isProfileOpen = false,
   className = '',
@@ -65,6 +83,12 @@ export default function MatchCard({
   const containerClasses = [styles.container, className]
     .filter(Boolean)
     .join(' ');
+
+  // ViewModel 생성
+  const explanationVM = buildMatchExplanationVM(reasons, tagsV2, {
+    variant: 'list',
+    isSteamConnected,
+  });
 
   return (
     <div className={containerClasses}>
@@ -96,9 +120,13 @@ export default function MatchCard({
 
             {/* 태그 목록 */}
             <div className={styles.tagContainer}>
-              {tags.map((tag, index) => (
-                <Tag key={index} style="duotone" className={styles.tag}>
-                  {tag}
+              {explanationVM.tags.map((tag, index) => (
+                <Tag
+                  key={index}
+                  style={tag.emphasis === 'primary' ? 'primary' : 'duotone'}
+                  className={styles.tag}
+                >
+                  #{tag.label}
                 </Tag>
               ))}
             </div>

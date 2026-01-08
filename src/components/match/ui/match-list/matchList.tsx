@@ -35,6 +35,10 @@ export interface MatchListProps {
    */
   activeProfileUserId?: string;
   /**
+   * Steam 연동 여부 (태그 강조도 계산용)
+   */
+  isSteamConnected: boolean;
+  /**
    * 매칭률 필터 변경 핸들러
    */
   onMatchRateChange: (item: SelectboxItem) => void;
@@ -58,6 +62,7 @@ export default function MatchList({
   selectedStatus,
   isSidePanelOpen,
   activeProfileUserId,
+  isSteamConnected,
   onMatchRateChange,
   onStatusChange,
   onRefresh,
@@ -112,6 +117,9 @@ export default function MatchList({
               status={effectiveStatus}
               avatarUrl={match.avatarUrl}
               tags={match.tags}
+              reasons={match.reasons}
+              tagsV2={match.tagsV2}
+              isSteamConnected={isSteamConnected}
               onProfileClick={() => onProfileClick(match.userId)}
               isProfileOpen={activeProfileUserId === match.userId}
             />

@@ -8,25 +8,12 @@ import { useMatchFilters } from './hooks/useMatchFilters';
 import { useSidePanelStore } from '@/stores/sidePanel.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMatchResults } from '@/hooks/useMatchResults';
-import { MatchData } from './types/match.types';
+import { MatchData, MatchResultWithProfile } from './types/match.types';
 import { getEffectiveStatus } from '@/stores/user-status.store';
 import { usePresenceStore } from '@/stores/presence.store';
 import { useProfileBinding } from '@/components/overlay/profile/hooks/index.binding.hook';
 import { useSteamOAuth } from '@/components/auth/hooks/useSteamOAuth.hook';
 import { SteamAlert } from '@/commons/layout/ui/steamAlert';
-
-interface MatchResultWithProfile {
-  targetUserId: string;
-  finalScore: number;
-  isOnlineMatched: boolean;
-  availabilityHint: 'online' | 'offline' | 'unknown';
-  profile?: {
-    nickname: string;
-    avatarUrl?: string;
-    animalType?: string;
-  };
-  status?: 'online' | 'offline';
-}
 
 export default function Match() {
   // 현재 로그인한 사용자 정보
@@ -58,6 +45,8 @@ export default function Match() {
   // 스팀 연동 여부 확인 (로딩 완료 후에만 확인)
   const isSteamNotConnected =
     !profileBindingLoading && profileBindingData.isSteamConnected === false;
+  const isSteamConnected =
+    !profileBindingLoading && profileBindingData.isSteamConnected === true;
 
   // 스팀 알림 배너 표시 조건: 스팀 미연동 && 닫지 않음 && 로딩 완료
   // 매칭 페이지에서는 테스트 완료 여부와 관계없이 스팀 미연동 회원에게 표시
@@ -122,7 +111,9 @@ export default function Match() {
         matchRate: Math.round(result.finalScore),
         status: enrichedResult.status || 'offline',
         avatarUrl: enrichedResult.profile?.avatarUrl,
-        tags: [], // TODO: 나중에 user traits에서 가져오기
+        tags: [], // 하위 호환용 (곧 제거 예정)
+        reasons: enrichedResult.reasons || [], // CoreDTO 전달
+        tagsV2: enrichedResult.tags || [], // CoreDTO 전달
       };
     });
 
@@ -198,6 +189,7 @@ export default function Match() {
             selectedStatus={selectedStatus}
             isSidePanelOpen={isOpen}
             activeProfileUserId={targetUserId}
+            isSteamConnected={isSteamConnected}
             onMatchRateChange={handleMatchRateChange}
             onStatusChange={handleStatusChange}
             onRefresh={handleRefreshWithData}
