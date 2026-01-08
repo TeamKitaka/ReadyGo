@@ -88,39 +88,93 @@ export function formatReason(reason: MatchReasonCoreDTO): FormattedReason {
       }
 
     case 'ACTIVITY_PATTERN':
-      // commonTimeSlots 객체 배열을 읽기 쉽게 변환
+      // commonTimeSlots 패턴 분석하여 구체적 메시지 생성
       const slots = reason.detail.commonTimeSlots || [];
       if (slots.length === 0) {
         return { icon: '⏰', text: '비슷한 시간대에 활동해요' };
       }
       
-      // slots는 { dayType: string, timeSlot: string }[] 형태
-      // 예: [{ dayType: 'weekday', timeSlot: '22:00-00:00' }]
-      const timeSlotStr = slots[0]?.timeSlot;
-      if (!timeSlotStr || typeof timeSlotStr !== 'string') {
-        return { icon: '⏰', text: '비슷한 시간대에 활동해요' };
-      }
-      
-      const parts = timeSlotStr.split('-');
-      if (parts.length !== 2) {
-        return { icon: '⏰', text: '비슷한 시간대에 활동해요' };
-      }
-      
-      const [startTime, endTime] = parts;
-      const startParts = startTime.split(':');
-      const endParts = endTime.split(':');
-      
-      if (startParts.length === 0 || endParts.length === 0) {
-        return { icon: '⏰', text: '비슷한 시간대에 활동해요' };
-      }
-      
-      const startHour = startParts[0];
-      const endHour = endParts[0];
-      
-      return {
-        icon: '⏰',
-        text: `${startHour}시~${endHour}시에 함께 플레이할 수 있어요`,
+      // 시간대와 요일 패턴 분석
+      const timePatterns = {
+        morning: 0,    // 06-12
+        afternoon: 0,  // 12-18
+        evening: 0,    // 18-22
+        lateNight: 0,  // 22-04
       };
+      let weekendCount = 0;
+      let weekdayCount = 0;
+      
+      slots.forEach((slot) => {
+        const timeSlotStr = slot.timeSlot;
+        if (!timeSlotStr || typeof timeSlotStr !== 'string') return;
+        
+        const [startTime] = timeSlotStr.split('-');
+        const startHour = parseInt(startTime.split(':')[0], 10);
+        
+        // 시간대 카운트
+        if (startHour >= 6 && startHour < 12) {
+          timePatterns.morning++;
+        } else if (startHour >= 12 && startHour < 18) {
+          timePatterns.afternoon++;
+        } else if (startHour >= 18 && startHour < 22) {
+          timePatterns.evening++;
+        } else if (startHour >= 22 || startHour < 4) {
+          timePatterns.lateNight++;
+        }
+        
+        // 요일 카운트
+        if (slot.dayType === 'weekend') {
+          weekendCount++;
+        } else if (slot.dayType === 'weekday') {
+          weekdayCount++;
+        }
+      });
+      
+      // 패턴 기반 메시지 생성 (우선순위: 주말 > 유연 > 특정 시간대)
+      
+      // 1. 주말 중심
+      if (weekendCount > 0 && weekendCount >= weekdayCount) {
+        return {
+          icon: '🎮',
+          text: '주말에 함께 게임할 수 있어요',
+        };
+      }
+      
+      // 2. 유연형 (다양한 시간대)
+      const nonZeroPatterns = Object.values(timePatterns).filter(c => c > 0).length;
+      if (nonZeroPatterns >= 3) {
+        return {
+          icon: '🕐',
+          text: '자유롭게 시간 맞출 수 있어요',
+        };
+      }
+      
+      // 3. 특정 시간대 중심
+      const maxPattern = Math.max(...Object.values(timePatterns));
+      if (timePatterns.lateNight === maxPattern && maxPattern > 0) {
+        return {
+          icon: '🌙',
+          text: '심야에 함께 플레이할 수 있어요',
+        };
+      } else if (timePatterns.evening === maxPattern && maxPattern > 0) {
+        return {
+          icon: '🌆',
+          text: '저녁에 함께 플레이할 수 있어요',
+        };
+      } else if (timePatterns.afternoon === maxPattern && maxPattern > 0) {
+        return {
+          icon: '☀️',
+          text: '오후에 함께 플레이할 수 있어요',
+        };
+      } else if (timePatterns.morning === maxPattern && maxPattern > 0) {
+        return {
+          icon: '🌅',
+          text: '아침에 함께 플레이할 수 있어요',
+        };
+      }
+      
+      // 4. Fallback
+      return { icon: '⏰', text: '비슷한 시간대에 활동해요' };
 
     case 'ONLINE_NOW':
       return {

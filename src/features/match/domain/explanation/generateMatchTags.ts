@@ -367,10 +367,11 @@ export const generateMatchTags = (
     if (totalSlots >= 4 && nonZeroCounts >= 3 && maxTimeCount / totalSlots < 0.5) {
       tags.push({ label: '유연형' });
     }
-    // 16-3. 특정 시간대형 (가장 많은 시간대, 최소 2개 이상)
+    // 16-3. 특정 시간대형 (가장 많은 시간대, 최소 1개 이상)
+    // Cold Start 대응: 행동 기반이므로 schedule만 있으면 태그 생성
     else {
       const maxCount = Math.max(...Object.values(timeSlotCounts));
-      if (maxCount >= 2) {
+      if (maxCount >= 1) {
         if (timeSlotCounts.lateNight === maxCount) {
           tags.push({ label: '올빼미형' });
         } else if (timeSlotCounts.evening === maxCount) {
