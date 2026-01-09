@@ -144,5 +144,3 @@ export const updatePartyPostService = async (
     );
   }
 };
-
-

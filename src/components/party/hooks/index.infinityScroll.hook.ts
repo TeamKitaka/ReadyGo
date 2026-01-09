@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { PartyCardProps } from '../ui/card/card';
 import { AnimalType } from '@/commons/constants/animal';
 import { useAuth } from '@/commons/providers/auth/auth.provider';

@@ -97,8 +97,8 @@ export default function Card({
   onJoinClick,
   className = '',
   partyId,
-  startDate,
-  startTime,
+  startDate: _startDate,
+  startTime: _startTime,
   isParticipant = false,
 }: PartyCardProps) {
   const router = useRouter();

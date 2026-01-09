@@ -26,5 +26,3 @@ export const usePartyTab = (): UsePartyTabReturn => {
     setActiveTab,
   };
 };
-
-

@@ -33,5 +33,3 @@ export const useFilter = (): UseFilterReturn => {
     reset,
   };
 };
-
-

@@ -56,8 +56,7 @@ export default function Avatar({
 
   // unknown 아바타인지 확인 (imageUrl 또는 animalType으로 판단)
   const isUnknownAvatar =
-    imageSrc.includes('unknown.svg') ||
-    animalType === AnimalType.unknown;
+    imageSrc.includes('unknown.svg') || animalType === AnimalType.unknown;
 
   const wrapperClasses = [styles.wrapper, styles[`size-${size}`], className]
     .filter(Boolean)
