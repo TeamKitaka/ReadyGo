@@ -34,70 +34,279 @@ import type {
 const toReasonViewModel = (
   reasonDTO: MatchReasonCoreDTO
 ): MatchReasonViewModel => {
-  const { detail } = reasonDTO;
+  const { detail, isBaseline } = reasonDTO;
 
+  // Baseline reason (Domain이 의미 없다고 판단한 것)
+  if (isBaseline) {
+    return {
+      type: 'BASELINE',
+      icon: '✨',
+      label: '새로운만남',
+      primaryText: '새로운 만남의 시작이에요',
+      isHighlight: false,
+      isFallback: true,
+    };
+  }
+
+  // 의미 있는 reason들
   switch (detail.type) {
-    case 'COMMON_GAME':
+    case 'COMMON_GAME': {
+      const gameNames = detail.topGames?.slice(0, 2).join(', ') || '';
       return {
         type: detail.type,
-        primaryText: `공통 게임 ${detail.gameCount}개 보유`,
-        secondaryText:
-          detail.topGames.length > 0 ? detail.topGames.join(', ') : undefined,
+        icon: '🎮',
+        label: '동일게임',
+        primaryText: `${detail.gameCount}개의 같은 게임을 플레이해요`,
+        secondaryText: gameNames || `${detail.gameCount}개`,
         isHighlight: detail.gameCount >= 3,
+      };
+    }
+
+    case 'STYLE_SIMILARITY': {
+      // topTrait에 따라 구체적인 메시지 제공
+      const topTrait = detail.topTrait;
+      
+      switch (topTrait) {
+        case 'cooperation':
+          return {
+            type: detail.type,
+            icon: '🤝',
+            label: '협동적',
+            primaryText: '팀 플레이를 중요하게 여겨요',
+            secondaryText: '협동 성향이 높아요',
+            isHighlight: true,
+          };
+        
+        case 'exploration':
+          return {
+            type: detail.type,
+            icon: '🧭',
+            label: '탐험가',
+            primaryText: '새로운 콘텐츠를 좋아해요',
+            secondaryText: '탐험 성향이 높아요',
+            isHighlight: true,
+          };
+        
+        case 'strategy':
+          return {
+            type: detail.type,
+            icon: '🎯',
+            label: '효율러',
+            primaryText: '최적화된 플레이를 선호해요',
+            secondaryText: '전략 성향이 높아요',
+            isHighlight: true,
+          };
+        
+        case 'leadership':
+          return {
+            type: detail.type,
+            icon: '👑',
+            label: '리더형',
+            primaryText: '팀을 이끄는 역할을 자주 맡아요',
+            secondaryText: '리더십이 뛰어나요',
+            isHighlight: true,
+          };
+        
+        case 'social':
+          return {
+            type: detail.type,
+            icon: '💬',
+            label: '소통왕',
+            primaryText: '소통이 활발해요',
+            secondaryText: '사교성이 높아요',
+            isHighlight: true,
+          };
+        
+        default: {
+          // fallback (안전장치)
+          const traitLabel = getTraitLabel(topTrait);
+          return {
+            type: detail.type,
+            icon: '🤝',
+            label: '스타일유사',
+            primaryText: `${traitLabel} 성향이 비슷해요`,
+            isHighlight: detail.similarityScore >= 70,
+          };
+        }
+      }
+    }
+
+    case 'ACTIVITY_PATTERN': {
+      // viewerTimeType과 targetTimeType이 있으면 관계 기반 메시지 생성
+      const viewerType = detail.viewerTimeType;
+      const targetType = detail.targetTimeType;
+      
+      if (viewerType && targetType) {
+        // 1. 같은 타입 (가장 강력)
+        if (viewerType === targetType) {
+          switch (viewerType) {
+            case 'morning':
+              return {
+                type: detail.type,
+                icon: '🌅',
+                label: '아침형',
+                primaryText: '주로 오전에 활동해요',
+                secondaryText: '생활 리듬이 비슷해요',
+                isHighlight: true,
+              };
+            case 'afternoon':
+              return {
+                type: detail.type,
+                icon: '☀️',
+                label: '오후형',
+                primaryText: '오후 시간대에 자주 접속해요',
+                secondaryText: '생활 패턴이 유사해요',
+                isHighlight: true,
+              };
+            case 'evening':
+              return {
+                type: detail.type,
+                icon: '🌆',
+                label: '저녁형',
+                primaryText: '퇴근 후 플레이 시간이 잘 맞아요',
+                secondaryText: '저녁 시간대 일치',
+                isHighlight: true,
+              };
+            case 'lateNight':
+              return {
+                type: detail.type,
+                icon: '🦉',
+                label: '올빼미',
+                primaryText: '밤에 활발하게 플레이해요',
+                secondaryText: '심야 시간대 일치',
+                isHighlight: true,
+              };
+            case 'weekend':
+              return {
+                type: detail.type,
+                icon: '🎮',
+                label: '주말형',
+                primaryText: '주말에 함께 게임하기 좋아요',
+                secondaryText: '주말 집중 플레이',
+                isHighlight: true,
+              };
+            case 'flexible':
+              return {
+                type: detail.type,
+                icon: '🕐',
+                label: '유연함',
+                primaryText: '시간 조율이 쉬워요',
+                secondaryText: '유연한 시간대',
+                isHighlight: true,
+              };
+          }
+        }
+        
+        // 2. 보완형 (설득력 있음)
+        const isEveningLateNight =
+          (viewerType === 'evening' && targetType === 'lateNight') ||
+          (viewerType === 'lateNight' && targetType === 'evening');
+        
+        if (isEveningLateNight) {
+          return {
+            type: detail.type,
+            icon: '🌙',
+            label: '시간대보완',
+            primaryText: '저녁부터 밤까지 자연스럽게 이어져요',
+            secondaryText: '보완적 시간대',
+            isHighlight: true,
+          };
+        }
+        
+        const hasFlexible = viewerType === 'flexible' || targetType === 'flexible';
+        if (hasFlexible) {
+          return {
+            type: detail.type,
+            icon: '🔄',
+            label: '유연함',
+            primaryText: '시간대에 맞춰 함께 플레이하기 좋아요',
+            secondaryText: '유연한 조율',
+            isHighlight: true,
+          };
+        }
+        
+        // 3. 다른 타입이지만 긍정적으로 표현 (절대 감점 금지)
+        return {
+          type: detail.type,
+          icon: '⏰',
+          label: '여유형',
+          primaryText: '각자의 시간대에서 자유롭게 즐기는 스타일이에요',
+          isHighlight: false,
+        };
+      }
+      
+      // Fallback: viewerTimeType이 없는 경우
+      return {
+        type: detail.type,
+        icon: '⏰',
+        label: '시간대일치',
+        primaryText: '비슷한 시간대에 활동해요',
+        isHighlight: detail.patternScore >= 70,
+      };
+    }
+
+    case 'ONLINE_NOW':
+      return {
+        type: detail.type,
+        icon: '🟢',
+        label: '지금온라인',
+        primaryText: '지금 온라인 상태예요',
+        isHighlight: true,
       };
 
     case 'PLAY_TIME':
       return {
         type: detail.type,
-        primaryText: `플레이 시간 ${detail.matchScore}% 일치`,
+        icon: '⏱️',
+        label: '플타임유사',
+        primaryText: `플레이 시간이 ${detail.matchScore}% 비슷해요`,
         isHighlight: detail.matchScore >= 70,
-      };
-
-    case 'STYLE_SIMILARITY':
-      const traitLabel = getTraitLabel(detail.topTrait);
-      return {
-        type: detail.type,
-        primaryText: `플레이 스타일 ${detail.similarityScore}% 유사`,
-        secondaryText: `${traitLabel} 성향 일치`,
-        isHighlight: detail.similarityScore >= 70,
-      };
-
-    case 'PARTY_EXPERIENCE':
-      return {
-        type: detail.type,
-        primaryText: `파티 경험 ${detail.experienceScore}% 유사`,
-        isHighlight: detail.experienceScore >= 70,
       };
 
     case 'RELIABILITY':
       return {
         type: detail.type,
-        primaryText: `신뢰도 ${detail.reliabilityScore}점`,
+        icon: '🛡️',
+        label: '매너좋음',
+        primaryText: `신뢰도 점수 ${detail.reliabilityScore}점`,
         isHighlight: detail.reliabilityScore >= 70,
       };
 
-    case 'ONLINE_NOW':
+    case 'STEAM_GENRE': {
+      const genre = detail.genre || '공통';
       return {
         type: detail.type,
-        primaryText: detail.isOnline ? '지금 온라인' : '오프라인',
-        isHighlight: detail.isOnline,
+        icon: '🎵',
+        label: '장르일치',
+        primaryText: `${genre} 장르를 함께 즐겨요`,
+        isHighlight: true,
+      };
+    }
+
+    case 'STEAM_PLAYSTYLE':
+      return {
+        type: detail.type,
+        icon: '🕹️',
+        label: '플스타일유사',
+        primaryText: '플레이 스타일이 잘 맞아요',
+        isHighlight: true,
       };
 
-    case 'ACTIVITY_PATTERN':
+    case 'PARTY_EXPERIENCE':
       return {
         type: detail.type,
-        primaryText: `활동 패턴 ${detail.patternScore}% 일치`,
-        secondaryText:
-          detail.commonTimeSlots.length > 0
-            ? detail.commonTimeSlots.join(', ')
-            : undefined,
-        isHighlight: detail.patternScore >= 70,
+        icon: '👥',
+        label: '파티러버',
+        primaryText: '파티 플레이 경험이 풍부해요',
+        isHighlight: detail.experienceScore >= 70,
       };
 
     default:
       return {
         type: 'UNKNOWN',
-        primaryText: '알 수 없는 이유',
+        icon: '💡',
+        label: '기타',
+        primaryText: '함께하면 즐거울 거예요',
         isHighlight: false,
       };
   }

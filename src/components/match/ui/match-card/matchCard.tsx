@@ -8,7 +8,7 @@ import Tag from '@/commons/components/tag';
 import { AnimalType } from '@/commons/constants/animal';
 import type { MatchReasonCoreDTO } from '@/commons/types/match/matchReasonCore.dto';
 import type { MatchTagCoreDTO } from '@/commons/types/match/matchTagCore.dto';
-import { buildMatchExplanationVM } from '../../utils/buildMatchExplanationVM';
+import { buildMatchExplanationVM } from '@/viewmodels/match/buildMatchExplanationVM';
 
 export interface MatchCardProps {
   /**
@@ -123,7 +123,7 @@ export default function MatchCard({
               {explanationVM.tags.map((tag, index) => (
                 <Tag
                   key={index}
-                  style={tag.emphasis === 'primary' ? 'primary' : 'duotone'}
+                  style={tag.emphasis === 'primary' ? 'rectangle' : 'duotone'}
                   className={styles.tag}
                 >
                   {tag.label}

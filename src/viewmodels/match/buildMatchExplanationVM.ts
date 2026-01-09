@@ -1,12 +1,12 @@
 import type { MatchReasonCoreDTO } from '@/commons/types/match/matchReasonCore.dto';
 import type { MatchTagCoreDTO } from '@/commons/types/match/matchTagCore.dto';
-import type { MatchCardExplanationVM } from '../types/matchExplanation.types';
+import type { MatchReasonViewModel } from './MatchResultViewModel';
 import {
   sortReasonsByPriority,
   pickTopReasons,
   pickTopTags,
-} from './explanationHelpers';
-import { formatReason, FALLBACK_REASONS } from './reasonFormatter';
+} from './utils/sortAndFilterHelpers';
+import { toMatchResultViewModel } from './toMatchResultViewModel';
 
 /**
  * MatchCardExplanationVM 생성 함수
@@ -28,6 +28,45 @@ interface BuildMatchExplanationVMOptions {
    */
   isSteamConnected: boolean;
 }
+
+/**
+ * Explanation ViewModel
+ */
+export interface MatchCardExplanationVM {
+  headlineReasons: Array<MatchReasonViewModel & { isFallback?: boolean }>;
+  tags: Array<{ label: string; emphasis: 'primary' | 'secondary' }>;
+  shortSummary?: string;
+}
+
+/**
+ * Fallback reasons (Domain에서 온 것이 아닌 UI 전용)
+ */
+const FALLBACK_REASONS: MatchReasonViewModel[] = [
+  {
+    type: 'FALLBACK',
+    icon: '✨',
+    label: '새로운조합',
+    primaryText: '새로운 조합이라 더 재밌을 수 있어요',
+    isHighlight: false,
+    isFallback: true,
+  },
+  {
+    type: 'FALLBACK',
+    icon: '🎲',
+    label: '취향발견',
+    primaryText: '함께 플레이하며 취향을 더 맞춰갈 수 있어요',
+    isHighlight: false,
+    isFallback: true,
+  },
+  {
+    type: 'FALLBACK',
+    icon: '📈',
+    label: '성장가능',
+    primaryText: '프로필이 채워질수록 더 정교해져요',
+    isHighlight: false,
+    isFallback: true,
+  },
+];
 
 /**
  * Tag label을 reason type으로 매핑 (강조도 계산용)
@@ -89,23 +128,26 @@ export function buildMatchExplanationVM(
   const sortedReasons = sortReasonsByPriority(reasons);
   const selectedReasons = pickTopReasons(sortedReasons, reasonCount);
 
-  // 변환
-  const headlineReasons = selectedReasons.map((reason) => {
-    const formatted = formatReason(reason);
-    return {
-      ...formatted,
-      isFallback: reason.isBaseline, // Domain의 isBaseline을 UI에 전달
-    };
-  });
+  // toMatchResultViewModel을 사용하여 변환
+  const mockCoreDTO = {
+    userId: '',
+    targetUserId: '',
+    similarityScore: 0,
+    reasons: selectedReasons,
+    tags: [],
+  };
+  
+  const viewModelResult = toMatchResultViewModel(mockCoreDTO);
+  const headlineReasons = viewModelResult.reasons.map((reason) => ({
+    ...reason,
+    isFallback: reason.isFallback,
+  }));
 
   // Fallback 채우기 (Domain이 부족한 경우)
   let fallbackIndex = 0;
   while (headlineReasons.length < reasonCount) {
     const fallback = FALLBACK_REASONS[fallbackIndex % FALLBACK_REASONS.length];
-    headlineReasons.push({
-      ...fallback,
-      isFallback: true,
-    });
+    headlineReasons.push(fallback);
     fallbackIndex++;
   }
 
