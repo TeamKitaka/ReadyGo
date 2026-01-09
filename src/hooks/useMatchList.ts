@@ -20,6 +20,7 @@ import { useState, useEffect, useCallback } from 'react';
 export interface MatchListOptions {
   minScore?: number;
   statusFilter?: 'all' | 'online' | 'offline';
+  refresh?: boolean; // 강제 새로고침 (캐시 스킵)
 }
 
 /**
@@ -41,6 +42,7 @@ export const useMatchList = () => {
       const params = new URLSearchParams();
       if (options.minScore) params.set('minScore', String(options.minScore));
       if (options.statusFilter) params.set('status', options.statusFilter);
+      if (options.refresh) params.set('refresh', 'true');
       
       const response = await fetch(`/api/match/list?${params.toString()}`, {
         credentials: 'include',

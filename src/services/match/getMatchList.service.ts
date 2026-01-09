@@ -31,6 +31,7 @@ export interface MatchListOptions {
   minScore?: number;
   statusFilter?: 'all' | 'online' | 'offline';
   limit?: number;
+  refresh?: boolean; // 강제 새로고침 (캐시 스킵)
 }
 
 /**
@@ -48,17 +49,22 @@ export async function getMatchList(
 ) {
   const minScore = options.minScore ?? DEFAULT_MIN_SCORE;
   const limit = options.limit ?? 12;
+  const refresh = options.refresh ?? false;
   
-  // 1. 캐시 확인 (Repository에서 5분 TTL 강제)
-  const { data: cached } = await matchCacheRepo.findByViewerAndContext(
-    client,
-    viewerId,
-    CACHE_CONTEXT
-  );
-  
-  if (cached && cached.length >= limit) {
-    console.debug('[getMatchList] Using cached results:', cached.length);
-    return await enrichAndSort(client, cached.slice(0, limit), options.statusFilter);
+  // 1. 캐시 확인 (refresh=true일 때는 스킵)
+  if (!refresh) {
+    const { data: cached } = await matchCacheRepo.findByViewerAndContext(
+      client,
+      viewerId,
+      CACHE_CONTEXT
+    );
+    
+    if (cached && cached.length >= limit) {
+      console.debug('[getMatchList] Using cached results:', cached.length);
+      return await enrichAndSort(client, cached.slice(0, limit), options.statusFilter);
+    }
+  } else {
+    console.debug('[getMatchList] Refresh mode: skipping cache');
   }
   
   // 2. 후보 조회

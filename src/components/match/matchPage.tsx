@@ -165,10 +165,11 @@ export default function Match() {
   const handleRefreshWithData = () => {
     handleRefresh(); // useMatchFilters의 내부 로직 (현재는 TODO)
     
-    // 최신 필터 옵션으로 서버에 재요청
+    // 최신 필터 옵션으로 서버에 재요청 (캐시 스킵 + 실시간 계산)
     refetch({
       minScore: selectedMatchRate ? Number(selectedMatchRate) : undefined,
       statusFilter: selectedStatus as 'all' | 'online' | 'offline' || 'all',
+      refresh: true, // 🔥 캐시 스킵, 강제 실시간 계산
     });
   };
 
