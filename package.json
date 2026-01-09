@@ -16,7 +16,8 @@
     "test:watch": "vitest --project=unit --watch",
     "test:e2e": "playwright test",
     "supabase:types": "supabase gen types --linked --schema public > supabase/types/database.types.ts",
-    "seed:users": "tsx scripts/seed-test-users.ts"
+    "seed:users": "tsx scripts/seed-test-users.ts",
+    "seed:steam": "tsx scripts/link-steam-to-test-users.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
