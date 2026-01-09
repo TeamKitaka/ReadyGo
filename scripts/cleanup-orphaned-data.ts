@@ -25,14 +25,50 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   },
 });
 
+async function getAllAuthUsers() {
+  console.log('🔍 모든 auth.users 조회 중 (페이지네이션 처리)...');
+  
+  const allUsers: any[] = [];
+  let page = 1;
+  let hasMore = true;
+  
+  while (hasMore) {
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: 1000, // 한 페이지에 최대 1000명
+    });
+    
+    if (error) {
+      console.error('❌ 조회 실패:', error.message);
+      throw error;
+    }
+    
+    if (data.users && data.users.length > 0) {
+      allUsers.push(...data.users);
+      console.log(`   페이지 ${page}: ${data.users.length}명`);
+      page++;
+      
+      // 더 이상 데이터가 없으면 중단
+      if (data.users.length < 1000) {
+        hasMore = false;
+      }
+    } else {
+      hasMore = false;
+    }
+  }
+  
+  console.log(`✅ 총 ${allUsers.length}명 조회 완료`);
+  return allUsers;
+}
+
 async function main() {
   console.log('🧹 고아 데이터 정리 시작...');
   console.log('');
 
   try {
-    // 1. 모든 auth.users 조회
-    const { data: authData } = await supabase.auth.admin.listUsers();
-    const validUserIds = new Set(authData?.users?.map(u => u.id) || []);
+    // 1. 모든 auth.users 조회 (페이지네이션 처리)
+    const allUsers = await getAllAuthUsers();
+    const validUserIds = new Set(allUsers.map(u => u.id));
     
     console.log(`📊 유효한 auth.users: ${validUserIds.size}명`);
     console.log('');

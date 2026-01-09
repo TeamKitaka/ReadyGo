@@ -27,7 +27,8 @@
     "seed:fix-settings": "tsx scripts/fix-missing-settings-status.ts",
     "seed:debug-user": "tsx scripts/debug-user.ts",
     "seed:cleanup": "tsx scripts/cleanup-orphaned-data.ts",
-    "seed:check-auth": "tsx scripts/check-auth-users.ts"
+    "seed:check-auth": "tsx scripts/check-auth-users.ts",
+    "seed:restore": "tsx scripts/restore-user-profiles.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
