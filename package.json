@@ -25,7 +25,8 @@
     "seed:add-extra": "tsx scripts/add-extra-users.ts",
     "seed:check": "tsx scripts/check-data-consistency.ts",
     "seed:fix-settings": "tsx scripts/fix-missing-settings-status.ts",
-    "seed:debug-user": "tsx scripts/debug-user.ts"
+    "seed:debug-user": "tsx scripts/debug-user.ts",
+    "seed:cleanup": "tsx scripts/cleanup-orphaned-data.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
