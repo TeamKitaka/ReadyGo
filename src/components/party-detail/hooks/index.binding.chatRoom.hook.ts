@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import React from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 import { supabase as baseSupabase } from '@/lib/supabase/client';
@@ -55,6 +56,15 @@ export interface UseChatRoomReturn {
   sendMessage: (content: string) => Promise<void>;
   isLoading: boolean;
   error: string | null;
+  scrollToBottom: (containerRef: React.RefObject<HTMLDivElement>) => void;
+  shouldShowScrollToBottomButton: (
+    containerRef: React.RefObject<HTMLDivElement>
+  ) => boolean;
+  shouldScrollToBottom: boolean;
+  clearScrollTriggers: () => void;
+  setMessageListContainerRef: (
+    ref: React.RefObject<HTMLDivElement>
+  ) => void;
 }
 
 /**
@@ -179,31 +189,151 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
   const seenMessageIdsRef = useRef<Set<number>>(new Set());
   const isSendingRef = useRef(false); // 중복 전송 방지
 
+  // 스크롤 관련 상태 및 ref
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
+  const messageListContainerRef =
+    useRef<React.RefObject<HTMLDivElement> | null>(null);
+  const shouldAutoScrollRef = useRef(true); // 자동 스크롤 여부 (사용자가 수동 스크롤 시 false)
+  const isInitialLoadRef = useRef(false); // 초기 로드 플래그
+
+  /**
+   * 최하단으로 스크롤
+   */
+  const scrollToBottom = useCallback(
+    (containerRef: React.RefObject<HTMLDivElement>) => {
+      if (!containerRef.current) {
+        return;
+      }
+
+      // DOM 렌더링 완료 후 스크롤
+      requestAnimationFrame(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
+      });
+    },
+    []
+  );
+
+  /**
+   * 최하단 이동 버튼 표시 여부 확인
+   * 스크롤이 전체 길이의 50% 이상 올라갔을 때만 표시
+   */
+  const shouldShowScrollToBottomButton = useCallback(
+    (containerRef: React.RefObject<HTMLDivElement>): boolean => {
+      if (!containerRef.current) {
+        return false;
+      }
+
+      const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+
+      // 스크롤 가능한 전체 높이 계산
+      const scrollableHeight = scrollHeight - clientHeight;
+
+      // 스크롤 가능한 높이가 없으면 버튼 표시 안 함 (모든 메시지가 화면에 보임)
+      if (scrollableHeight <= 0) {
+        return false;
+      }
+
+      // 현재 스크롤 위치가 하단에서 얼마나 떨어져 있는지 계산
+      const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+
+      // 하단까지의 거리가 전체 스크롤 가능한 높이의 50% 이상일 때만 버튼 표시
+      const threshold = scrollableHeight * 0.5;
+      return distanceFromBottom > threshold;
+    },
+    []
+  );
+
+  /**
+   * 스크롤이 최하단에 있는지 확인
+   */
+  const isAtBottom = useCallback(
+    (containerRef: React.RefObject<HTMLDivElement>): boolean => {
+      if (!containerRef.current) {
+        return false;
+      }
+
+      const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+
+      // 스크롤 가능한 전체 높이 계산
+      const scrollableHeight = scrollHeight - clientHeight;
+
+      // 스크롤 가능한 높이가 없으면 최하단으로 간주
+      if (scrollableHeight <= 0) {
+        return true;
+      }
+
+      // 현재 스크롤 위치가 하단에서 얼마나 떨어져 있는지 계산
+      const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+
+      // 하단까지의 거리가 50px 이하이면 최하단으로 간주
+      return distanceFromBottom <= 50;
+    },
+    []
+  );
+
+  /**
+   * 스크롤 트리거 초기화
+   */
+  const clearScrollTriggers = useCallback(() => {
+    setShouldScrollToBottom(false);
+  }, []);
+
+  /**
+   * 메시지 리스트 컨테이너 ref 설정
+   */
+  const setMessageListContainerRef = useCallback(
+    (ref: React.RefObject<HTMLDivElement>) => {
+      messageListContainerRef.current = ref;
+    },
+    []
+  );
+
   /**
    * 새 메시지 처리 (중복 제거 포함)
    */
-  const handleNewMessage = useCallback((message: PartyMessage) => {
-    // 중복 체크 (Set 기반)
-    if (seenMessageIdsRef.current.has(message.id)) {
-      return;
-    }
-    seenMessageIdsRef.current.add(message.id);
+  const handleNewMessage = useCallback(
+    (message: PartyMessage) => {
+      // 중복 체크 (Set 기반)
+      if (seenMessageIdsRef.current.has(message.id)) {
+        return;
+      }
+      seenMessageIdsRef.current.add(message.id);
 
-    setMessages((prev) => {
-      // 이미 존재하는지 다시 확인 (race condition 방지)
-      if (prev.some((m) => m.id === message.id)) {
-        return prev;
+      // 자신이 보낸 메시지이거나 사용자가 최하단에 있을 때 자동 스크롤
+      if (message.sender_id === user?.id) {
+        shouldAutoScrollRef.current = true;
+        setShouldScrollToBottom(true);
+      } else if (shouldAutoScrollRef.current) {
+        // 상대방 메시지이고 자동 스크롤이 활성화되어 있으면 최하단 스크롤
+        if (messageListContainerRef.current?.current) {
+          if (isAtBottom(messageListContainerRef.current)) {
+            setShouldScrollToBottom(true);
+          } else {
+            // 사용자가 위로 스크롤한 경우 자동 스크롤 비활성화
+            shouldAutoScrollRef.current = false;
+          }
+        }
       }
 
-      // created_at 기준으로 정렬된 위치에 삽입
-      const newMessages = [...prev, message];
-      return newMessages.sort((a, b) => {
-        const aTime = a.created_at || '';
-        const bTime = b.created_at || '';
-        return aTime.localeCompare(bTime);
+      setMessages((prev) => {
+        // 이미 존재하는지 다시 확인 (race condition 방지)
+        if (prev.some((m) => m.id === message.id)) {
+          return prev;
+        }
+
+        // created_at 기준으로 정렬된 위치에 삽입
+        const newMessages = [...prev, message];
+        return newMessages.sort((a, b) => {
+          const aTime = a.created_at || '';
+          const bTime = b.created_at || '';
+          return aTime.localeCompare(bTime);
+        });
       });
-    });
-  }, []);
+    },
+    [user?.id, isAtBottom]
+  );
 
   /**
    * postgres_changes 채널 정리 함수
@@ -406,6 +536,10 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
             );
           });
         }
+
+        // 초기 로드 완료 후 최하단 스크롤 트리거
+        isInitialLoadRef.current = false;
+        setShouldScrollToBottom(true);
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : '메시지 로드에 실패했습니다.';
@@ -652,6 +786,10 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     setIsLoading(true);
     // error 상태 초기화
     setError(null);
+    // 스크롤 관련 상태 초기화
+    isInitialLoadRef.current = false;
+    shouldAutoScrollRef.current = true;
+    setShouldScrollToBottom(false);
 
     // 파티 멤버 프로필 정보와 메시지를 모두 로드한 후 구독 시작
     // 이렇게 하면 새 메시지가 도착하기 전에 프로필 정보가 준비되어
@@ -766,5 +904,10 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     sendMessage,
     isLoading,
     error,
+    scrollToBottom,
+    shouldShowScrollToBottomButton,
+    shouldScrollToBottom,
+    clearScrollTriggers,
+    setMessageListContainerRef,
   };
 };
