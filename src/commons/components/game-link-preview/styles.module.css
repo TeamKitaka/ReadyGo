@@ -1,0 +1,71 @@
+.container {
+  width: 100%;
+  max-width: 400px;
+  background-color: var(--color-bg-primary);
+  border-radius: var(--border-radius-12, 12px);
+  overflow: hidden;
+  border: 1px solid var(--color-border-secondary);
+}
+
+.imageContainer {
+  width: 100%;
+  aspect-ratio: 460 / 215;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--color-bg-secondary);
+}
+
+.content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--typo-heading-md-font-family);
+  font-size: var(--typo-heading-md-font-size);
+  line-height: var(--typo-heading-md-line-height);
+  font-weight: var(--typo-heading-md-font-weight);
+  color: var(--color-text-primary);
+}
+
+.description {
+  margin: 0;
+  font-family: var(--typo-body-md-font-family);
+  font-size: var(--typo-body-md-font-size);
+  line-height: var(--typo-body-md-line-height);
+  font-weight: var(--typo-body-md-font-weight);
+  color: var(--color-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gameStartButton {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.loadingContainer {
+  width: 100%;
+  max-width: 400px;
+  background-color: var(--color-bg-primary);
+  border-radius: var(--border-radius-12, 12px);
+  padding: 16px;
+  border: 1px solid var(--color-border-secondary);
+}
+
+.loadingText {
+  margin: 0;
+  font-family: var(--typo-body-md-font-family);
+  font-size: var(--typo-body-md-font-size);
+  line-height: var(--typo-body-md-line-height);
+  font-weight: var(--typo-body-md-font-weight);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+

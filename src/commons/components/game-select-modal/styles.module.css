@@ -1,0 +1,196 @@
+.modalContainer {
+  display: flex;
+  flex-direction: column;
+  width: 600px;
+  background-color: var(--color-bg-primary);
+  border-radius: var(--border-radius-16, 16px);
+  border: 1px solid var(--color-border-secondary);
+  box-shadow:
+    0 10px 15px -3px var(--color-shadow-bold),
+    0 4px 6px -4px var(--color-shadow-bold);
+  overflow: hidden;
+  max-height: 90vh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  border-bottom: 1px solid var(--color-border-secondary);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--typo-heading-md-font-family);
+  font-size: var(--typo-heading-md-font-size);
+  line-height: var(--typo-heading-md-line-height);
+  font-weight: var(--typo-heading-md-font-weight);
+  color: var(--color-text-primary);
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-icon-interactive-secondary);
+  border-radius: var(--border-radius-8, 8px);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.closeButton:hover {
+  background-color: var(--color-bg-interactive-teritiary-hover);
+  color: var(--color-icon-interactive-primary);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 24px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.searchWrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.searchWrapperWithDropdown {
+  margin-bottom: 248px;
+}
+
+.gameOptionsGroup {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+  padding: 8px 0;
+  border-radius: var(--border-radius-12, 12px);
+  overflow: hidden;
+  box-shadow:
+    0 2px 8px 0 rgba(0, 0, 0, 0.12),
+    0 0 2px 0 rgba(0, 0, 0, 0.08);
+  width: 100%;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-secondary);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.gameOptionItem {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  height: 36px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.gameOptionItem:hover {
+  background-color: var(--color-transparent-12);
+}
+
+.gameOptionItem.selected {
+  background-color: var(--color-transparent-12);
+}
+
+.checkIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: var(--color-icon-interactive-primary);
+}
+
+.gameOptionValue {
+  flex: 1 1 0%;
+  min-width: 0;
+  margin-left: 22px;
+  font-family: var(--typo-body-lg-font-family);
+  font-size: var(--typo-body-lg-font-size);
+  line-height: var(--typo-body-lg-line-height);
+  font-weight: var(--typo-body-lg-font-weight);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.errorMessage {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--typo-body-sm-font-family);
+  font-size: var(--typo-body-sm-font-size);
+  line-height: var(--typo-body-sm-line-height);
+  font-weight: var(--typo-body-sm-font-weight);
+  color: var(--color-text-danger);
+}
+
+.loadingText {
+  margin: 8px 0 0 0;
+  font-family: var(--typo-body-md-font-family);
+  font-size: var(--typo-body-md-font-size);
+  line-height: var(--typo-body-md-line-height);
+  font-weight: var(--typo-body-md-font-weight);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.selectedGame {
+  padding: 12px;
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--border-radius-8, 8px);
+  border: 1px solid var(--color-border-secondary);
+  margin-top: 16px;
+}
+
+.selectedGameLabel {
+  margin: 0 0 4px 0;
+  font-family: var(--typo-body-sm-font-family);
+  font-size: var(--typo-body-sm-font-size);
+  line-height: var(--typo-body-sm-line-height);
+  font-weight: var(--typo-body-sm-font-weight);
+  color: var(--color-text-secondary);
+}
+
+.selectedGameName {
+  margin: 0;
+  font-family: var(--typo-body-lg-font-family);
+  font-size: var(--typo-body-lg-font-size);
+  line-height: var(--typo-body-lg-line-height);
+  font-weight: var(--typo-body-lg-font-weight);
+  color: var(--color-text-primary);
+}
+
+.footer {
+  display: flex;
+  gap: 12px;
+  padding: 24px;
+  border-top: 1px solid var(--color-border-secondary);
+}
+
+.cancelButton {
+  flex: 1;
+}
+
+.confirmButton {
+  flex: 1;
+}
+
