@@ -7,8 +7,9 @@
 import { config } from 'dotenv';
 import { resolve } from 'path';
 import { createClient } from '@supabase/supabase-js';
+import { createHash } from 'crypto';
 import { generateNickname } from '../src/lib/nickname/generateNickname';
-import { getTierFromTemperature, getRandomTemperatureByTier } from './utils/tierMapping';
+import { getTierFromTemperature } from './utils/tierMapping';
 
 config({ path: resolve(process.cwd(), '.env.local') });
 
@@ -28,6 +29,36 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 });
 
 const STATUS_OPTIONS = ['online', 'offline', 'away'] as const;
+
+/**
+ * 결정론적(Deterministic) 데이터 생성 함수들
+ * user_id를 해시하여 항상 동일한 값을 생성
+ */
+
+// user_id 기반 해시 생성
+function hashUserId(userId: string): number {
+  const hash = createHash('sha256').update(userId).digest('hex');
+  return parseInt(hash.substring(0, 8), 16);
+}
+
+// 결정론적 온도 점수 생성 (0-100)
+function getDeterministicTemperature(userId: string): number {
+  const hash = hashUserId(userId);
+  return hash % 101; // 0-100 범위
+}
+
+// 결정론적 상태 생성
+function getDeterministicStatus(userId: string): typeof STATUS_OPTIONS[number] {
+  const hash = hashUserId(userId);
+  return STATUS_OPTIONS[hash % STATUS_OPTIONS.length];
+}
+
+// 결정론적 닉네임 생성 (기본값이 없을 경우)
+function getDeterministicNickname(userId: string): string {
+  const hash = hashUserId(userId);
+  const index = hash % 10000; // 4자리 숫자
+  return `유저${index.toString().padStart(4, '0')}`;
+}
 
 async function getAllAuthUsers() {
   console.log('🔍 모든 auth.users 조회 중 (페이지네이션 처리)...');
@@ -82,13 +113,15 @@ async function restoreUserProfile(user: any) {
       return { userId, email, status: 'skip', reason: 'already exists' };
     }
     
-    // 2. 닉네임 생성 (user_metadata에서 가져오거나 랜덤 생성)
+    // 2. 닉네임 생성 (user_metadata > 결정론적 생성)
+    // ⚠️ 중복 방지: user_metadata 우선, 없으면 user_id 기반 결정론적 생성
     const nickname = user.user_metadata?.nickname || 
                      user.user_metadata?.name || 
-                     generateNickname(8);
+                     getDeterministicNickname(userId);
     
-    // 3. user_profiles 생성
-    const temperatureScore = getRandomTemperatureByTier();
+    // 3. user_profiles 생성 (결정론적 데이터)
+    // ⚠️ 항상 동일한 user_id는 동일한 값 생성
+    const temperatureScore = getDeterministicTemperature(userId);
     const tier = getTierFromTemperature(temperatureScore);
     
     const { error: profileError } = await supabase
@@ -123,13 +156,14 @@ async function restoreUserProfile(user: any) {
       return { userId, email, status: 'error', reason: `Settings: ${settingsError.message}` };
     }
     
-    // 5. user_status 생성
-    const randomStatus = STATUS_OPTIONS[Math.floor(Math.random() * STATUS_OPTIONS.length)];
+    // 5. user_status 생성 (결정론적)
+    // ⚠️ user_id 기반 결정론적 생성 (재실행 시 동일한 값)
+    const status = getDeterministicStatus(userId);
     const { error: statusError } = await supabase
       .from('user_status')
       .upsert({
         user_id: userId,
-        status: randomStatus,
+        status,
       }, { onConflict: 'user_id' });
     
     if (statusError) {

@@ -28,7 +28,9 @@
     "seed:debug-user": "tsx scripts/debug-user.ts",
     "seed:cleanup": "tsx scripts/cleanup-orphaned-data.ts",
     "seed:check-auth": "tsx scripts/check-auth-users.ts",
-    "seed:restore": "tsx scripts/restore-user-profiles.ts"
+    "seed:restore": "tsx scripts/restore-user-profiles.ts",
+    "seed:clear-cache": "tsx scripts/clear-match-cache.ts",
+    "seed:clear-steam": "tsx scripts/clear-steam-data.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

@@ -32,6 +32,33 @@ export const GET = async (request: Request) => {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
+    // 🚨 Cold Start 가드: user_traits와 user_play_schedules 확인
+    const { data: traits } = await supabase
+      .from('user_traits')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .single();
+    
+    const { data: schedules } = await supabase
+      .from('user_play_schedules')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .limit(1)
+      .single();
+    
+    // 성향분석이 완료되지 않은 경우 차단
+    if (!traits || !schedules) {
+      return NextResponse.json({
+        status: 'BLOCKED',
+        reason: 'COLD_START',
+        message: '매칭을 사용하려면 성향분석 테스트를 먼저 완료해주세요.',
+        requiredActions: {
+          traits: !traits,
+          schedules: !schedules,
+        },
+      }, { status: 403 });
+    }
+    
     const results = await getMatchList(supabase, user.id, {
       minScore,
       statusFilter,
