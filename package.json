@@ -15,7 +15,8 @@
     "test": "vitest --project=unit",
     "test:watch": "vitest --project=unit --watch",
     "test:e2e": "playwright test",
-    "supabase:types": "supabase gen types --linked --schema public > supabase/types/database.types.ts"
+    "supabase:types": "supabase gen types --linked --schema public > supabase/types/database.types.ts",
+    "seed:users": "tsx scripts/seed-test-users.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -66,6 +67,7 @@
     "postcss": "^8",
     "prettier": "^3.7.4",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.19.2",
     "typescript": "^5",
     "vite": "^7.2.7",
     "vite-tsconfig-paths": "^6.0.3",
