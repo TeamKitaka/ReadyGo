@@ -192,8 +192,16 @@ export default function Match() {
     });
   };
 
+  // Cold Start 상태에 따라 컨테이너 클래스 변경
+  const containerClasses = [
+    styles.container,
+    shouldShowTraitsAlert ? styles.containerCentered : styles.containerStart,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className={styles.container}>
+    <div className={containerClasses}>
       {/* 성향 분석 안내 배너 (1순위) */}
       {shouldShowTraitsAlert && (
         <TraitsAlert className={styles.traitsAlertContainer} />

@@ -8,6 +8,16 @@
   padding: 16px;
 }
 
+/* Cold Start: 중앙 정렬 */
+.containerCentered {
+  justify-content: center;
+}
+
+/* 일반: 상단 정렬 */
+.containerStart {
+  justify-content: flex-start;
+}
+
 /* 헤더 섹션 */
 .header {
   display: flex;
