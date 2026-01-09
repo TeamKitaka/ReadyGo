@@ -76,6 +76,7 @@ export async function getHomeMatches(
           score: result.finalScore,
           reasons: result.reasons,
           tags: result.tags,
+          context: 'home',
         });
 
         return {

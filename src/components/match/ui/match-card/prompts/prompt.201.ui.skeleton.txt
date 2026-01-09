@@ -42,3 +42,5 @@
               * 768px 이하: min-width 260px
               * 480px 이하: min-width 0 (제약 없음)
 
+
+

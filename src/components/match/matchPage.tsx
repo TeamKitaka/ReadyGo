@@ -7,7 +7,7 @@ import MatchListSkeleton from './ui/match-list/matchListSkeleton';
 import { useMatchFilters } from './hooks/useMatchFilters';
 import { useSidePanelStore } from '@/stores/sidePanel.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { useMatchResults } from '@/hooks/useMatchResults';
+import { useMatchList } from '@/hooks/useMatchList';
 import { MatchData, MatchResultWithProfile } from './types/match.types';
 import { getEffectiveStatus } from '@/stores/user-status.store';
 import { usePresenceStore } from '@/stores/presence.store';
@@ -90,9 +90,10 @@ export default function Match() {
   // side-panel 상태 관리
   const { isOpen, targetUserId, open, close } = useSidePanelStore();
 
-  // 매칭 결과 가져오기 (전체)
-  const { results, loading, error, refetch } = useMatchResults(viewerId || '', {
-    sortBy: 'score',
+  // 매칭 결과 가져오기 (필터 적용)
+  const { results, loading, error, refetch } = useMatchList({
+    minScore: selectedMatchRate || undefined,
+    statusFilter: selectedStatus as 'all' | 'online' | 'offline',
   });
 
   // 매칭 결과를 MatchData 형식으로 변환 및 Presence 기반 정렬
@@ -101,23 +102,26 @@ export default function Match() {
       return [];
     }
 
-    // API에서 이미 프로필과 상태 정보가 포함되어 있으므로 바로 변환
+    // useMatchList API 응답 형식에 맞게 변환
     const matchDataArray: MatchData[] = results.map((result, index) => {
-      const enrichedResult = result as MatchResultWithProfile;
+      // getMatchList 서비스에서 enrichAndSort를 거친 결과 구조
+      const targetUserId = result.profile?.userId || result.target_id || result.targetUserId;
+      const score = result.score || result.finalScore || 0;
+      
       return {
         id: index + 1,
-        userId: result.targetUserId,
-        nickname: enrichedResult.profile?.nickname || '알 수 없음',
-        matchRate: Math.round(result.finalScore),
-        status: enrichedResult.status || 'offline',
-        avatarUrl: enrichedResult.profile?.avatarUrl,
+        userId: targetUserId,
+        nickname: result.profile?.nickname || '알 수 없음',
+        matchRate: Math.round(score),
+        status: result.status || 'offline',
+        avatarUrl: result.profile?.avatarUrl,
         tags: [], // 하위 호환용 (곧 제거 예정)
-        reasons: enrichedResult.reasons || [], // CoreDTO 전달
-        tagsV2: enrichedResult.tags || [], // CoreDTO 전달
+        reasons: result.reasons || [], // CoreDTO 전달
+        tagsV2: result.tags || [], // CoreDTO 전달
       };
     });
 
-    // Presence 기반 실시간 정렬
+    // Presence 기반 실시간 정렬 (서버에서 이미 정렬되었지만, Presence 변경 시 재정렬)
     // 1순위: 온라인 상태 (Presence 기반)
     // 2순위: 매칭 점수 높은 순
     return matchDataArray.sort((a, b) => {

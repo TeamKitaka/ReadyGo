@@ -50,6 +50,7 @@ Generated from: database.types.ts
 - match_filters
 - match_recent_views
 - match_results_cache
+- match_exposure_log
 - match_scores
 - notifications
 - party_activity_logs
@@ -153,3 +154,4 @@ Generated from: database.types.ts
 |  v1.0.4 | 2025-01-13 | chat_blocks 테이블명을 user_blocks로 변경         |
 |  v1.0.5 | 2025-01-07 | steam_user_stats 테이블 추가                      |
 |  v1.0.6 | 2026-01-09 | match_results_cache 테이블 추가 (Step 1 캐싱)    |
+|  v1.0.7 | 2026-01-09 | match_exposure_log 테이블 추가 (Step 2 중복 방지) |

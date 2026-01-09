@@ -23,6 +23,7 @@ export interface CachedMatchResult {
   reasons: any;
   tags: any;
   computed_at: string;
+  context?: string;
 }
 
 /**
@@ -47,10 +48,34 @@ export async function findByViewer(
 }
 
 /**
+ * context별 캐시 조회 (5분 TTL 강제)
+ * 
+ * @param client Supabase 클라이언트
+ * @param viewerId viewer 사용자 ID
+ * @param context 캐시 컨텍스트 ('home' | 'match')
+ * @returns 5분 이내 캐시만 점수 내림차순 정렬
+ */
+export async function findByViewerAndContext(
+  client: SupabaseClient<Database>,
+  viewerId: string,
+  context: 'home' | 'match'
+) {
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  
+  return await client
+    .from('match_results_cache')
+    .select('*')
+    .eq('viewer_id', viewerId)
+    .eq('context', context)
+    .gte('computed_at', fiveMinutesAgo.toISOString())
+    .order('score', { ascending: false });
+}
+
+/**
  * 캐시 저장 (upsert)
  * 
  * @param client Supabase 클라이언트
- * @param data 저장할 캐시 데이터
+ * @param data 저장할 캐시 데이터 (context 포함)
  */
 export async function upsert(
   client: SupabaseClient<Database>,
@@ -60,6 +85,7 @@ export async function upsert(
     score: number;
     reasons: any;
     tags: any;
+    context?: 'home' | 'match';
   }
 ) {
   return await client
@@ -67,10 +93,11 @@ export async function upsert(
     .upsert(
       {
         ...data,
+        context: data.context || 'home',
         computed_at: new Date().toISOString(),
       },
       {
-        onConflict: 'viewer_id,target_id',
+        onConflict: 'viewer_id,target_id,context',
       }
     );
 }

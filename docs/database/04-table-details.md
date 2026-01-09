@@ -307,28 +307,56 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 #### 22. match_results_cache
 
-- 매칭 결과 캐시 (홈 화면 최적화용)
+- 매칭 결과 캐시 (홈 화면 + 매칭 화면 최적화용)
 
-| Column      | Type        | Nullable | Description                        |
-| ----------- | ----------- | -------- | ---------------------------------- |
-| viewer_id   | uuid        | ❌       | 기준 유저 (PK 일부)                |
-| target_id   | uuid        | ❌       | 매칭 대상 (PK 일부)                |
-| score       | int         | ❌       | 매칭 점수                          |
-| reasons     | jsonb       | ❌       | 매칭 이유 배열 (CoreDTO)           |
-| tags        | jsonb       | ❌       | 매칭 태그 배열 (CoreDTO)           |
-| computed_at | timestamptz | ⭕       | 계산 시각 (기본값: NOW())          |
+| Column      | Type        | Nullable | Description                               |
+| ----------- | ----------- | -------- | ----------------------------------------- |
+| viewer_id   | uuid        | ❌       | 기준 유저 (PK 일부)                       |
+| target_id   | uuid        | ❌       | 매칭 대상 (PK 일부)                       |
+| context     | text        | ❌       | 캐시 컨텍스트 (PK 일부, 'home' \| 'match') |
+| score       | int         | ❌       | 매칭 점수                                 |
+| reasons     | jsonb       | ❌       | 매칭 이유 배열 (CoreDTO)                  |
+| tags        | jsonb       | ❌       | 매칭 태그 배열 (CoreDTO)                  |
+| computed_at | timestamptz | ⭕       | 계산 시각 (기본값: NOW())                 |
 
-**Primary Key**: (viewer_id, target_id)
+**Primary Key**: (viewer_id, target_id, context)
 
 **인덱스**:
-- `idx_cache_viewer_score`: (viewer_id, score DESC) - 점수순 조회 최적화
-- `idx_cache_computed_at`: (computed_at) - 오래된 캐시 정리용
+- `idx_cache_viewer_context_score`: (viewer_id, context, score DESC) - context별 점수순 조회
+- `idx_cache_context_time`: (viewer_id, context, computed_at DESC) - 5분 TTL 체크용
 
 **용도**:
-- 홈 화면 매칭 카드 4개 표시용 캐시
-- 첫 방문: 실시간 계산 후 캐시 저장 (~300ms)
-- 재방문: 캐시 조회 (~50ms)
-- Step 1: 기본 캐싱 구현 (캐시 우선 조회 + 실시간 fallback)
+- **홈 화면** (context='home'): 매칭 카드 4개 표시용, 무제한 캐시
+- **매칭 화면** (context='match'): 매칭 목록 12개 표시용, 5분 TTL
+- 첫 방문: 실시간 계산 후 캐시 저장 (~300-500ms)
+- 재방문: 캐시 조회 (~50-100ms)
+- Step 1: 기본 캐싱 구현 (홈 화면)
+- Step 2: context 분리 + 5분 TTL (매칭 화면)
+
+#### 23. match_exposure_log
+
+- 매칭 목록 노출 이력 (중복 방지용)
+
+| Column     | Type        | Nullable | Description                            |
+| ---------- | ----------- | -------- | -------------------------------------- |
+| id         | bigserial   | ❌       | PK                                     |
+| viewer_id  | uuid        | ❌       | 기준 유저                              |
+| target_id  | uuid        | ❌       | 노출된 매칭 대상                       |
+| exposed_at | timestamptz | ❌       | 노출 시각 (기본값: NOW())              |
+| context    | text        | ❌       | 노출 컨텍스트 (기본값: 'match_list')   |
+
+**인덱스**:
+- `idx_exposure_viewer_time`: (viewer_id, exposed_at DESC) - 최근 노출 조회
+- `idx_exposure_viewer_target_time`: (viewer_id, target_id, exposed_at DESC) - 중복 체크
+
+**RLS**:
+- 사용자는 자신의 노출 이력만 조회 가능
+- 쓰기는 서비스 롤만 가능
+
+**용도**:
+- 매칭 목록에 노출된 사용자 기록 (4시간 이내 중복 방지)
+- match_recent_views (24시간 조회 이력)와 함께 중복 방지 구현
+- 주기적 정리: 7일 이상 된 로그 삭제 (Cron)
 
 ---
 
@@ -567,7 +595,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
 - **Last Updated At**: 2026-01-09
-- **Document Version**: v1.0.11
+- **Document Version**: v1.0.12
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
@@ -589,3 +617,4 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 |  v1.0.9 | 2025-01-15 | chat_message_reads 테이블: message_id, user_id를 NOT NULL로 변경, (message_id, user_id) UNIQUE 제약조건 추가 |
 | v1.0.10 | 2025-01-07 | Steam Domain에 steam_user_stats 테이블 추가, 테이블 번호 재정렬 (27~37번)                                    |
 | v1.0.11 | 2026-01-09 | Match Domain에 match_results_cache 테이블 추가 (Step 1 캐싱 시스템)                                          |
+| v1.0.12 | 2026-01-09 | match_results_cache에 context 컬럼 추가, match_exposure_log 테이블 추가 (Step 2 중복 방지 + 5분 TTL)        |
