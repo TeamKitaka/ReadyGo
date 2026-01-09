@@ -9,6 +9,10 @@
  * 비책임:
  * - API 구현 (API Route에서 처리)
  * - 비즈니스 로직 (Service에서 처리)
+ * 
+ * 특징:
+ * - 셀렉트박스 변경 시 자동 refetch 없음
+ * - 명시적으로 refetch(options) 호출 시에만 서버 요청
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -21,15 +25,15 @@ export interface MatchListOptions {
 /**
  * 매칭 화면용 매칭 목록 조회 Hook
  * 
- * @param options 필터 옵션
- * @returns 매칭 결과, 로딩 상태, 에러, refetch 함수
+ * @returns 매칭 결과, 로딩 상태, 에러, 현재 필터, refetch 함수
  */
-export const useMatchList = (options: MatchListOptions = {}) => {
+export const useMatchList = () => {
+  const [filters, setFilters] = useState<MatchListOptions>({});
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   
-  const fetchMatchList = useCallback(async () => {
+  const fetchMatchList = useCallback(async (options: MatchListOptions) => {
     setLoading(true);
     setError(null);
     
@@ -48,22 +52,31 @@ export const useMatchList = (options: MatchListOptions = {}) => {
       
       const data = await response.json();
       setResults(data.results || []);
+      setFilters(options); // 성공 시 filters 업데이트
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));
     } finally {
       setLoading(false);
     }
-  }, [options.minScore, options.statusFilter]);
+  }, []);
   
+  // 초기 마운트 시에만 fetch (기본 필터)
   useEffect(() => {
-    fetchMatchList();
+    fetchMatchList({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  
+  // refetch 함수는 options를 받음
+  const refetch = useCallback((options: MatchListOptions) => {
+    fetchMatchList(options);
   }, [fetchMatchList]);
   
   return {
     results,
     loading,
     error,
-    refetch: fetchMatchList,
+    filters, // 현재 적용된 필터
+    refetch, // refetch(newOptions)
   };
 };
 

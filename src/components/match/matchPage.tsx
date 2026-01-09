@@ -90,11 +90,8 @@ export default function Match() {
   // side-panel 상태 관리
   const { isOpen, targetUserId, open, close } = useSidePanelStore();
 
-  // 매칭 결과 가져오기 (필터 적용)
-  const { results, loading, error, refetch } = useMatchList({
-    minScore: selectedMatchRate || undefined,
-    statusFilter: selectedStatus as 'all' | 'online' | 'offline',
-  });
+  // 매칭 결과 가져오기 (초기 로드만, 필터는 버튼 클릭 시 적용)
+  const { results, loading, error, filters, refetch } = useMatchList();
 
   // 매칭 결과를 MatchData 형식으로 변환 및 Presence 기반 정렬
   const matchData = useMemo(() => {
@@ -164,10 +161,15 @@ export default function Match() {
     }
   };
 
-  // 갱신 핸들러 (useMatchFilters의 handleRefresh + useMatchResults의 refetch 결합)
+  // 갱신 핸들러 (셀렉트박스 선택 후 버튼 클릭 시 서버에 재요청)
   const handleRefreshWithData = () => {
-    handleRefresh();
-    refetch();
+    handleRefresh(); // useMatchFilters의 내부 로직 (현재는 TODO)
+    
+    // 최신 필터 옵션으로 서버에 재요청
+    refetch({
+      minScore: selectedMatchRate ? Number(selectedMatchRate) : undefined,
+      statusFilter: selectedStatus as 'all' | 'online' | 'offline' || 'all',
+    });
   };
 
   return (
