@@ -81,8 +81,12 @@ export async function getMatchList(
   
   const filtered = candidates.filter((c) => !excludeIds.has(c.userId));
   
-  // 4. 실시간 계산 (여유분 충분히 - 50% 이상 확보)
-  const toCalculate = filtered.slice(0, 80); // 40 → 80으로 증가
+  // 4. 실시간 계산 (minScore에 따라 계산량 조정)
+  // 높은 매칭율(75% 이상): 40명 (빠름)
+  // 중간 매칭율(65% 이상): 60명 (중간)
+  // 모든 매칭율(50% 이상): 100명 (느림, 다양성 확보)
+  const calculateCount = minScore >= 75 ? 40 : minScore >= 65 ? 60 : 100;
+  const toCalculate = filtered.slice(0, calculateCount);
   const calculated = await Promise.allSettled(
     toCalculate.map(async (c) => {
       const result = await calculateMatchResult(client, viewerId, c.userId);
