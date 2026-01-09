@@ -46,11 +46,12 @@ const toReasonViewModel = (
           icon: '✨',
           label: '새로운만남',
           shortDescription: '함께 알아가는 스타일',
-          primaryText: '처음부터 맞춰가기보다, 플레이하며 자연스럽게 호흡을 맞춰갈 수 있어요',
+          primaryText:
+            '처음부터 맞춰가기보다, 플레이하며 자연스럽게 호흡을 맞춰갈 수 있어요',
           isHighlight: false,
           isFallback: true,
         };
-      
+
       case 'ACTIVITY_PATTERN':
         return {
           type: detail.type,
@@ -61,18 +62,18 @@ const toReasonViewModel = (
           isHighlight: false,
           isFallback: true,
         };
-      
+
       case 'RELIABILITY':
         return {
           type: detail.type,
           icon: '🤝',
           label: '부담없음',
-          shortDescription: '가볍게 시작',
+          shortDescription: '가볍게 시작 가능',
           primaryText: '가볍게 파티를 시작하기에 부담이 적은 편이에요',
           isHighlight: false,
           isFallback: true,
         };
-      
+
       default:
         return {
           type: 'BASELINE',
@@ -104,7 +105,7 @@ const toReasonViewModel = (
     case 'STYLE_SIMILARITY': {
       // topTrait에 따라 구체적인 메시지 제공
       const topTrait = detail.topTrait;
-      
+
       switch (topTrait) {
         case 'cooperation':
           return {
@@ -116,7 +117,7 @@ const toReasonViewModel = (
             secondaryText: '협동 성향이 높아요',
             isHighlight: true,
           };
-        
+
         case 'exploration':
           return {
             type: detail.type,
@@ -127,7 +128,7 @@ const toReasonViewModel = (
             secondaryText: '탐험 성향이 높아요',
             isHighlight: true,
           };
-        
+
         case 'strategy':
           return {
             type: detail.type,
@@ -138,7 +139,7 @@ const toReasonViewModel = (
             secondaryText: '전략 성향이 높아요',
             isHighlight: true,
           };
-        
+
         case 'leadership':
           return {
             type: detail.type,
@@ -149,7 +150,7 @@ const toReasonViewModel = (
             secondaryText: '리더십이 뛰어나요',
             isHighlight: true,
           };
-        
+
         case 'social':
           return {
             type: detail.type,
@@ -160,7 +161,7 @@ const toReasonViewModel = (
             secondaryText: '사교성이 높아요',
             isHighlight: true,
           };
-        
+
         default: {
           // fallback (안전장치)
           const traitLabel = getTraitLabel(topTrait);
@@ -180,7 +181,7 @@ const toReasonViewModel = (
       // viewerTimeType과 targetTimeType이 있으면 관계 기반 메시지 생성
       const viewerType = detail.viewerTimeType;
       const targetType = detail.targetTimeType;
-      
+
       if (viewerType && targetType) {
         // 1. 같은 타입 (가장 강력)
         if (viewerType === targetType) {
@@ -247,12 +248,12 @@ const toReasonViewModel = (
               };
           }
         }
-        
+
         // 2. 보완형 (설득력 있음)
         const isEveningLateNight =
           (viewerType === 'evening' && targetType === 'lateNight') ||
           (viewerType === 'lateNight' && targetType === 'evening');
-        
+
         if (isEveningLateNight) {
           return {
             type: detail.type,
@@ -264,8 +265,9 @@ const toReasonViewModel = (
             isHighlight: true,
           };
         }
-        
-        const hasFlexible = viewerType === 'flexible' || targetType === 'flexible';
+
+        const hasFlexible =
+          viewerType === 'flexible' || targetType === 'flexible';
         if (hasFlexible) {
           return {
             type: detail.type,
@@ -277,7 +279,7 @@ const toReasonViewModel = (
             isHighlight: true,
           };
         }
-        
+
         // 3. 다른 타입이지만 긍정적으로 표현 (절대 감점 금지)
         return {
           type: detail.type,
@@ -288,7 +290,7 @@ const toReasonViewModel = (
           isHighlight: false,
         };
       }
-      
+
       // Fallback: viewerTimeType이 없는 경우
       return {
         type: detail.type,
