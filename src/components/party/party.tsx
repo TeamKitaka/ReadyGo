@@ -81,7 +81,7 @@ export default function Party() {
             <div className={styles.filterSelect}>
               <Selectbox
                 items={genreItems}
-                selectedId={selectedGenre || 'all'}
+                selectedId={selectedGenre || undefined}
                 onSelect={handleGenreSelect}
                 placeholder="모든 게임 장르"
                 className={styles.selectboxWidth}
