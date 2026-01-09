@@ -34,6 +34,18 @@ export const findByUserId = async (
 };
 
 /**
+ * user_profiles 레코드를 여러 user_id(id)로 조회한다
+ * - DB 접근만 수행, 에러 처리 및 데이터 가공 없음
+ * - Supabase 응답 구조를 그대로 반환
+ */
+export const findByUserIds = async (
+  client: SupabaseClient<Database>,
+  userIds: string[]
+) => {
+  return await client.from('user_profiles').select('*').in('id', userIds);
+};
+
+/**
  * user_profiles의 animal_type을 업데이트한다
  * - DB 접근만 수행, 에러 처리는 상위 레이어에서 담당
  * - Supabase 응답 구조를 그대로 반환

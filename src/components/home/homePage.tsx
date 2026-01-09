@@ -1,12 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import styles from './styles.module.css';
 import MatchSection from './ui/match-section/matchSection';
 import PartySection from './ui/party-section/partySection';
 import ProfileSection from './ui/profile-section/profileSection';
 import StartSection from './ui/start-section/startSection';
-import { MatchCardProps } from './ui/match-section/card/matchCard';
 import { PartyCardProps } from './ui/party-section/card/partyCard';
 import { AnimalType } from '@/commons/constants/animal';
 import { BarChartDataItem } from '@/commons/components/bar-chart';
@@ -14,50 +13,9 @@ import { useGoogleOAuth } from '@/components/auth/hooks/useGoogleOAuth.hook';
 import { useKakaoOAuth } from '@/components/auth/hooks/useKakaoOAuth.hook';
 import { useSidePanelStore } from '@/stores/sidePanel.store';
 import { useProfile } from './hooks/useProfile';
-
-// 임시 데이터 - 추후 API로 대체될 예정
-const mockMatchData: MatchCardProps[] = [
-  {
-    userId: 'd3216299-dac9-478a-ab19-d79e56c6a2b1',
-    nickname: '턱없는살모사',
-    matchRate: 94,
-    status: 'online',
-    animalType: AnimalType.raven,
-    gamePreference: 'Valorant, Apex',
-    playTime: '저녁 시간대',
-    skillLevel: '플래티넘',
-  },
-  {
-    userId: '3943add5-23d2-4bc3-8818-65a04a41161e',
-    nickname: '예쁜코알라',
-    matchRate: 89,
-    status: 'online',
-    animalType: AnimalType.fox,
-    gamePreference: 'League of Legends',
-    playTime: '저녁 시간대',
-    skillLevel: '다이아',
-  },
-  {
-    userId: '73ea14dd-2e4d-4d96-b267-bee66a6c8ad5',
-    nickname: '더운담비',
-    matchRate: 87,
-    status: 'away',
-    animalType: AnimalType.owl,
-    gamePreference: 'Overwatch, Valorant',
-    playTime: '밤 시간대',
-    skillLevel: '플래티넘',
-  },
-  {
-    userId: '84e1e171-a836-4264-8277-c97decb722d3',
-    nickname: '시원찮은닭',
-    matchRate: 85,
-    status: 'online',
-    animalType: AnimalType.rabbit,
-    gamePreference: 'League of Legends, Valorant',
-    playTime: '저녁 시간대',
-    skillLevel: '플래티넘',
-  },
-];
+import { useHomeMatches } from './hooks/useHomeMatches';
+import { usePresenceStore } from '@/stores/presence.store';
+import { getEffectiveStatus } from '@/stores/user-status.store';
 
 const mockPartyData: PartyCardProps[] = [
   {
@@ -162,6 +120,20 @@ export default function Home() {
     error: profileError,
   } = useProfile();
 
+  // 매칭 데이터 fetch (Step 1: 캐시 기반)
+  const { matchCards, loading: matchLoading } = useHomeMatches();
+
+  // Presence 상태 구독 (실시간 온라인 상태 반영)
+  const { presenceUserIds } = usePresenceStore();
+
+  // Presence 기반 실시간 상태 반영
+  const matchCardsWithPresence = useMemo(() => {
+    return matchCards.map((card) => ({
+      ...card,
+      status: getEffectiveStatus(card.userId),
+    }));
+  }, [matchCards, presenceUserIds]);
+
   // 테스트 완료 여부 확인 (animalType이 unknown이 아니고 null/undefined가 아니며, 또는 traits가 존재하면 완료)
   const isTestCompleted =
     !profileLoading &&
@@ -189,7 +161,7 @@ export default function Home() {
         {isTestCompleted && (
           <MatchSection
             title="레전드 조합, ㄹㄷ? 🎲"
-            matches={mockMatchData}
+            matches={matchCardsWithPresence}
             className={styles.matchSection}
           />
         )}
