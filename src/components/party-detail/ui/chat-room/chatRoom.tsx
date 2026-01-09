@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import styles from './styles.module.css';
 import Avatar from '@/commons/components/avatar';
 import Input from '@/commons/components/input';
+import Icon from '@/commons/components/icon';
 import { AnimalType } from '@/commons/constants/animal';
 import { useChatRoom } from '../../hooks/index.binding.chatRoom.hook';
 
@@ -21,9 +22,26 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
     ? 0
     : parseInt(postId || '', 10);
 
+  // 메시지 리스트 컨테이너 ref
+  const messageListRef = useRef<HTMLDivElement>(null);
+
   // useChatRoom Hook 호출
-  const { formattedMessages, sendMessage, isLoading, error, isBlocked } =
-    useChatRoom({ postId: postIdNumber });
+  const {
+    formattedMessages,
+    sendMessage,
+    isLoading,
+    error,
+    isBlocked,
+    scrollToBottom,
+    shouldShowScrollToBottomButton,
+    shouldScrollToBottom,
+    clearScrollTriggers,
+    setMessageListContainerRef,
+  } = useChatRoom({ postId: postIdNumber });
+
+  // 플로팅 버튼 표시 여부
+  const [showScrollToBottomButton, setShowScrollToBottomButton] =
+    useState(false);
 
   // 메시지 입력 상태 관리
   const [messageInput, setMessageInput] = useState('');
@@ -50,6 +68,50 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
       handleSendMessage();
     }
   };
+
+  // 스크롤 트리거 처리
+  useEffect(() => {
+    if (shouldScrollToBottom && messageListRef.current) {
+      scrollToBottom(messageListRef);
+      clearScrollTriggers();
+    }
+  }, [shouldScrollToBottom, scrollToBottom, clearScrollTriggers]);
+
+  // 메시지 리스트 컨테이너 ref를 hook에 등록
+  useEffect(() => {
+    setMessageListContainerRef(messageListRef);
+  }, [setMessageListContainerRef]);
+
+  // 스크롤 위치 감지
+  const handleScroll = useCallback(() => {
+    if (messageListRef.current) {
+      const shouldShow = shouldShowScrollToBottomButton(messageListRef);
+      setShowScrollToBottomButton(shouldShow);
+    }
+  }, [shouldShowScrollToBottomButton]);
+
+  // 스크롤 이벤트 리스너 등록
+  useEffect(() => {
+    const container = messageListRef.current;
+    if (!container) {
+      return;
+    }
+
+    container.addEventListener('scroll', handleScroll);
+    // 초기 상태 확인
+    handleScroll();
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, [handleScroll, formattedMessages.length]);
+
+  // 최하단 이동 버튼 클릭 핸들러
+  const handleScrollToBottomClick = useCallback(() => {
+    if (messageListRef.current) {
+      scrollToBottom(messageListRef);
+    }
+  }, [scrollToBottom]);
 
   // 로딩 상태 처리
   if (isLoading) {
@@ -92,7 +154,11 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
   return (
     <div className={styles.chatRoom}>
       {/* 메시지 리스트 영역 */}
-      <div className={styles.messageList} aria-label="메시지 목록">
+      <div
+        ref={messageListRef}
+        className={styles.messageList}
+        aria-label="메시지 목록"
+      >
         <div className={styles.messagesContainer}>
           {/* 날짜 구분선 렌더링 */}
           {formattedMessages.map((item, index) => {
@@ -203,6 +269,20 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
             })}
           </div>
         </div>
+        {/* 플로팅 버튼: 최근 메시지로 이동 (메시지 리스트 하단에 고정) */}
+        {showScrollToBottomButton && (
+          <div className={styles.scrollToBottomButtonWrapper}>
+            <button
+              className={styles.scrollToBottomButton}
+              onClick={handleScrollToBottomClick}
+              aria-label="최근 메시지로 이동"
+              type="button"
+            >
+              <Icon name="chevron-down" size={20} />
+              <span>최근 메시지</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 입력 영역 */}

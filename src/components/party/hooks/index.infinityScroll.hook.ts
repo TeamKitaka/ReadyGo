@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { PartyCardProps } from '../ui/card/card';
 import { AnimalType } from '@/commons/constants/animal';
 import { useAuth } from '@/commons/providers/auth/auth.provider';
@@ -215,6 +215,31 @@ const truncateDescription = (
   return `${description.substring(0, maxLength)}...`;
 };
 
+// 날짜와 시간을 정확하게 파싱하여 Date 객체를 생성하는 헬퍼 함수
+// startDate: "YYYY-MM-DD" 형식
+// startTime: "HH:mm:ss" 형식
+// ISO 형식(YYYY-MM-DDTHH:mm:ss)으로 변환하여 정확한 날짜/시간 비교 가능
+const parseStartDateTime = (
+  startDate: string | undefined,
+  startTime: string | undefined
+): Date | null => {
+  if (!startDate || !startTime) {
+    return null;
+  }
+  try {
+    // ISO 형식으로 변환: "YYYY-MM-DD HH:mm:ss" → "YYYY-MM-DDTHH:mm:ss"
+    const isoString = `${startDate}T${startTime}`;
+    const date = new Date(isoString);
+    // 유효한 날짜인지 확인
+    if (isNaN(date.getTime())) {
+      return null;
+    }
+    return date;
+  } catch {
+    return null;
+  }
+};
+
 // 파티 목록 정렬 함수
 const sortPartyList = (
   parties: PartyCardProps[],
@@ -224,27 +249,19 @@ const sortPartyList = (
 
   // 시작시간이 지난 카드와 지나지 않은 카드 분리
   const activeParties = parties.filter((p) => {
-    if (!p.startDate || !p.startTime) {
-      return true; // 날짜/시간 정보가 없으면 활성으로 간주
+    const startDateTime = parseStartDateTime(p.startDate, p.startTime);
+    if (!startDateTime) {
+      return true; // 날짜/시간 정보가 없거나 파싱 실패 시 활성으로 간주
     }
-    try {
-      const startDateTime = new Date(`${p.startDate} ${p.startTime}`);
-      return startDateTime >= now;
-    } catch {
-      return true; // 파싱 실패 시 활성으로 간주
-    }
+    return startDateTime >= now;
   });
 
   const expiredParties = parties.filter((p) => {
-    if (!p.startDate || !p.startTime) {
-      return false; // 날짜/시간 정보가 없으면 만료되지 않은 것으로 간주
+    const startDateTime = parseStartDateTime(p.startDate, p.startTime);
+    if (!startDateTime) {
+      return false; // 날짜/시간 정보가 없거나 파싱 실패 시 만료되지 않은 것으로 간주
     }
-    try {
-      const startDateTime = new Date(`${p.startDate} ${p.startTime}`);
-      return startDateTime < now;
-    } catch {
-      return false; // 파싱 실패 시 만료되지 않은 것으로 간주
-    }
+    return startDateTime < now;
   });
 
   // 활성 카드 정렬
@@ -257,16 +274,12 @@ const sortPartyList = (
     });
   } else if (sortOption === 'deadline') {
     activeParties.sort((a, b) => {
-      if (!a.startDate || !a.startTime || !b.startDate || !b.startTime) {
+      const dateA = parseStartDateTime(a.startDate, a.startTime);
+      const dateB = parseStartDateTime(b.startDate, b.startTime);
+      if (!dateA || !dateB) {
         return 0;
       }
-      try {
-        const dateA = new Date(`${a.startDate} ${a.startTime}`).getTime();
-        const dateB = new Date(`${b.startDate} ${b.startTime}`).getTime();
-        return dateA - dateB;
-      } catch {
-        return 0;
-      }
+      return dateA.getTime() - dateB.getTime();
     });
   }
 
@@ -280,16 +293,12 @@ const sortPartyList = (
     });
   } else if (sortOption === 'deadline') {
     expiredParties.sort((a, b) => {
-      if (!a.startDate || !a.startTime || !b.startDate || !b.startTime) {
+      const dateA = parseStartDateTime(a.startDate, a.startTime);
+      const dateB = parseStartDateTime(b.startDate, b.startTime);
+      if (!dateA || !dateB) {
         return 0;
       }
-      try {
-        const dateA = new Date(`${a.startDate} ${a.startTime}`).getTime();
-        const dateB = new Date(`${b.startDate} ${b.startTime}`).getTime();
-        return dateA - dateB;
-      } catch {
-        return 0;
-      }
+      return dateA.getTime() - dateB.getTime();
     });
   }
 
