@@ -71,6 +71,7 @@
   align-items: center;
   gap: 12px;
   box-sizing: border-box;
+  flex: 1;
 }
 
 .filterSelect {
@@ -82,8 +83,12 @@
 }
 
 .searchInput {
+  display: none;
   width: 100%;
-  flex: 1;
+}
+
+.searchbarWidth {
+  width: 100%;
 }
 
 .newPartyButton {
@@ -113,6 +118,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 
 .sortOption {
@@ -220,4 +227,136 @@
 
 .floatButton:hover {
   border-color: var(--color-border-interactive-secondary);
+}
+
+/* 반응형 디자인 - 웹 (1448px 이하) */
+@media (max-width: 1448px) {
+  .container {
+    padding: 24px;
+  }
+
+  .titleArea {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .contentWrapper {
+    width: 100%;
+    max-width: 100%;
+    padding: 24px;
+  }
+
+  .searchArea {
+    width: 100%;
+    height: auto;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .filterSearchWrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .filterSelect {
+    width: 240px;
+    flex-shrink: 0;
+  }
+
+  .searchInput {
+    display: block;
+    width: 100%;
+  }
+
+  .newPartyButton {
+    width: 131px;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  .tabArea {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+  }
+
+  .mainArea {
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .sortArea {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+}
+
+/* 반응형 디자인 - 모바일 (768px 이하) */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+    gap: 24px;
+  }
+
+  .contentWrapper {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .searchArea {
+    gap: 12px;
+  }
+
+  .filterSearchWrapper {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .filterSelect {
+    width: 100%;
+  }
+
+  .searchInput {
+    order: 0;
+    flex: 0 0 auto;
+  }
+
+  .newPartyButton {
+    width: 100%;
+    order: 0;
+  }
+
+  .tabArea {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .sortArea {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  .floatButton {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
+/* 화면 540px 이하 - 반응형 무시하고 고정 */
+@media (max-width: 540px) {
+  .mainArea {
+    align-items: center;
+  }
+
+  .sortArea {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
 }
