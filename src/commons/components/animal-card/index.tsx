@@ -105,7 +105,8 @@ export default function AnimalCard({
             <div className={styles.descriptionLabel}>
               <p className={styles.descriptionTitle}>
                 {isUnknown
-                  ? animalMeta.description[0]
+                  ? animalMeta.unknownDescriptions?.[property] ||
+                    animalMeta.description[0]
                   : `${animalMeta.description[0]}, ${animalMeta.label}`}
               </p>
             </div>
@@ -204,7 +205,7 @@ export default function AnimalCard({
           </div>
 
           {/* Unknown Type: Test Link Button */}
-          {isUnknown && (
+          {isUnknown && property === 'my' && (
             <div
               className={styles.testLinkButton}
               onClick={handleTraitsTestClick}
