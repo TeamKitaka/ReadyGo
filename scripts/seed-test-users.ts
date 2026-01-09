@@ -7,10 +7,15 @@
  * - 다양한 성향/게임 데이터 포함
  */
 
+import { config } from 'dotenv';
+import { resolve } from 'path';
 import { createClient } from '@supabase/supabase-js';
 import { generateNickname } from '../src/lib/nickname/generateNickname';
 import { ANIMAL_VECTORS, type TraitVector } from '../src/commons/constants/animal/animal.vector';
 import { AnimalType } from '../src/commons/constants/animal/animal.enum';
+
+// .env.local 파일 명시적으로 로드
+config({ path: resolve(process.cwd(), '.env.local') });
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
