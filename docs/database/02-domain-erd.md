@@ -69,11 +69,14 @@ erDiagram
 
 - 유저 성향 기반 매칭 결과 및 필터
 - 매칭 점수와 최근 조회 이력 관리
+- 홈 화면 최적화를 위한 캐시 시스템
 
 ```mermaid
 erDiagram
   user_profiles ||--o{ match_scores : calculates
   user_profiles ||--o{ match_recent_views : views
+  user_profiles ||--o{ match_results_cache : "cached_as_viewer"
+  user_profiles ||--o{ match_results_cache : "cached_as_target"
   user_profiles ||--|| match_filters : configures
 ```
 
@@ -142,8 +145,8 @@ erDiagram
 
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
-- **Last Updated At**: 2025-12-31
-- **Document Version**: v1.0.4
+- **Last Updated At**: 2026-01-09
+- **Document Version**: v1.0.5
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
@@ -158,3 +161,4 @@ erDiagram
 |  v1.0.2 | 2025-12-29 | User/Profile Domain에 user_status 추가                         |
 |  v1.0.3 | 2025-12-29 | user_play_schedules 테이블 추가에 따른 ERD 수정                |
 |  v1.0.4 | 2025-01-13 | chat_blocks를 user_blocks로 변경, User/Profile Domain으로 이동 |
+|  v1.0.5 | 2026-01-09 | Match Domain에 match_results_cache 추가 (캐싱 시스템)          |

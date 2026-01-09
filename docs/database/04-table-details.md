@@ -1,6 +1,6 @@
 # Table Details(ReadyGo)
 
-본 문서는 ReadyGo 서비스의 public schema 전체 테이블(35개)에 대한 상세 정의 문서이다.
+본 문서는 ReadyGo 서비스의 public schema 전체 테이블(36개)에 대한 상세 정의 문서이다.
 
 ### Source of Truth (SSOT)
 
@@ -305,6 +305,31 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | target_user_id | uuid        | ⭕       | 조회 대상   |
 | viewed_at      | timestamptz | ⭕       | 조회 시각   |
 
+#### 22. match_results_cache
+
+- 매칭 결과 캐시 (홈 화면 최적화용)
+
+| Column      | Type        | Nullable | Description                        |
+| ----------- | ----------- | -------- | ---------------------------------- |
+| viewer_id   | uuid        | ❌       | 기준 유저 (PK 일부)                |
+| target_id   | uuid        | ❌       | 매칭 대상 (PK 일부)                |
+| score       | int         | ❌       | 매칭 점수                          |
+| reasons     | jsonb       | ❌       | 매칭 이유 배열 (CoreDTO)           |
+| tags        | jsonb       | ❌       | 매칭 태그 배열 (CoreDTO)           |
+| computed_at | timestamptz | ⭕       | 계산 시각 (기본값: NOW())          |
+
+**Primary Key**: (viewer_id, target_id)
+
+**인덱스**:
+- `idx_cache_viewer_score`: (viewer_id, score DESC) - 점수순 조회 최적화
+- `idx_cache_computed_at`: (computed_at) - 오래된 캐시 정리용
+
+**용도**:
+- 홈 화면 매칭 카드 4개 표시용 캐시
+- 첫 방문: 실시간 계산 후 캐시 저장 (~300ms)
+- 재방문: 캐시 조회 (~50ms)
+- Step 1: 기본 캐싱 구현 (캐시 우선 조회 + 실시간 fallback)
+
 ---
 
 ### 5️⃣ Steam Domain
@@ -541,8 +566,8 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
-- **Last Updated At**: 2025-01-07
-- **Document Version**: v1.0.10
+- **Last Updated At**: 2026-01-09
+- **Document Version**: v1.0.11
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
@@ -563,3 +588,4 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 |  v1.0.8 | 2025-01-13 | chat_blocks 테이블명을 user_blocks로 변경, User/Profile Domain으로 이동                                      |
 |  v1.0.9 | 2025-01-15 | chat_message_reads 테이블: message_id, user_id를 NOT NULL로 변경, (message_id, user_id) UNIQUE 제약조건 추가 |
 | v1.0.10 | 2025-01-07 | Steam Domain에 steam_user_stats 테이블 추가, 테이블 번호 재정렬 (27~37번)                                    |
+| v1.0.11 | 2026-01-09 | Match Domain에 match_results_cache 테이블 추가 (Step 1 캐싱 시스템)                                          |
