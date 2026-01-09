@@ -31,20 +31,52 @@ interface ConsistencyIssue {
   issues: string[];
 }
 
+async function getAllAuthUsers() {
+  console.log('🔍 모든 auth.users 조회 중 (페이지네이션 처리)...');
+  
+  const allUsers: any[] = [];
+  let page = 1;
+  let hasMore = true;
+  
+  while (hasMore) {
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: 1000,
+    });
+
+    if (error) {
+      console.error(`❌ auth.users 조회 실패 (페이지 ${page}):`, error.message);
+      break;
+    }
+
+    if (!data || data.users.length === 0) {
+      hasMore = false;
+      break;
+    }
+
+    allUsers.push(...data.users);
+    console.log(`   페이지 ${page}: ${data.users.length}명`);
+
+    if (data.users.length < 1000) {
+      hasMore = false;
+    }
+    page++;
+  }
+
+  console.log(`✅ 총 ${allUsers.length}명 조회 완료`);
+  return allUsers;
+}
+
 async function main() {
   console.log('🔍 데이터 일관성 체크 시작...');
   console.log('');
 
   try {
-    // 1. 모든 auth.users 조회
-    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+    // 1. 모든 auth.users 조회 (페이지네이션 처리)
+    const allUsers = await getAllAuthUsers();
+    console.log('');
 
-    if (authError) {
-      console.error('❌ Auth 유저 조회 실패:', authError.message);
-      process.exit(1);
-    }
-
-    const testUsers = authUsers.users.filter(u => u.email?.includes('@readygo.test'));
+    const testUsers = allUsers.filter(u => u.email?.includes('@readygo.test'));
     console.log(`📊 총 ${testUsers.length}명의 테스트 계정 발견`);
     console.log('');
 
