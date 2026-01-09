@@ -199,29 +199,25 @@ export default function Match() {
         <TraitsAlert className={styles.traitsAlertContainer} />
       )}
 
-      {/* 스팀 연동 알림 배너 (2순위) */}
-      {shouldShowSteamAlert && (
-        <SteamAlert
-          onConnect={handleSteamLink}
-          onClose={handleSteamAlertClose}
-          className={styles.steamAlertContainer}
-        />
-      )}
+      {/* Cold Start가 아닐 때만 나머지 UI 표시 */}
+      {!shouldShowTraitsAlert && (
+        <>
+          {/* 스팀 연동 알림 배너 (2순위) */}
+          {shouldShowSteamAlert && (
+            <SteamAlert
+              onConnect={handleSteamLink}
+              onClose={handleSteamAlertClose}
+              className={styles.steamAlertContainer}
+            />
+          )}
 
-      <div className={styles.content}>
-        {/* 헤더 섹션 */}
-        <div className={styles.header}>
-          <h1 className={styles.title}>매칭 찾기</h1>
-          <p className={styles.subtitle}>너랑 딱 맞는 게임 친구를 찾아봐</p>
-        </div>
+          <div className={styles.content}>
+            {/* 헤더 섹션 */}
+            <div className={styles.header}>
+              <h1 className={styles.title}>매칭 찾기</h1>
+              <p className={styles.subtitle}>너랑 딱 맞는 게임 친구를 찾아봐</p>
+            </div>
 
-        {/* 성향 분석 미완료 시 매칭 목록 숨김 */}
-        {shouldShowTraitsAlert ? (
-          <div className={styles.emptyState}>
-            <p>게임 성향 분석을 완료하면 나와 잘 맞는 친구를 찾을 수 있어요!</p>
-          </div>
-        ) : (
-          <>
             {/* 로딩 상태 */}
             {loading && <MatchListSkeleton isSidePanelOpen={isOpen} />}
 
@@ -247,9 +243,9 @@ export default function Match() {
                 onProfileClick={handleProfileClick}
               />
             )}
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
