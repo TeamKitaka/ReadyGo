@@ -9,6 +9,8 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { generateNickname } from '../src/lib/nickname/generateNickname';
+import { ANIMAL_VECTORS, type TraitVector } from '../src/commons/constants/animal/animal.vector';
+import { AnimalType } from '../src/commons/constants/animal/animal.enum';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -27,16 +29,43 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   },
 });
 
-// 동물 타입 목록
-const ANIMAL_TYPES = [
-  'fox', 'wolf', 'bear', 'cat', 'dog', 'rabbit', 
-  'tiger', 'leopard', 'falcon', 'owl', 'raven', 'hawk',
-  'deer', 'dolphin', 'hedgehog', 'koala', 'panda', 'bird'
-];
+// 동물 타입 목록 (벡터가 정의된 동물만)
+const ANIMAL_TYPES = Object.keys(ANIMAL_VECTORS) as AnimalType[];
 
-// 랜덤 성향 점수 생성 (30-90 범위)
-function generateTraitScore(): number {
-  return Math.floor(Math.random() * 61) + 30; // 30-90
+/**
+ * 동물 타입에 맞는 성향 점수 생성
+ * - 각 동물의 이상적 벡터를 기준으로 ±10 변동
+ * - 실제 유저처럼 약간의 편차가 있는 자연스러운 값 생성
+ */
+function generateTraitsForAnimal(animalType: AnimalType): TraitVector {
+  const baseVector = ANIMAL_VECTORS[animalType];
+  
+  if (!baseVector) {
+    // 벡터가 없는 경우 (예: unknown) 랜덤 값 생성
+    return {
+      cooperation: Math.floor(Math.random() * 61) + 30,
+      exploration: Math.floor(Math.random() * 61) + 30,
+      strategy: Math.floor(Math.random() * 61) + 30,
+      leadership: Math.floor(Math.random() * 61) + 30,
+      social: Math.floor(Math.random() * 61) + 30,
+    };
+  }
+  
+  // 기본 벡터에 ±10 변동 추가
+  const addVariation = (baseValue: number): number => {
+    const variation = Math.floor(Math.random() * 21) - 10; // -10 ~ +10
+    const result = baseValue + variation;
+    // 0-100 범위로 clamp
+    return Math.max(0, Math.min(100, result));
+  };
+  
+  return {
+    cooperation: addVariation(baseVector.cooperation),
+    exploration: addVariation(baseVector.exploration),
+    strategy: addVariation(baseVector.strategy),
+    leadership: addVariation(baseVector.leadership),
+    social: addVariation(baseVector.social),
+  };
 }
 
 // 랜덤 시간대 생성
@@ -99,16 +128,13 @@ async function createTestUser(index: number) {
       return null;
     }
 
-    // 3. User Traits 생성
+    // 3. User Traits 생성 (동물 타입에 맞는 성향)
+    const traits = generateTraitsForAnimal(animalType as AnimalType);
     const { error: traitsError } = await supabase
       .from('user_traits')
       .insert({
         user_id: userId,
-        cooperation: generateTraitScore(),
-        exploration: generateTraitScore(),
-        strategy: generateTraitScore(),
-        leadership: generateTraitScore(),
-        social: generateTraitScore(),
+        ...traits,
       });
 
     if (traitsError) {

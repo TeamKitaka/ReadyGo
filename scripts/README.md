@@ -41,7 +41,9 @@ npm run seed:users
 ### 생성되는 테이블 데이터
 1. **auth.users** (Supabase Auth)
 2. **user_profiles** (프로필 정보)
-3. **user_traits** (성향 점수 30-90 랜덤)
+3. **user_traits** (동물 타입에 맞는 성향 점수 자동 생성)
+   - 각 동물의 이상적 벡터 기준 ±10 변동
+   - 예: Wolf → leadership 높음, Tiger → exploration 높음
 4. **user_play_schedules** (플레이 시간대 2-4개 랜덤)
 
 ## 커스터마이징
