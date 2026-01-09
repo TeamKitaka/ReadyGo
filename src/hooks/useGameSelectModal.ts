@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 
 export type SteamGame = {
   app_id: number;
@@ -40,10 +40,6 @@ export const useGameSelectModal = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage =
-          errorData.message || errorData.detail || response.statusText;
-
         if (response.status === 401) {
           setError('로그인이 필요합니다.');
         } else {
@@ -55,10 +51,12 @@ export const useGameSelectModal = () => {
 
       const result = await response.json();
       // SelectboxItem 형식에서 SteamGame 형식으로 변환
-      const games: SteamGame[] = (result.data || []).map((item: { id: string; value: string }) => ({
-        app_id: parseInt(item.id, 10),
-        name: item.value,
-      }));
+      const games: SteamGame[] = (result.data || []).map(
+        (item: { id: string; value: string }) => ({
+          app_id: parseInt(item.id, 10),
+          name: item.value,
+        })
+      );
       setGameList(games);
     } catch (error) {
       console.error('게임 목록 조회 중 오류 발생:', error);
@@ -129,4 +127,3 @@ export const useGameSelectModal = () => {
     error,
   };
 };
-

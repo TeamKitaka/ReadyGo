@@ -20,7 +20,9 @@ export type GameInfoMap = Record<number, GameInfo>;
  * - appId별 게임 정보 캐싱 및 조회
  * - 로딩 상태 관리
  */
-export const useGameLinkPreview = (messages: Array<{ content?: string | null }>) => {
+export const useGameLinkPreview = (
+  messages: Array<{ content?: string | null }>
+) => {
   const [gameInfoMap, setGameInfoMap] = useState<GameInfoMap>({});
 
   /**
@@ -103,11 +105,16 @@ export const useGameLinkPreview = (messages: Array<{ content?: string | null }>)
   /**
    * steam://run/{appId} 패턴에서 appId 추출
    */
-  const extractGameAppId = useCallback((content?: string | null): number | null => {
-    if (!content) return null;
-    const match = content.match(/steam:\/\/run\/(\d+)/);
-    return match ? parseInt(match[1], 10) : null;
-  }, []);
+  const extractGameAppId = useCallback(
+    (content?: string | null): number | null => {
+      if (!content) {
+        return null;
+      }
+      const match = content.match(/steam:\/\/run\/(\d+)/);
+      return match ? parseInt(match[1], 10) : null;
+    },
+    []
+  );
 
   /**
    * 게임 링크인지 확인
@@ -136,4 +143,3 @@ export const useGameLinkPreview = (messages: Array<{ content?: string | null }>)
     getGameInfo,
   };
 };
-

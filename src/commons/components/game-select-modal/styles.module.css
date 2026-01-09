@@ -40,7 +40,9 @@
   cursor: pointer;
   color: var(--color-icon-interactive-secondary);
   border-radius: var(--border-radius-8, 8px);
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .closeButton:hover {
@@ -193,4 +195,3 @@
 .confirmButton {
   flex: 1;
 }
-

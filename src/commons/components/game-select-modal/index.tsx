@@ -38,7 +38,7 @@ export default function GameSelectModal({
   isOpen,
   onClose,
   onConfirm,
-  games,
+  games: _games,
   filteredGames,
   isLoading,
   searchQuery,
@@ -96,7 +96,10 @@ export default function GameSelectModal({
 
   return (
     <OverlayContainer onClose={onClose}>
-      <div className={styles.modalContainer} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={styles.modalContainer}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className={styles.header}>
           <h2 className={styles.title}>게임 선택</h2>
           <button
@@ -153,7 +156,9 @@ export default function GameSelectModal({
                           <Icon name="check" size={20} />
                         </span>
                       )}
-                      <span className={styles.gameOptionValue}>{game.name}</span>
+                      <span className={styles.gameOptionValue}>
+                        {game.name}
+                      </span>
                     </div>
                   );
                 })}
@@ -198,4 +203,3 @@ export default function GameSelectModal({
     </OverlayContainer>
   );
 }
-

@@ -15,7 +15,7 @@ import GameLinkPreview from '@/commons/components/game-link-preview';
 import GameSelectModal from '@/commons/components/game-select-modal';
 
 // Goose Goose Duck Steam App ID
-const GOOSE_GOOSE_DUCK_APP_ID = 1568590;
+// const GOOSE_GOOSE_DUCK_APP_ID = 1568590;
 
 // 테스트할 유저 UUID
 const TEST_USER_ID = 'da532b5d-60ac-46b8-a725-3c38845b15ac';

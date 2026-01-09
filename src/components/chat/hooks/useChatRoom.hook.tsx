@@ -133,7 +133,9 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
   const hasMarkedAsReadRef = useRef(false); // 이미 읽음 처리했는지 추적
   const messageListContainerRef =
     useRef<React.RefObject<HTMLDivElement> | null>(null); // 메시지 리스트 컨테이너 ref
-  const markRoomAsReadRef = useRef<((targetRoomId: number) => Promise<void>) | null>(null); // 읽음 처리 함수 ref
+  const markRoomAsReadRef = useRef<
+    ((targetRoomId: number) => Promise<void>) | null
+  >(null); // 읽음 처리 함수 ref
 
   // onMessage ref 업데이트 (최신 콜백 유지)
   useEffect(() => {

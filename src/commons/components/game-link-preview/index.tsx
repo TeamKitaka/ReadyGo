@@ -29,7 +29,7 @@ export interface GameLinkPreviewProps {
  */
 export default function GameLinkPreview({
   gameInfo,
-  appId,
+  appId: _appId,
   onGameStart,
 }: GameLinkPreviewProps) {
   if (gameInfo?.isLoading) {
