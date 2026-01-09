@@ -1,0 +1,154 @@
+아래의 조건을 모두 적용하여, 아래의 요구사항을 모두 구현할 것.
+구현 결과를 체크리스트로 반환할 것.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하여 작업하고, 이 작업이 끝나면 해당 rules 적용 결과를 체크리스트로 반환할 것.
+	- Repository는 순수 DB 접근만 수행한다
+	- 비즈니스 로직 포함 금지
+	- 데이터 변환/가공 금지 (ViewModel 변환 ❌)
+	- 에러 핸들링 최소화 (Supabase 응답 그대로 반환)
+	- 단일 책임 원칙: 하나의 테이블에만 접근
+	- mutation 금지 (immutability 유지)
+	- throw 사용 최소화 (Supabase 에러는 caller에게 전파)
+
+==============================================
+
+조건-파일경로) 참고 및 기준 파일 경로는 다음과 같다.
+	- 구현 대상:
+		- src/repositories/matchResultsCache.repository.ts
+	- 참고 패턴:
+		- src/repositories/userProfiles.repository.ts
+		- src/repositories/userStatus.repository.ts
+	- 접근 테이블:
+		- match_results_cache (viewer_id, target_id, score, reasons, tags, computed_at)
+
+==============================================
+
+조건-구현참고) 반드시 참고할 기존 구현 패턴은 다음과 같다.
+	- userProfiles.repository.ts는 user_profiles 테이블 전용 CRUD 수행
+	- 모든 함수는 SupabaseClient를 첫 번째 인자로 받음
+	- Supabase 응답 구조를 그대로 반환 (data, error 포함)
+	- 비즈니스 로직 없음, 순수 DB 쿼리만
+	- 타입은 Database 스키마 타입 사용
+
+==============================================
+
+핵심요구사항) 다음 기능을 step-by-step으로 구현하고, 각 항목의 적용 여부를 체크리스트로 반환할 것.
+
+0) 파일/Export 규칙
+	- 파일 위치: src/repositories/matchResultsCache.repository.ts
+	- named export만 사용 (default export 금지)
+	- 함수명은 명확한 CRUD 동사 사용 (findByViewer, upsert, delete 등)
+
+1) 타입 정의
+	- CachedMatchResult 인터페이스 정의:
+		- viewer_id: string
+		- target_id: string
+		- score: number
+		- reasons: any (JSONB)
+		- tags: any (JSONB)
+		- computed_at: string
+	- Database 타입 import: import type { Database } from '@/types/supabase'
+
+2) findByViewer 함수
+	- 함수명: findByViewer
+	- 입력:
+		- client: SupabaseClient<Database>
+		- viewerId: string
+		- targetIds: string[]
+	- 동작:
+		- match_results_cache 테이블에서 조회
+		- viewer_id = viewerId AND target_id IN targetIds
+		- 점수 내림차순 정렬 (score DESC)
+	- 반환: Supabase 응답 그대로 ({ data, error })
+
+3) upsert 함수
+	- 함수명: upsert
+	- 입력:
+		- client: SupabaseClient<Database>
+		- data: { viewer_id, target_id, score, reasons, tags }
+	- 동작:
+		- computed_at을 현재 시간으로 설정
+		- onConflict: 'viewer_id,target_id' (PRIMARY KEY)
+		- 중복 시 업데이트, 없으면 삽입
+	- 반환: Supabase 응답 그대로
+
+4) deleteByViewerAndTarget 함수
+	- 함수명: deleteByViewerAndTarget
+	- 입력:
+		- client: SupabaseClient<Database>
+		- viewerId: string
+		- targetId: string
+	- 동작:
+		- viewer_id = viewerId AND target_id = targetId 삭제
+	- 반환: Supabase 응답 그대로
+
+5) deleteAllByViewer 함수
+	- 함수명: deleteAllByViewer
+	- 입력:
+		- client: SupabaseClient<Database>
+		- viewerId: string
+	- 동작:
+		- viewer_id = viewerId인 모든 레코드 삭제
+	- 반환: Supabase 응답 그대로
+
+6) 금지 사항
+	- 비즈니스 로직 포함 ❌
+	- 데이터 가공/변환 ❌
+	- try-catch 남용 ❌ (Supabase 에러는 caller에게)
+	- Domain 타입 의존 ❌
+	- Service Layer 호출 ❌
+	- UI/Hook 의존 ❌
+
+7) Immutability 규칙
+	- 입력 파라미터 직접 수정 ❌
+	- 반환값은 Supabase 응답 그대로
+
+==============================================
+
+조건-Service/Hook/UI 책임)
+	- 해당 작업은 Repository 전용
+	- Service/Hook/UI 파일 생성/수정 금지
+
+==============================================
+
+구현 완료 후 반환) 아래 체크리스트를 반드시 반환할 것.
+	1. Repository 정체성
+		- 순수 DB 접근만 수행
+		- 비즈니스 로직 없음
+		- 데이터 변환 없음
+
+	2. 파일 / 위치 / export
+		- 파일 위치: src/repositories/matchResultsCache.repository.ts
+		- named export만 사용
+		- 함수명이 명확한 CRUD 동사 사용
+
+	3. 타입 정의
+		- CachedMatchResult 인터페이스 정의됨
+		- Database 타입 import됨
+
+	4. findByViewer 구현
+		- SupabaseClient 첫 번째 인자
+		- viewer_id, target_ids 필터링
+		- score DESC 정렬
+		- Supabase 응답 그대로 반환
+
+	5. upsert 구현
+		- computed_at 자동 설정
+		- onConflict PRIMARY KEY
+		- Supabase 응답 그대로 반환
+
+	6. delete 함수들 구현
+		- deleteByViewerAndTarget 구현
+		- deleteAllByViewer 구현
+
+	7. 금지 사항 준수
+		- 비즈니스 로직 없음
+		- 데이터 가공 없음
+		- Domain/Service/UI 의존 없음
+
+	8. Immutability
+		- 입력 파라미터 수정 안 함
+		- 반환값 직접 수정 안 함
+
