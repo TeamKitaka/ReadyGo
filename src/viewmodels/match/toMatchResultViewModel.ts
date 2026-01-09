@@ -37,16 +37,53 @@ const toReasonViewModel = (
   const { detail, isBaseline } = reasonDTO;
 
   // Baseline reason (Domain이 의미 없다고 판단한 것)
+  // 타입별로 다른 메시지 제공하여 중복 방지
   if (isBaseline) {
-    return {
-      type: 'BASELINE',
-      icon: '✨',
-      label: '새로운만남',
-      shortDescription: '새로운 조합',
-      primaryText: '새로운 만남의 시작이에요',
-      isHighlight: false,
-      isFallback: true,
-    };
+    switch (detail.type) {
+      case 'STYLE_SIMILARITY':
+        return {
+          type: detail.type,
+          icon: '✨',
+          label: '새로운만남',
+          shortDescription: '함께 플레이하며 알아가요',
+          primaryText: '함께 플레이하며 스타일을 맞춰갈 수 있어요',
+          isHighlight: false,
+          isFallback: true,
+        };
+      
+      case 'ACTIVITY_PATTERN':
+        return {
+          type: detail.type,
+          icon: '🕐',
+          label: '시간조율',
+          shortDescription: '시간 맞춰 플레이 가능',
+          primaryText: '시간을 조율하며 함께 플레이할 수 있어요',
+          isHighlight: false,
+          isFallback: true,
+        };
+      
+      case 'RELIABILITY':
+        return {
+          type: detail.type,
+          icon: '🤝',
+          label: '좋은만남',
+          shortDescription: '새로운 파티원',
+          primaryText: '새로운 파티원과의 만남이에요',
+          isHighlight: false,
+          isFallback: true,
+        };
+      
+      default:
+        return {
+          type: 'BASELINE',
+          icon: '✨',
+          label: '새로운만남',
+          shortDescription: '새로운 조합',
+          primaryText: '새로운 만남의 시작이에요',
+          isHighlight: false,
+          isFallback: true,
+        };
+    }
   }
 
   // 의미 있는 reason들
