@@ -394,23 +394,30 @@ export const generateMatchTags = (
   // 성향 테스트를 안 한 사람도 최소 3개 태그를 가져야 함
   // Fallback 태그는 조건 없이 추가 가능한 "일반적 긍정 메시지"만 포함
   if (tags.length < 3) {
-    // Fallback 태그 목록 (우선순위 순)
+    // Fallback 태그 후보 목록 (랜덤 선택용)
     // 조건 없이 추가 가능한 일반적/긍정적 태그만
-    const fallbackTags = [
-      '좋은만남',      // 1순위: 새로운 만남 긍정 메시지
-      '매너좋음',      // 2순위: 기본 매너 (긍정 이미지)
-      '활동적',        // 3순위: 활동성 (일반적 표현)
-      '꾸준함',        // 4순위: 지속성 (긍정 신호)
-      '협동형',        // 5순위: 기본 성향 (구체적)
+    const fallbackCandidates = [
+      '좋은만남',      // 새로운 만남 긍정 메시지
+      '매너좋음',      // 기본 매너 (긍정 이미지)
+      '활동적',        // 활동성 (일반적 표현)
+      '꾸준함',        // 지속성 (긍정 신호)
+      '협동형',        // 기본 성향 (구체적)
     ];
 
-    // 이미 추가되지 않은 fallback 태그를 순서대로 추가
-    for (const fallbackLabel of fallbackTags) {
-      if (tags.length >= 3) {
-        break; // 3개 이상이면 중단
-      }
-      addTagIfNotExists(tags, fallbackLabel);
-    }
+    // 이미 추가되지 않은 태그만 필터링
+    const availableTags = fallbackCandidates.filter(
+      (label) => !tags.some((t) => t.label === label)
+    );
+
+    // 필요한 개수만큼 랜덤 선택
+    const needed = 3 - tags.length;
+    const shuffled = availableTags.sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, needed);
+
+    // 선택된 태그 추가
+    selected.forEach((label) => {
+      tags.push({ label });
+    });
   }
 
   // 상위 5개로 제한
