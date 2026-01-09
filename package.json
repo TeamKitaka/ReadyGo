@@ -30,7 +30,8 @@
     "seed:check-auth": "tsx scripts/check-auth-users.ts",
     "seed:restore": "tsx scripts/restore-user-profiles.ts",
     "seed:clear-cache": "tsx scripts/clear-match-cache.ts",
-    "seed:clear-steam": "tsx scripts/clear-steam-data.ts"
+    "seed:clear-steam": "tsx scripts/clear-steam-data.ts",
+    "seed:fix-nicknames": "tsx scripts/fix-real-user-nicknames.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
