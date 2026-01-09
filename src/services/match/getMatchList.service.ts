@@ -25,7 +25,7 @@ import * as steamGamesRepo from '@/repositories/steamGames.repository';
 import { getAvatarImagePath } from '@/lib/avatar/getAvatarImagePath';
 import { getEffectiveStatus } from '@/stores/user-status.store';
 
-const DEFAULT_MIN_SCORE = 50; // 50% 이상이면 충분 (실시간성 우선)
+const DEFAULT_MIN_SCORE = 65; // 기본값: 65% 이상 (중간 매칭율, 셀렉트 박스 미선택 시)
 const CACHE_CONTEXT = 'match';
 
 export interface MatchListOptions {
@@ -98,10 +98,8 @@ export async function getMatchList(
     .map((r) => (r as PromiseFulfilledResult<any>).value)
     .filter((r) => r.finalScore >= minScore);
   
-  // 5. 랜덤 섞기 (실시간성 우선, 점수 편향 제거)
-  // 고득점자(90% 이상)도 랜덤하게 섞어서 다양성 확보
-  const shuffled = results.sort(() => Math.random() - 0.5);
-  const top = shuffled.slice(0, limit);
+  // 5. 점수대별 샘플링 (다양성 확보)
+  const top = sampleByScoreRange(results, minScore, limit);
   
   // 6. 캐시 저장
   await Promise.all(
@@ -128,6 +126,65 @@ export async function getMatchList(
   
   // 8. 프로필/상태 추가 + 온라인 우선 정렬
   return await enrichAndSort(client, top, options.statusFilter);
+}
+
+/**
+ * 점수대별 샘플링
+ * 
+ * 전략:
+ * - 75% 이상: 고득점만 (높은 매칭율)
+ * - 65% 이상: 65~75% 위주 + 75% 이상 소수 (중간 매칭율)
+ * - 50% 이상: 전 구간 골고루 (모든 매칭율)
+ * 
+ * @param results 모든 매칭 결과
+ * @param minScore 최소 점수
+ * @param limit 목표 개수
+ * @returns 샘플링된 결과
+ */
+function sampleByScoreRange(results: any[], minScore: number, limit: number): any[] {
+  if (results.length === 0) return [];
+  
+  // 점수대별로 분류
+  const high = results.filter(r => r.finalScore >= 75); // 75% 이상
+  const mid = results.filter(r => r.finalScore >= 65 && r.finalScore < 75); // 65~75%
+  const low = results.filter(r => r.finalScore >= 50 && r.finalScore < 65); // 50~65%
+  
+  let sampled: any[] = [];
+  
+  if (minScore >= 75) {
+    // "높은 매칭율 (75% 이상)": 75% 이상만
+    sampled = shuffleArray(high).slice(0, limit);
+  } else if (minScore >= 65) {
+    // "중간 매칭율 (65% 이상)": 65~75% 위주 + 75% 이상 소수
+    const midCount = Math.min(mid.length, Math.ceil(limit * 0.7)); // 70%
+    const highCount = Math.min(high.length, limit - midCount); // 나머지
+    
+    sampled = [
+      ...shuffleArray(mid).slice(0, midCount),
+      ...shuffleArray(high).slice(0, highCount),
+    ];
+  } else {
+    // "모든 매칭율 (50% 이상)": 전 구간 골고루
+    const lowCount = Math.min(low.length, Math.ceil(limit * 0.4)); // 40%
+    const midCount = Math.min(mid.length, Math.ceil(limit * 0.35)); // 35%
+    const highCount = Math.min(high.length, limit - lowCount - midCount); // 나머지 25%
+    
+    sampled = [
+      ...shuffleArray(low).slice(0, lowCount),
+      ...shuffleArray(mid).slice(0, midCount),
+      ...shuffleArray(high).slice(0, highCount),
+    ];
+  }
+  
+  // 최종 랜덤 섞기 (점수대 내에서는 랜덤)
+  return shuffleArray(sampled).slice(0, limit);
+}
+
+/**
+ * 배열 랜덤 섞기
+ */
+function shuffleArray<T>(array: T[]): T[] {
+  return [...array].sort(() => Math.random() - 0.5);
 }
 
 /**
