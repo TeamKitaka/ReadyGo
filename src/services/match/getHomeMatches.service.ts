@@ -18,6 +18,7 @@ import { calculateMatchResult } from './calculateMatchResult.service';
 import * as matchCacheRepo from '@/repositories/matchResultsCache.repository';
 import * as userProfilesRepo from '@/repositories/userProfiles.repository';
 import * as userStatusRepo from '@/repositories/userStatus.repository';
+import * as steamGamesRepo from '@/repositories/steamGames.repository';
 import { getAvatarImagePath } from '@/lib/avatar/getAvatarImagePath';
 
 /**
@@ -124,10 +125,29 @@ async function enrichWithProfiles(
 
   const userIds = results.map((r) => r.target_id);
 
-  // 프로필과 상태 병렬 조회
-  const [{ data: profiles }, { data: statuses }] = await Promise.all([
+  // 1. reasons에서 모든 게임 ID 추출
+  const allGameIds = new Set<number>();
+  for (const result of results) {
+    if (result.reasons) {
+      for (const reason of result.reasons) {
+        if (reason.detail.type === 'COMMON_GAME' && reason.detail.topGames) {
+          // "Game 570" → 570으로 변환
+          for (const gameStr of reason.detail.topGames) {
+            const match = gameStr.match(/Game (\d+)/);
+            if (match) {
+              allGameIds.add(parseInt(match[1], 10));
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 2. 프로필, 상태, 게임 정보 병렬 조회
+  const [{ data: profiles }, { data: statuses }, gameNameMap] = await Promise.all([
     userProfilesRepo.findByUserIds(client, userIds),
     userStatusRepo.findByUserIds(client, userIds),
+    steamGamesRepo.getGameNameMap(client, Array.from(allGameIds)),
   ]);
 
   // Map으로 변환 (빠른 조회)
@@ -136,6 +156,18 @@ async function enrichWithProfiles(
     statuses?.map((s) => [s.user_id, s.status]) || []
   );
 
+  // 3. 게임 이름 변환 헬퍼
+  const replaceGameNames = (topGames: string[]): string[] => {
+    return topGames.map((gameStr) => {
+      const match = gameStr.match(/Game (\d+)/);
+      if (match) {
+        const appId = parseInt(match[1], 10);
+        return gameNameMap.get(appId) || gameStr;
+      }
+      return gameStr;
+    });
+  };
+
   return results.map((r) => {
     const profile = profileMap.get(r.target_id);
     const avatarUrl = getAvatarImagePath(
@@ -143,8 +175,25 @@ async function enrichWithProfiles(
       profile?.animal_type
     );
 
+    // 4. reasons의 게임 이름 변환
+    const enrichedReasons = r.reasons
+      ? r.reasons.map((reason: any) => {
+          if (reason.detail.type === 'COMMON_GAME' && reason.detail.topGames) {
+            return {
+              ...reason,
+              detail: {
+                ...reason.detail,
+                topGames: replaceGameNames(reason.detail.topGames),
+              },
+            };
+          }
+          return reason;
+        })
+      : [];
+
     return {
       ...r,
+      reasons: enrichedReasons,
       profile: {
         userId: r.target_id,
         nickname: profile?.nickname || '알 수 없음',
