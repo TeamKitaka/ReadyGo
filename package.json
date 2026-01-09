@@ -31,7 +31,9 @@
     "seed:restore": "tsx scripts/restore-user-profiles.ts",
     "seed:clear-cache": "tsx scripts/clear-match-cache.ts",
     "seed:clear-steam": "tsx scripts/clear-steam-data.ts",
-    "seed:fix-nicknames": "tsx scripts/fix-real-user-nicknames.ts"
+    "seed:fix-nicknames": "tsx scripts/fix-real-user-nicknames.ts",
+    "seed:add-traits": "tsx scripts/add-traits-to-test-users.ts",
+    "seed:assign-animals": "tsx scripts/assign-animal-types.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
