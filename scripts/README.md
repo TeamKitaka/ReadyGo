@@ -76,19 +76,36 @@ npm run seed:users
 
 #### Cold Start (test1~25)
 1. **auth.users** ✅
-2. **user_profiles** ✅ (animal_type: `unknown`)
+2. **user_profiles** ✅ 
+   - animal_type: `unknown`
+   - tier: 온도 점수에 따라 자동 계산
+   - temperature_score: 0-100 랜덤
 3. **user_settings** ✅ (테마: dark, 알림: 모두 활성화)
 4. **user_status** ✅ (online/offline/away 랜덤)
 
 #### 성향분석 완료 (test26~150)
 1. **auth.users** ✅
-2. **user_profiles** ✅ (동물 타입 자동 할당, 18종)
+2. **user_profiles** ✅
+   - 동물 타입 자동 할당 (18종)
+   - **tier**: 온도 점수에 따라 자동 계산
+   - **temperature_score**: 0-100 랜덤 (정규분포 근사)
 3. **user_settings** ✅ (테마: dark, 알림: 모두 활성화)
 4. **user_status** ✅ (online/offline/away 랜덤)
 5. **user_traits** ✅ (동물별 성향 자동 생성)
    - 각 동물의 이상적 벡터 기준 ±10 변동
    - 예: Wolf → leadership 높음, Tiger → exploration 높음
-6. **user_play_schedules** ✅ (2-4개 시간대 랜덤)
+6. **user_play_schedules** ✅ (2-4개 시간대 랜덤, 중복 없음)
+
+#### 📊 온도-티어 매칭 규칙
+| 티어 | 온도 점수 범위 |
+|------|--------------|
+| 브론즈 | 0 ~ 29 |
+| 실버 | 30 ~ 44 |
+| 골드 | 45 ~ 59 |
+| 플래티넘 | 60 ~ 74 |
+| 다이아몬드 | 75 ~ 87 |
+| 마스터 | 88 ~ 94 |
+| 챌린저 | 95 ~ 100 |
 
 > 💡 **매칭 시스템 테스트 전략**
 > - Cold Start: 기본 매칭 알고리즘 테스트
@@ -153,6 +170,22 @@ Supabase Dashboard:
 ```
 
 → 이미 존재하는 이메일입니다. `START` 값을 변경하거나 기존 유저를 삭제하세요.
+
+### Schedules 중복 에러
+
+```
+❌ Schedules 생성 실패: duplicate key value violates unique constraint
+```
+
+→ `npm run seed:fix` 실행해서 실패한 계정 복구
+
+### Tier 불일치
+
+```
+온도 점수와 티어가 맞지 않는 경우
+```
+
+→ `npm run seed:fix-tier` 실행해서 모든 계정의 티어 자동 수정
 
 ## 테스트 계정 삭제
 

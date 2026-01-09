@@ -13,6 +13,7 @@ import { createClient } from '@supabase/supabase-js';
 import { generateNickname } from '../src/lib/nickname/generateNickname';
 import { ANIMAL_VECTORS, type TraitVector } from '../src/commons/constants/animal/animal.vector';
 import { AnimalType } from '../src/commons/constants/animal/animal.enum';
+import { getTierFromTemperature, getRandomTemperature } from './utils/tierMapping';
 
 // .env.local 파일 명시적으로 로드
 config({ path: resolve(process.cwd(), '.env.local') });
@@ -118,17 +119,18 @@ async function createTestUser(index: number, isColdStart: boolean = false) {
     const userId = authData.user.id;
 
     // 2. User Profile 생성
+    const temperatureScore = getRandomTemperature(); // 0-100 랜덤
+    const tier = getTierFromTemperature(temperatureScore); // 온도에 맞는 티어 자동 계산
+    
     const { error: profileError } = await supabase
       .from('user_profiles')
       .insert({
         id: userId,
         nickname,
         animal_type: animalType,
-        tier: 'bronze',
-        temperature_score: Math.floor(Math.random() * 20) + 30, // 30-50
-        bio: isColdStart 
-          ? `안녕하세요! ${nickname}입니다. 함께 게임해요! 🎮`
-          : `안녕하세요! ${nickname}입니다. 함께 게임해요! 🎮`,
+        tier,
+        temperature_score: temperatureScore,
+        bio: `안녕하세요! ${nickname}입니다. 함께 게임해요! 🎮`,
       });
 
     if (profileError) {
