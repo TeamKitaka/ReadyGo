@@ -158,7 +158,40 @@ async function createTestUser(index: number) {
       return null;
     }
 
-    console.log(`✅ [${index}] ${email} (${nickname}, ${animalType})`);
+    // 5. User Settings 생성 (실제 회원가입 플로우와 동일)
+    const { error: settingsError } = await supabase
+      .from('user_settings')
+      .insert({
+        id: userId,
+        theme_mode: 'dark',
+        notification_push: true,
+        notification_chat: true,
+        notification_party: true,
+        language: 'ko',
+      });
+
+    if (settingsError) {
+      console.error(`❌ [${index}] Settings 생성 실패:`, settingsError.message);
+      return null;
+    }
+
+    // 6. User Status 생성 (랜덤 온라인 상태)
+    const statuses = ['online', 'offline', 'away'] as const;
+    const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+    
+    const { error: statusError } = await supabase
+      .from('user_status')
+      .insert({
+        user_id: userId,
+        status: randomStatus,
+      });
+
+    if (statusError) {
+      console.error(`❌ [${index}] Status 생성 실패:`, statusError.message);
+      return null;
+    }
+
+    console.log(`✅ [${index}] ${email} (${nickname}, ${animalType}, ${randomStatus})`);
     return userId;
 
   } catch (error) {

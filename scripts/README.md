@@ -39,12 +39,20 @@ npm run seed:users
 - **동물 타입**: 18종 중 랜덤
 
 ### 생성되는 테이블 데이터
+
+실제 **회원가입 + 성향분석 완료** 상태와 동일하게 생성:
+
 1. **auth.users** (Supabase Auth)
 2. **user_profiles** (프로필 정보)
-3. **user_traits** (동물 타입에 맞는 성향 점수 자동 생성)
+   - 동물 타입 자동 할당 (18종)
+3. **user_traits** (동물 타입에 맞는 성향 점수)
    - 각 동물의 이상적 벡터 기준 ±10 변동
    - 예: Wolf → leadership 높음, Tiger → exploration 높음
 4. **user_play_schedules** (플레이 시간대 2-4개 랜덤)
+5. **user_settings** (기본 설정)
+   - 테마: dark, 알림: 모두 활성화
+6. **user_status** (온라인 상태)
+   - online / offline / away 랜덤
 
 ## 커스터마이징
 
