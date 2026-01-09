@@ -167,12 +167,17 @@ export default function ProfilePanel({
 
     const viewModel = toMatchResultViewModel(mockCoreDTO);
 
-    // shortDescription 추출하여 string[]로 변환 (최대 3개)
-    // shortDescription은 중간 길이의 설명 ("동일 게임 선호" vs "동일게임" vs "3개의 같은 게임을 플레이해요")
-    // Cold Start: fallback도 포함하여 최소 3개 보장
-    return viewModel.reasons
-      .slice(0, 3)
-      .map((r) => r.shortDescription);
+    // shortDescription 추출하여 string[]로 변환
+    // 표시 개수 결정: 상위 2개 길이 합이 15자 이하면 3개, 초과하면 2개
+    const allReasons = viewModel.reasons.map((r) => r.shortDescription);
+    
+    if (allReasons.length === 0) return [];
+    
+    // 상위 2개 길이 체크
+    const top2Length = allReasons.slice(0, 2).join('').length;
+    const displayCount = top2Length <= 15 ? 3 : 2;
+    
+    return allReasons.slice(0, displayCount);
   }, [matchData, isMyProfile, myUserId, userId]);
 
   const containerClasses = [styles.profilePanel, className]

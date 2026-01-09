@@ -233,47 +233,55 @@ export const generateMatchReasons = (
 
   // 최소 3개 보장: 부족하면 baseline reason 추가
   if (reasons.length < 3) {
-    // STYLE_SIMILARITY가 없으면 추가 (baseline)
-    if (!reasons.some((r) => r.detail.type === 'STYLE_SIMILARITY')) {
-      reasons.push({
+    // 4개 baseline 후보 정의
+    const baselineCandidates: MatchReasonCoreDTO[] = [
+      {
         detail: {
           type: 'STYLE_SIMILARITY',
-          similarityScore: 50, // 중간값 (의미 없는 기본값)
+          similarityScore: 50,
           topTrait: 'cooperation',
         },
         priority: 'HIGH',
-        isBaseline: true, // baseline 플래그
-      });
-    }
-    // ACTIVITY_PATTERN이 없으면 추가 (baseline)
-    if (
-      !reasons.some((r) => r.detail.type === 'ACTIVITY_PATTERN') &&
-      reasons.length < 3
-    ) {
-      reasons.push({
+        isBaseline: true,
+      },
+      {
         detail: {
           type: 'ACTIVITY_PATTERN',
-          patternScore: 50, // 중간값 (의미 없는 기본값)
+          patternScore: 50,
           commonTimeSlots: [],
         },
         priority: 'MEDIUM',
-        isBaseline: true, // baseline 플래그
-      });
-    }
-    // RELIABILITY가 없으면 추가 (baseline)
-    if (
-      !reasons.some((r) => r.detail.type === 'RELIABILITY') &&
-      reasons.length < 3
-    ) {
-      reasons.push({
+        isBaseline: true,
+      },
+      {
         detail: {
           type: 'RELIABILITY',
-          reliabilityScore: 50, // 중간값 (의미 없는 기본값)
+          reliabilityScore: 50,
         },
         priority: 'LOW',
-        isBaseline: true, // baseline 플래그
-      });
-    }
+        isBaseline: true,
+      },
+      {
+        detail: {
+          type: 'BASELINE' as any, // 4번째 후보 (새로운조합)
+          score: 50,
+        },
+        priority: 'LOW',
+        isBaseline: true,
+      },
+    ];
+
+    // 이미 존재하는 타입 제외
+    const availableBaselines = baselineCandidates.filter(
+      (candidate) => !reasons.some((r) => r.detail.type === candidate.detail.type)
+    );
+
+    // 필요한 개수만큼 랜덤 선택
+    const needed = 3 - reasons.length;
+    const shuffled = availableBaselines.sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, needed);
+
+    reasons.push(...selected);
   }
 
   // Steam 관련 설명 추가

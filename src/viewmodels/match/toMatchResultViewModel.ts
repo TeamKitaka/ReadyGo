@@ -45,8 +45,8 @@ const toReasonViewModel = (
           type: detail.type,
           icon: '✨',
           label: '새로운만남',
-          shortDescription: '함께 플레이하며 알아가요',
-          primaryText: '함께 플레이하며 스타일을 맞춰갈 수 있어요',
+          shortDescription: '함께 알아가는 스타일',
+          primaryText: '처음부터 맞춰가기보다, 플레이하며 자연스럽게 호흡을 맞춰갈 수 있어요',
           isHighlight: false,
           isFallback: true,
         };
@@ -56,8 +56,8 @@ const toReasonViewModel = (
           type: detail.type,
           icon: '🕐',
           label: '시간조율',
-          shortDescription: '시간 맞춰 플레이 가능',
-          primaryText: '시간을 조율하며 함께 플레이할 수 있어요',
+          shortDescription: '유연한 플레이 시간',
+          primaryText: '접속 시간을 조율하며 가볍게 함께 플레이하기 좋아요',
           isHighlight: false,
           isFallback: true,
         };
@@ -67,8 +67,8 @@ const toReasonViewModel = (
           type: detail.type,
           icon: '🤝',
           label: '좋은만남',
-          shortDescription: '새로운 파티원',
-          primaryText: '새로운 파티원과의 만남이에요',
+          shortDescription: '첫 파티의 안정감',
+          primaryText: '처음 만나는 파티원으로 부담 없이 시작하기 좋아요',
           isHighlight: false,
           isFallback: true,
         };
@@ -77,9 +77,9 @@ const toReasonViewModel = (
         return {
           type: 'BASELINE',
           icon: '✨',
-          label: '새로운만남',
+          label: '새로운조합',
           shortDescription: '새로운 조합',
-          primaryText: '새로운 만남의 시작이에요',
+          primaryText: '새로운 조합이라서 오히려 색다른 플레이가 될 수 있어요',
           isHighlight: false,
           isFallback: true,
         };
@@ -93,9 +93,9 @@ const toReasonViewModel = (
       return {
         type: detail.type,
         icon: '🎮',
-        label: '동일게임',
-        shortDescription: '동일 게임 선호',
-        primaryText: `${detail.gameCount}개의 같은 게임을 플레이해요`,
+        label: '게임취향',
+        shortDescription: '같은 게임 취향',
+        primaryText: `함께 즐긴 게임이 ${detail.gameCount}개나 있어요`,
         secondaryText: gameNames || `${detail.gameCount}개`,
         isHighlight: detail.gameCount >= 3,
       };
@@ -111,8 +111,8 @@ const toReasonViewModel = (
             type: detail.type,
             icon: '🤝',
             label: '협동적',
-            shortDescription: '팀플레이 스타일 유사',
-            primaryText: '팀 플레이를 중요하게 여겨요',
+            shortDescription: '팀워크 중시',
+            primaryText: '팀 플레이 흐름을 중요하게 생각하는 타입이에요',
             secondaryText: '협동 성향이 높아요',
             isHighlight: true,
           };
@@ -122,8 +122,8 @@ const toReasonViewModel = (
             type: detail.type,
             icon: '🧭',
             label: '탐험가',
-            shortDescription: '탐험적 플레이 성향',
-            primaryText: '새로운 콘텐츠를 좋아해요',
+            shortDescription: '새로운 시도 선호',
+            primaryText: '새로운 콘텐츠나 시도를 즐기는 편이에요',
             secondaryText: '탐험 성향이 높아요',
             isHighlight: true,
           };
@@ -133,8 +133,8 @@ const toReasonViewModel = (
             type: detail.type,
             icon: '🎯',
             label: '효율러',
-            shortDescription: '전략적 플레이 성향',
-            primaryText: '최적화된 플레이를 선호해요',
+            shortDescription: '전략적 사고',
+            primaryText: '플레이 동선이나 전략을 고민하며 움직여요',
             secondaryText: '전략 성향이 높아요',
             isHighlight: true,
           };
@@ -144,8 +144,8 @@ const toReasonViewModel = (
             type: detail.type,
             icon: '👑',
             label: '리더형',
-            shortDescription: '리더십 역할 선호',
-            primaryText: '팀을 이끄는 역할을 자주 맡아요',
+            shortDescription: '주도적인 플레이',
+            primaryText: '상황에 따라 팀을 이끄는 역할을 자연스럽게 맡아요',
             secondaryText: '리더십이 뛰어나요',
             isHighlight: true,
           };
@@ -155,8 +155,8 @@ const toReasonViewModel = (
             type: detail.type,
             icon: '💬',
             label: '소통왕',
-            shortDescription: '활발한 소통 스타일',
-            primaryText: '소통이 활발해요',
+            shortDescription: '소통 중심',
+            primaryText: '게임 중 소통이 활발한 편이에요',
             secondaryText: '사교성이 높아요',
             isHighlight: true,
           };
@@ -167,9 +167,9 @@ const toReasonViewModel = (
           return {
             type: detail.type,
             icon: '🤝',
-            label: '스타일유사',
-            shortDescription: '플레이 스타일 유사',
-            primaryText: `${traitLabel} 성향이 비슷해요`,
+            label: '성향유사',
+            shortDescription: '성향 포인트 유사',
+            primaryText: `${traitLabel} 성향에서 공통점이 보여요`,
             isHighlight: detail.similarityScore >= 70,
           };
         }
@@ -190,8 +190,8 @@ const toReasonViewModel = (
                 type: detail.type,
                 icon: '🌅',
                 label: '아침형',
-                shortDescription: '주로 오전 활동',
-                primaryText: '주로 오전에 활동해요',
+                shortDescription: '오전 활동 중심',
+                primaryText: '주로 오전 시간대에 플레이하는 편이에요',
                 secondaryText: '생활 리듬이 비슷해요',
                 isHighlight: true,
               };
@@ -200,8 +200,8 @@ const toReasonViewModel = (
                 type: detail.type,
                 icon: '☀️',
                 label: '오후형',
-                shortDescription: '오후 시간대 활동',
-                primaryText: '오후 시간대에 자주 접속해요',
+                shortDescription: '낮 시간 플레이',
+                primaryText: '낮 시간대에 접속하는 경우가 많아요',
                 secondaryText: '생활 패턴이 유사해요',
                 isHighlight: true,
               };
@@ -210,8 +210,8 @@ const toReasonViewModel = (
                 type: detail.type,
                 icon: '🌆',
                 label: '저녁형',
-                shortDescription: '저녁 시간 일치',
-                primaryText: '퇴근 후 플레이 시간이 잘 맞아요',
+                shortDescription: '저녁 접속 패턴',
+                primaryText: '저녁 이후 시간대가 잘 맞아요',
                 secondaryText: '저녁 시간대 일치',
                 isHighlight: true,
               };
@@ -220,8 +220,8 @@ const toReasonViewModel = (
                 type: detail.type,
                 icon: '🦉',
                 label: '올빼미',
-                shortDescription: '심야 시간 일치',
-                primaryText: '밤에 활발하게 플레이해요',
+                shortDescription: '심야 플레이',
+                primaryText: '밤 시간대에 활발하게 플레이해요',
                 secondaryText: '심야 시간대 일치',
                 isHighlight: true,
               };
@@ -230,8 +230,8 @@ const toReasonViewModel = (
                 type: detail.type,
                 icon: '🎮',
                 label: '주말형',
-                shortDescription: '주말 집중 플레이',
-                primaryText: '주말에 함께 게임하기 좋아요',
+                shortDescription: '주말 집중형',
+                primaryText: '주말에 플레이 비중이 높은 편이에요',
                 secondaryText: '주말 집중 플레이',
                 isHighlight: true,
               };
@@ -239,9 +239,9 @@ const toReasonViewModel = (
               return {
                 type: detail.type,
                 icon: '🕐',
-                label: '유연함',
-                shortDescription: '시간 조율 가능',
-                primaryText: '시간 조율이 쉬워요',
+                label: '언제든가능',
+                shortDescription: '유연한 시간',
+                primaryText: '특정 시간대에 크게 구애받지 않아요',
                 secondaryText: '유연한 시간대',
                 isHighlight: true,
               };
@@ -257,9 +257,9 @@ const toReasonViewModel = (
           return {
             type: detail.type,
             icon: '🌙',
-            label: '시간대보완',
-            shortDescription: '저녁~밤 시간 연결',
-            primaryText: '저녁부터 밤까지 자연스럽게 이어져요',
+            label: '올나이트',
+            shortDescription: '밤 플레이 궁합',
+            primaryText: '저녁부터 밤까지 길게 함께 플레이하기 좋아요',
             secondaryText: '보완적 시간대',
             isHighlight: true,
           };
@@ -270,9 +270,9 @@ const toReasonViewModel = (
           return {
             type: detail.type,
             icon: '🔄',
-            label: '유연함',
-            shortDescription: '시간 조율 가능',
-            primaryText: '시간대에 맞춰 함께 플레이하기 좋아요',
+            label: '시간궁합',
+            shortDescription: '플레이 시간 궁합',
+            primaryText: '서로의 플레이 시간대가 잘 어울려요',
             secondaryText: '유연한 조율',
             isHighlight: true,
           };
@@ -283,8 +283,8 @@ const toReasonViewModel = (
           type: detail.type,
           icon: '⏰',
           label: '여유형',
-          shortDescription: '자유로운 플레이 스타일',
-          primaryText: '각자의 시간대에서 자유롭게 즐기는 스타일이에요',
+          shortDescription: '리듬 존중',
+          primaryText: '각자의 리듬을 존중하며 플레이할 수 있어요',
           isHighlight: false,
         };
       }
@@ -293,9 +293,9 @@ const toReasonViewModel = (
       return {
         type: detail.type,
         icon: '⏰',
-        label: '시간대일치',
-        shortDescription: '활동 시간 유사',
-        primaryText: '비슷한 시간대에 활동해요',
+        label: '활동유사',
+        shortDescription: '접속 패턴 유사',
+        primaryText: '접속 패턴에서 공통점이 보여요',
         isHighlight: detail.patternScore >= 70,
       };
     }
@@ -305,8 +305,8 @@ const toReasonViewModel = (
         type: detail.type,
         icon: '🟢',
         label: '지금온라인',
-        shortDescription: '현재 접속 중',
-        primaryText: '지금 온라인 상태예요',
+        shortDescription: '바로 가능',
+        primaryText: '지금 바로 함께 플레이할 수 있어요',
         isHighlight: true,
       };
 
@@ -314,9 +314,9 @@ const toReasonViewModel = (
       return {
         type: detail.type,
         icon: '⏱️',
-        label: '플타임유사',
-        shortDescription: '플레이 시간 유사',
-        primaryText: `플레이 시간이 ${detail.matchScore}% 비슷해요`,
+        label: '플레이리듬',
+        shortDescription: '플레이 템포 유사',
+        primaryText: '게임을 즐기는 속도와 몰입도가 비슷한 편이에요',
         isHighlight: detail.matchScore >= 70,
       };
 
@@ -325,8 +325,8 @@ const toReasonViewModel = (
         type: detail.type,
         icon: '🛡️',
         label: '매너좋음',
-        shortDescription: '높은 신뢰도',
-        primaryText: `신뢰도 점수 ${detail.reliabilityScore}점`,
+        shortDescription: '안정적인 매너',
+        primaryText: '안정적인 플레이 매너를 보여요',
         isHighlight: detail.reliabilityScore >= 70,
       };
 
@@ -336,8 +336,8 @@ const toReasonViewModel = (
         type: detail.type,
         icon: '🎵',
         label: '장르일치',
-        shortDescription: `${genre} 장르 선호`,
-        primaryText: `${genre} 장르를 함께 즐겨요`,
+        shortDescription: '선호 장르 공통',
+        primaryText: `${genre} 장르를 특히 자주 플레이해요`,
         isHighlight: true,
       };
     }
@@ -347,8 +347,8 @@ const toReasonViewModel = (
         type: detail.type,
         icon: '🕹️',
         label: '플스타일유사',
-        shortDescription: '플레이 스타일 일치',
-        primaryText: '플레이 스타일이 잘 맞아요',
+        shortDescription: '플레이 성향 일치',
+        primaryText: '게임을 대하는 플레이 스타일이 잘 맞아요',
         isHighlight: true,
       };
 
@@ -357,8 +357,8 @@ const toReasonViewModel = (
         type: detail.type,
         icon: '👥',
         label: '파티러버',
-        shortDescription: '풍부한 파티 경험',
-        primaryText: '파티 플레이 경험이 풍부해요',
+        shortDescription: '파티 경험 풍부',
+        primaryText: '파티 플레이 경험이 많은 유저예요',
         isHighlight: detail.experienceScore >= 70,
       };
 
@@ -366,9 +366,9 @@ const toReasonViewModel = (
       return {
         type: 'UNKNOWN',
         icon: '💡',
-        label: '기타',
-        shortDescription: '함께 플레이',
-        primaryText: '함께하면 즐거울 거예요',
+        label: '기대감',
+        shortDescription: '플레이 기대',
+        primaryText: '함께하면 좋은 플레이가 될 것 같아요',
         isHighlight: false,
       };
   }
