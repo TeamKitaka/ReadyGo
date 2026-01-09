@@ -8,7 +8,11 @@ import Input from '@/commons/components/input';
 import { AnimalType } from '@/commons/constants/animal';
 import { useChatRoom } from '../../hooks/index.binding.chatRoom.hook';
 
-export default function ChatRoom() {
+interface ChatRoomProps {
+  isExpired?: boolean;
+}
+
+export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
   const params = useParams();
   const postId = params?.id as string | undefined;
 
@@ -26,7 +30,7 @@ export default function ChatRoom() {
 
   // 메시지 전송 핸들러
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || isBlocked) {
+    if (!messageInput.trim() || isBlocked || isExpired) {
       return;
     }
 
@@ -41,7 +45,7 @@ export default function ChatRoom() {
 
   // Enter 키 입력 핸들러
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !isExpired) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -215,15 +219,17 @@ export default function ChatRoom() {
             label={false}
             iconRight={messageInput.trim() ? 'send' : undefined}
             iconRightColor={
-              messageInput.trim() && !isBlocked
+              messageInput.trim() && !isBlocked && !isExpired
                 ? 'var(--color-icon-interactive-secondary)'
                 : undefined
             }
             onIconRightClick={
-              messageInput.trim() && !isBlocked ? handleSendMessage : undefined
+              messageInput.trim() && !isBlocked && !isExpired
+                ? handleSendMessage
+                : undefined
             }
             iconSize={20}
-            disabled={isBlocked}
+            disabled={isBlocked || isExpired}
           />
         </div>
       </div>

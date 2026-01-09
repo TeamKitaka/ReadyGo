@@ -2,11 +2,10 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-
+import type { Database } from '@/types/supabase';
 import { supabase as baseSupabase } from '@/lib/supabase/client';
 import { useAuth } from '@/commons/providers/auth/auth.provider';
 import { getAvatarImagePath } from '@/lib/avatar/getAvatarImagePath';
-import type { Database } from '@/types/supabase';
 
 // 타입 정의
 type PartyMessage = Database['public']['Tables']['party_messages']['Row'];
@@ -232,6 +231,67 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
   }, []);
 
   /**
+   * 메시지 발신자 프로필 정보 조회 (파티를 떠난 멤버 포함)
+   */
+  const loadMessageSenderProfiles = useCallback(async (senderIds: string[]) => {
+    if (senderIds.length === 0) {
+      return;
+    }
+
+    try {
+      // 고유한 sender_id만 필터링
+      const uniqueSenderIds = Array.from(new Set(senderIds.filter(Boolean)));
+
+      if (uniqueSenderIds.length === 0) {
+        return;
+      }
+
+      // Supabase 클라이언트를 사용하여 프로필 정보 조회
+      const { data: profiles, error } = await baseSupabase
+        .from('user_profiles')
+        .select('id, nickname, avatar_url, animal_type')
+        .in('id', uniqueSenderIds);
+
+      if (error) {
+        console.error('Failed to load message sender profiles:', error);
+        return;
+      }
+
+      // 기존 프로필 Map에 추가 (기존 프로필은 유지)
+      setPartyMemberProfiles((prev) => {
+        const newMap = new Map(prev);
+
+        (profiles || []).forEach((profile) => {
+          if (!profile.id) {
+            return;
+          }
+
+          // 이미 존재하는 프로필이면 업데이트하지 않음 (파티 멤버 프로필 우선)
+          if (newMap.has(profile.id)) {
+            return;
+          }
+
+          const avatarImagePath = getAvatarImagePath(
+            profile.avatar_url,
+            profile.animal_type
+          );
+
+          newMap.set(profile.id, {
+            userId: profile.id,
+            nickname: profile.nickname || '알 수 없음',
+            avatarImagePath,
+            animalType: profile.animal_type || undefined,
+          });
+        });
+
+        return newMap;
+      });
+    } catch (error) {
+      console.error('Failed to load message sender profiles:', error);
+    }
+  }, []);
+
+  /**
    * 파티 멤버 프로필 정보 조회
    */
   const loadPartyMemberProfiles = useCallback(async (targetPostId: number) => {
@@ -294,53 +354,69 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
   /**
    * 초기 메시지 로드 (API)
    */
-  const loadMessages = useCallback(async (targetPostId: number) => {
-    // postId가 유효하지 않으면 early return
-    if (!targetPostId || targetPostId <= 0) {
-      setIsLoading(false);
-      setMessages([]);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(
-        `/api/party/${targetPostId}/messages?limit=50&offset=0`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || '메시지 로드에 실패했습니다.');
+  const loadMessages = useCallback(
+    async (targetPostId: number) => {
+      // postId가 유효하지 않으면 early return
+      if (!targetPostId || targetPostId <= 0) {
+        setIsLoading(false);
+        setMessages([]);
+        return;
       }
 
-      const result = await response.json();
-      const loadedMessages: PartyMessage[] = result.data || [];
+      setIsLoading(true);
+      setError(null);
 
-      // Repository는 내림차순(최신→과거)으로 반환하므로 reverse 처리 (과거→최신)
-      const reversedMessages = [...loadedMessages].reverse();
+      try {
+        const response = await fetch(
+          `/api/party/${targetPostId}/messages?limit=50&offset=0`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          }
+        );
 
-      // seenMessageIds 초기화 및 업데이트
-      seenMessageIdsRef.current = new Set(reversedMessages.map((m) => m.id));
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || '메시지 로드에 실패했습니다.');
+        }
 
-      setMessages(reversedMessages);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : '메시지 로드에 실패했습니다.';
-      setError(errorMessage);
-      console.error('Failed to load messages:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+        const result = await response.json();
+        const loadedMessages: PartyMessage[] = result.data || [];
+
+        // Repository는 내림차순(최신→과거)으로 반환하므로 reverse 처리 (과거→최신)
+        const reversedMessages = [...loadedMessages].reverse();
+
+        // seenMessageIds 초기화 및 업데이트
+        seenMessageIdsRef.current = new Set(reversedMessages.map((m) => m.id));
+
+        setMessages(reversedMessages);
+
+        // 메시지 발신자 프로필 정보 조회 (파티를 떠난 멤버 포함)
+        const senderIds = reversedMessages
+          .map((m) => m.sender_id)
+          .filter((id): id is string => !!id);
+        if (senderIds.length > 0) {
+          loadMessageSenderProfiles(senderIds).catch((error) => {
+            console.error(
+              'Failed to load message sender profiles after loading messages:',
+              error
+            );
+          });
+        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : '메시지 로드에 실패했습니다.';
+        setError(errorMessage);
+        console.error('Failed to load messages:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [loadMessageSenderProfiles]
+  );
 
   /**
    * postgres_changes 구독
@@ -391,16 +467,54 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
               table: 'party_messages',
               filter: `post_id=eq.${targetPostId}`,
             },
-            (payload) => {
+            async (payload) => {
               try {
                 // payload.new는 이미 PartyMessage 타입
                 const newMessage = payload.new as PartyMessage;
+
+                // 발신자 프로필이 없으면 프로필 정보 조회
+                if (
+                  newMessage.sender_id &&
+                  !partyMemberProfiles.get(newMessage.sender_id)
+                ) {
+                  // 프로필 정보 조회 (비동기로 실행, 블로킹하지 않음)
+                  loadMessageSenderProfiles([newMessage.sender_id]).catch(
+                    (error) => {
+                      console.error(
+                        'Failed to load sender profile after new message:',
+                        error
+                      );
+                    }
+                  );
+                }
 
                 // 중복 체크 및 메시지 추가
                 handleNewMessage(newMessage);
               } catch (error) {
                 console.error(
                   'Error processing postgres_changes event:',
+                  error
+                );
+              }
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'party_members',
+              filter: `post_id=eq.${targetPostId}`,
+            },
+            async (payload) => {
+              try {
+                // 새 멤버가 추가되면 프로필 정보 갱신
+                // eslint-disable-next-line no-console
+                console.log('Party member INSERT event received:', payload);
+                await loadPartyMemberProfiles(targetPostId);
+              } catch (error) {
+                console.error(
+                  'Failed to refresh member profiles after member insert:',
                   error
                 );
               }
@@ -434,7 +548,13 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user?.id, cleanupChannel]
+    [
+      user?.id,
+      cleanupChannel,
+      loadPartyMemberProfiles,
+      loadMessageSenderProfiles,
+      partyMemberProfiles,
+    ]
   );
 
   /**
@@ -533,14 +653,15 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     // error 상태 초기화
     setError(null);
 
-    // 파티 멤버 프로필 정보 로드
-    loadPartyMemberProfiles(postId);
-
-    // 초기 메시지 로드
-    loadMessages(postId).then(() => {
-      // postgres_changes 구독
-      subscribeToPostgresChanges(postId);
-    });
+    // 파티 멤버 프로필 정보와 메시지를 모두 로드한 후 구독 시작
+    // 이렇게 하면 새 메시지가 도착하기 전에 프로필 정보가 준비되어
+    // "알 수 없음"으로 표시되는 문제를 방지할 수 있습니다
+    Promise.all([loadPartyMemberProfiles(postId), loadMessages(postId)]).then(
+      () => {
+        // postgres_changes 구독
+        subscribeToPostgresChanges(postId);
+      }
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, user?.id]);
 

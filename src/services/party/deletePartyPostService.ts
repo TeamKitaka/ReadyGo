@@ -30,3 +30,5 @@ export const deletePartyPostService = async (postId: number): Promise<void> => {
     );
   }
 };
+
+

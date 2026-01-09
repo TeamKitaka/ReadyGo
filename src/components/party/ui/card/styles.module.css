@@ -210,3 +210,8 @@
 .joinButton {
   width: 100%;
 }
+
+/* 지난 시간 표시 스타일 */
+.startTimeExpired {
+  color: var(--color-text-danger) !important;
+}

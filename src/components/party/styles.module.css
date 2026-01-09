@@ -25,7 +25,7 @@
   margin: 0;
   padding: 0;
   font-family: var(--typo-heading-2xl-font-family);
-  font-size: var(--typo-heading-2xl-line-height);
+  font-size: var(--typo-heading-2xl-font-size);
   line-height: var(--typo-heading-2xl-line-height);
   font-weight: var(--typo-heading-2xl-font-weight);
   color: var(--color-text-primary);
@@ -35,7 +35,7 @@
   margin: 0;
   padding: 0;
   font-family: var(--typo-body-lg-font-family);
-  font-size: var(--typo-heading-lg-font-size);
+  font-size: var(--typo-body-lg-font-size);
   line-height: var(--typo-body-lg-line-height);
   font-weight: var(--typo-body-lg-font-weight);
   color: var(--color-text-secondary);
@@ -97,9 +97,51 @@
 .tabArea {
   width: 1272px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: space-between;
   gap: 0;
   box-sizing: border-box;
+}
+
+.tabWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.sortArea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sortOption {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--typo-body-md-font-family);
+  font-size: var(--typo-body-md-font-size);
+  line-height: var(--typo-body-md-line-height);
+  font-weight: var(--typo-body-md-font-weight);
+  color: var(--color-text-interactive-secondary);
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.sortOption:hover {
+  color: var(--color-text-interactive-primary);
+}
+
+.sortOptionActive {
+  color: var(--color-text-interactive-primary);
+  font-weight: var(--typo-body-md-semibold-font-weight);
+}
+
+.sortSeparator {
+  color: var(--color-text-interactive-secondary);
+  font-family: var(--typo-body-md-font-family);
+  font-size: var(--typo-body-md-font-size);
+  line-height: var(--typo-body-md-line-height);
 }
 
 .tab {
