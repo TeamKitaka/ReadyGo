@@ -82,7 +82,13 @@ export async function getMatchList(
   // 4. 실시간 계산 (여유분 포함)
   const toCalculate = filtered.slice(0, 20);
   const calculated = await Promise.allSettled(
-    toCalculate.map((c) => calculateMatchResult(client, viewerId, c.userId))
+    toCalculate.map(async (c) => {
+      const result = await calculateMatchResult(client, viewerId, c.userId);
+      return {
+        ...result,
+        targetUserId: c.userId, // targetUserId 추가
+      };
+    })
   );
   
   const results = calculated
@@ -135,6 +141,7 @@ async function enrichAndSort(
 ) {
   if (results.length === 0) return [];
   
+  // targetUserId 추출 (캐시: target_id, 실시간: targetUserId)
   const userIds = results.map((r) => r.target_id || r.targetUserId);
   
   const [{ data: profiles }, { data: statuses }] = await Promise.all([
