@@ -167,12 +167,12 @@ export default function ProfilePanel({
 
     const viewModel = toMatchResultViewModel(mockCoreDTO);
 
-    // primaryText 추출하여 string[]로 변환 (최대 3개, fallback 제외)
-    // primaryText는 더 설명적 ("팀 플레이를 중요하게 여겨요" vs "협동적")
+    // shortDescription 추출하여 string[]로 변환 (최대 3개)
+    // shortDescription은 중간 길이의 설명 ("동일 게임 선호" vs "동일게임" vs "3개의 같은 게임을 플레이해요")
+    // Cold Start: fallback도 포함하여 최소 3개 보장
     return viewModel.reasons
-      .filter((r) => !r.isFallback)
       .slice(0, 3)
-      .map((r) => r.primaryText);
+      .map((r) => r.shortDescription);
   }, [matchData, isMyProfile, myUserId, userId]);
 
   const containerClasses = [styles.profilePanel, className]

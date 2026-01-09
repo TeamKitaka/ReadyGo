@@ -121,11 +121,7 @@ export default function MatchCard({
             {/* 태그 목록 */}
             <div className={styles.tagContainer}>
               {explanationVM.tags.map((tag, index) => (
-                <Tag
-                  key={index}
-                  style="duotone"
-                  className={styles.tag}
-                >
+                <Tag key={index} style="duotone" className={styles.tag}>
                   {tag.label}
                 </Tag>
               ))}
