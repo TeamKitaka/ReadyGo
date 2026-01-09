@@ -167,11 +167,12 @@ export default function ProfilePanel({
 
     const viewModel = toMatchResultViewModel(mockCoreDTO);
 
-    // label만 추출하여 string[]로 변환 (최대 3개, fallback 제외)
+    // primaryText 추출하여 string[]로 변환 (최대 3개, fallback 제외)
+    // primaryText는 더 설명적 ("팀 플레이를 중요하게 여겨요" vs "협동적")
     return viewModel.reasons
       .filter((r) => !r.isFallback)
       .slice(0, 3)
-      .map((r) => r.label);
+      .map((r) => r.primaryText);
   }, [matchData, isMyProfile, myUserId, userId]);
 
   const containerClasses = [styles.profilePanel, className]

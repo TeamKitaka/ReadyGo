@@ -123,7 +123,7 @@ export default function MatchCard({
               {explanationVM.tags.map((tag, index) => (
                 <Tag
                   key={index}
-                  style={tag.emphasis === 'primary' ? 'rectangle' : 'duotone'}
+                  style="duotone"
                   className={styles.tag}
                 >
                   {tag.label}
