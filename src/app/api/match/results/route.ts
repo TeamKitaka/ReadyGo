@@ -30,29 +30,6 @@ export const GET = async () => {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 🚨 Cold Start 가드: user_traits와 user_play_schedules 확인
-    const { data: traits } = await supabase
-      .from('user_traits')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .single();
-    
-    const { data: schedules } = await supabase
-      .from('user_play_schedules')
-      .select('user_id')
-      .eq('user_id', user.id)
-      .limit(1)
-      .single();
-    
-    // 성향분석이 완료되지 않은 경우 빈 배열 반환 (홈 화면이므로 차단하지 않음)
-    if (!traits || !schedules) {
-      return NextResponse.json({
-        results: [],
-        coldStart: true,
-        message: '성향분석 테스트를 완료하면 맞춤 매칭을 추천받을 수 있어요.',
-      });
-    }
-
     // 3. 홈 매칭 결과 조회 (캐시 + fallback)
     const results = await getHomeMatches(supabase, user.id);
 
