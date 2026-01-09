@@ -140,14 +140,36 @@ const STEAM_IDS = [
 async function getTestUserIds(): Promise<Array<{ email: string; userId: string }>> {
   const emails = Array.from({ length: 100 }, (_, i) => `test${i + 26}@readygo.test`);
   
-  const { data, error } = await supabase.auth.admin.listUsers();
+  // 페이지네이션 처리
+  const allUsers: any[] = [];
+  let page = 1;
+  let hasMore = true;
   
-  if (error) {
-    console.error('❌ 유저 조회 실패:', error.message);
-    throw error;
+  while (hasMore) {
+    const { data, error } = await supabase.auth.admin.listUsers({
+      page,
+      perPage: 1000,
+    });
+
+    if (error) {
+      console.error('❌ 유저 조회 실패:', error.message);
+      throw error;
+    }
+
+    if (!data || data.users.length === 0) {
+      hasMore = false;
+      break;
+    }
+
+    allUsers.push(...data.users);
+
+    if (data.users.length < 1000) {
+      hasMore = false;
+    }
+    page++;
   }
 
-  const testUsers = data.users
+  const testUsers = allUsers
     .filter((user) => emails.includes(user.email || ''))
     .map((user) => ({
       email: user.email || '',
