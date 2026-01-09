@@ -24,7 +24,7 @@ import * as userStatusRepo from '@/repositories/userStatus.repository';
 import { getAvatarImagePath } from '@/lib/avatar/getAvatarImagePath';
 import { getEffectiveStatus } from '@/stores/user-status.store';
 
-const DEFAULT_MIN_SCORE = 75;
+const DEFAULT_MIN_SCORE = 50; // 50% 이상이면 충분 (실시간성 우선)
 const CACHE_CONTEXT = 'match';
 
 export interface MatchListOptions {
@@ -81,12 +81,20 @@ export async function getMatchList(
     ...(recentExposures?.map((e) => e.target_id) || []),
   ]);
   
-  console.debug('[getMatchList] Excluded IDs:', excludeIds.size);
+  console.debug('[getMatchList] 🔍 Debug:', {
+    totalCandidates: candidates.length,
+    recentViews: recentViews?.length || 0,
+    recentExposures: recentExposures?.length || 0,
+    excludedCount: excludeIds.size,
+    excludedIds: Array.from(excludeIds).slice(0, 5), // 처음 5개만 로그
+  });
   
   const filtered = candidates.filter((c) => !excludeIds.has(c.userId));
   
-  // 4. 실시간 계산 (여유분 많이 - 75% 이상 확보 위해)
-  const toCalculate = filtered.slice(0, 40); // 20 → 40으로 증가
+  console.debug('[getMatchList] After filtering:', filtered.length);
+  
+  // 4. 실시간 계산 (여유분 충분히 - 50% 이상 확보)
+  const toCalculate = filtered.slice(0, 80); // 40 → 80으로 증가
   const calculated = await Promise.allSettled(
     toCalculate.map(async (c) => {
       const result = await calculateMatchResult(client, viewerId, c.userId);
@@ -102,9 +110,20 @@ export async function getMatchList(
     .map((r) => (r as PromiseFulfilledResult<any>).value)
     .filter((r) => r.finalScore >= minScore);
   
-  // 5. 점수순 정렬 (온라인 정렬은 enrichAndSort에서)
-  const sorted = results.sort((a, b) => b.finalScore - a.finalScore);
-  const top = sorted.slice(0, limit);
+  console.debug('[getMatchList] Calculated results:', {
+    total: results.length,
+    minScore,
+    scoreDistribution: {
+      '90+': results.filter(r => r.finalScore >= 90).length,
+      '75-89': results.filter(r => r.finalScore >= 75 && r.finalScore < 90).length,
+      '50-74': results.filter(r => r.finalScore >= 50 && r.finalScore < 75).length,
+    }
+  });
+  
+  // 5. 랜덤 섞기 (실시간성 우선, 점수 편향 제거)
+  // 고득점자(90% 이상)도 랜덤하게 섞어서 다양성 확보
+  const shuffled = results.sort(() => Math.random() - 0.5);
+  const top = shuffled.slice(0, limit);
   
   // 6. 캐시 저장
   await Promise.all(
@@ -121,12 +140,18 @@ export async function getMatchList(
   );
   
   // 7. 노출 이력 기록
+  const exposedIds = top.map((r) => r.targetUserId);
   await matchExposureLogRepo.bulkInsert(
     client,
     viewerId,
-    top.map((r) => r.targetUserId),
+    exposedIds,
     'match_list'
   );
+  
+  console.debug('[getMatchList] Exposure recorded:', {
+    count: exposedIds.length,
+    ids: exposedIds.slice(0, 3), // 처음 3개만 로그
+  });
   
   // 8. 프로필/상태 추가 + 온라인 우선 정렬
   return await enrichAndSort(client, top, options.statusFilter);
@@ -184,12 +209,13 @@ async function enrichAndSort(
     filtered = enriched.filter((r) => !r.isOnline);
   }
   
-  // 온라인 우선 정렬
+  // 온라인 우선 정렬 (같은 상태 내에서는 랜덤)
   return filtered.sort((a, b) => {
     if (a.isOnline !== b.isOnline) {
       return a.isOnline ? -1 : 1; // 온라인 우선
     }
-    return b.score - a.score; // 같은 상태면 점수순
+    // 같은 상태면 랜덤 (실시간성 우선, 점수 편향 제거)
+    return Math.random() - 0.5;
   });
 }
 
