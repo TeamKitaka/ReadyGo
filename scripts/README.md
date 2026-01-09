@@ -177,7 +177,17 @@ Supabase Dashboard:
 ❌ Schedules 생성 실패: duplicate key value violates unique constraint
 ```
 
-→ `npm run seed:fix` 실행해서 실패한 계정 복구
+**2가지 케이스**:
+
+1. **auth.users는 생성되었지만 schedules만 실패**
+   ```bash
+   npm run seed:fix  # user_traits + user_play_schedules 추가
+   ```
+
+2. **auth.users 자체가 생성되지 않음** ("유저를 찾을 수 없습니다")
+   ```bash
+   npm run seed:missing  # 처음부터 새로 생성
+   ```
 
 ### Tier 불일치
 
