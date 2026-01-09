@@ -114,6 +114,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   // postgres_changes 채널 관리
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -213,6 +214,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       // 채널 참조를 먼저 null로 설정하여 중복 호출 방지
       channelRef.current = null;
       subscribedRoomIdRef.current = null;
+      setIsConnected(false);
       // 채널 제거 (이미 null로 설정했으므로 onClose 콜백에서 다시 cleanupChannel이 호출되지 않음)
       try {
         baseSupabase.removeChannel(channel);
@@ -226,6 +228,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     } else {
       // 채널이 없으면 subscribedRoomIdRef만 초기화
       subscribedRoomIdRef.current = null;
+      setIsConnected(false);
     }
   }, []);
 
@@ -237,6 +240,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     if (!targetRoomId || targetRoomId <= 0) {
       setIsLoading(false);
       setMessages([]);
+      setIsConnected(false);
       return;
     }
 
@@ -298,12 +302,14 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     async (targetRoomId: number) => {
       // roomId가 유효하지 않으면 early return
       if (!targetRoomId || targetRoomId <= 0) {
+        setIsConnected(false);
         cleanupChannel();
         return;
       }
 
       // user.id가 없으면 구독하지 않음
       if (!user?.id) {
+        setIsConnected(false);
         cleanupChannel();
         return;
       }
@@ -319,6 +325,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         // 참조를 먼저 null로 설정
         channelRef.current = null;
         subscribedRoomIdRef.current = null;
+        setIsConnected(false);
         // 채널 제거
         try {
           baseSupabase.removeChannel(oldChannel);
@@ -365,7 +372,11 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
             }
           )
           .subscribe((status) => {
-            if (status === 'CHANNEL_ERROR') {
+            if (status === 'SUBSCRIBED') {
+              setIsConnected(true);
+              setError(null);
+            } else if (status === 'CHANNEL_ERROR') {
+              setIsConnected(false);
               const errorMessage = 'Postgres changes channel error occurred';
               setError(errorMessage);
               console.error('Channel error:', errorMessage);
@@ -376,12 +387,19 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
                 subscribedRoomIdRef.current = null;
               }
             } else if (status === 'CLOSED') {
+              setIsConnected(false);
               // CLOSED 상태는 이미 채널이 닫힌 상태이므로 cleanupChannel을 호출하지 않음
               // cleanupChannel을 호출하면 removeChannel이 다시 호출되어 무한 루프 발생 가능
               if (channelRef.current === channel) {
                 channelRef.current = null;
                 subscribedRoomIdRef.current = null;
               }
+            } else if (status === 'TIMED_OUT') {
+              setIsConnected(false);
+              setError('채널 구독 시간 초과');
+            } else {
+              // 기타 상태 (예: 'JOINING', 'LEAVING' 등)
+              setIsConnected(false);
             }
           });
 
@@ -390,6 +408,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       } catch (error) {
         console.error('Failed to setup postgres_changes subscription:', error);
         setError('구독 설정에 실패했습니다.');
+        setIsConnected(false);
         cleanupChannel();
       }
     },
@@ -647,6 +666,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       setMessages([]);
       seenMessageIdsRef.current.clear();
       setIsLoading(false);
+      setIsConnected(false);
       setError(null);
       return;
     }
@@ -658,6 +678,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       setMessages([]);
       seenMessageIdsRef.current.clear();
       setIsLoading(false);
+      setIsConnected(false);
       setError(null);
       return;
     }
@@ -1001,7 +1022,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     setMessageListContainerRef,
     isLoading,
     error,
-    isConnected: false, // Realtime 연결 상태는 더 이상 사용하지 않음
+    isConnected,
     scrollToBottom: scrollHook.scrollToBottom,
     scrollToUnreadBoundary: scrollHook.scrollToUnreadBoundary,
     getUnreadBoundaryMessageId: scrollHook.getUnreadBoundaryMessageId,

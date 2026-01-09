@@ -1,0 +1,134 @@
+아래의 조건을 모두 적용하여, 아래의 요구사항을 모두 구현할 것.
+구현 결과를 체크리스트로 반환할 것.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하여 작업하고, 이 작업이 끝나면 해당 rules 적용 결과를 체크리스트로 반환할 것.
+            - Service / Domain / Hook 레이어 책임을 엄격히 분리할 것
+            - Hook은 상태 관리 + UX 가공만 담당할 것
+            - Domain 타입, Domain 함수 import 금지
+            - Service 로직 복사 금지
+            - useEffect 내부에 복잡한 분기 로직 금지
+            - throw, null 반환 금지
+            - default export 금지, named export만 허용
+
+==============================================
+
+조건-파일경로) 참고 및 기준 파일 경로는 다음과 같다.
+            - 구현될 Hook 파일 경로: src/hooks/useGameLinkPreview.ts
+            - 참고할 Repository 파일 경로: src/repositories/steamGame.repository.ts
+
+==============================================
+
+조건-구현참고) 반드시 참고할 기존 구현 패턴은 다음과 같다.
+            - 다른 Hook들은 다음의 패턴을 따른다.
+                - Repository 직접 호출 (단순 조회인 경우)
+                - loading / error / data 상태 분리
+                - 파생 상태(computed) 분리
+                - 캐싱을 통한 중복 요청 방지
+
+==============================================
+
+핵심요구사항) 다음 기능을 step-by-step으로 구현하고, 각 항목의 적용 여부를 체크리스트로 반환할 것.
+
+1. useGameLinkPreview Hook 구현
+    - 게임 링크 감지, 게임 정보 조회, 미리보기 상태 관리
+    - 메시지에서 `steam://run/{appId}` 패턴 감지
+    - appId별 게임 정보 캐싱 및 조회
+    - 로딩 상태 관리
+
+2. Hook 시그니처 고정
+    interface UseGameLinkPreviewOptions {
+        message?: string;
+    }
+
+    export const useGameLinkPreview = (
+        options?: UseGameLinkPreviewOptions
+    ) => { ... }
+
+3. 메시지 패턴 감지
+    - `steam://run/{appId}` 패턴 정규식으로 감지
+    - appId 추출 (숫자만)
+    - 여러 링크가 있으면 첫 번째 링크만 처리
+
+4. 내부 상태 설계
+    - detectedAppId: number | null (감지된 appId)
+    - gameInfo: { app_id: number; name: string; header_image: string | null; short_description: string | null } | null
+    - loading: boolean
+    - error: Error | null
+
+5. Repository 호출 규칙
+    - getSteamGameByAppId(appId)만 호출
+    - SteamGame Repository 직접 접근 ✅
+    - Service 접근 ❌
+    - Domain / Repository 로직 복사 ❌
+
+6. 캐싱 규칙
+    - 같은 appId에 대한 중복 요청 방지
+    - appId별 게임 정보 캐싱 (메모리 캐시)
+    - 캐시된 데이터가 있으면 Repository 호출하지 않음
+
+7. Effect 트리거 규칙
+    useEffect(() => {
+        if (!message) {
+            // 메시지가 없으면 상태 초기화
+            return;
+        }
+        // 정규식으로 appId 추출
+        // 캐시 확인 후 Repository 호출
+    }, [message]);
+
+    - message 변경 시 재감지
+    - 같은 appId면 캐시 사용 (재요청 ❌)
+
+8. 반환 값 규칙
+    return {
+        detectedAppId,
+        gameInfo,
+        loading,
+        error,
+    };
+
+9. 에러 처리 규칙
+    - Repository 에러는 catch하여 error 상태에 저장
+    - throw ❌
+    - null 반환 ❌
+    - 에러 발생 시 gameInfo는 null, error만 설정
+
+10. 금지 사항
+    - Service 로직 복사 ❌
+    - Domain 타입 import ❌
+    - throw ❌
+    - null 반환 ❌
+    - default export ❌
+
+==============================================
+
+조건-Hook 책임)
+            - 메시지에서 게임 링크 패턴 감지
+            - appId 추출
+            - 게임 정보 조회 (Repository 호출)
+            - 로딩 / 에러 상태 관리
+            - 게임 정보 캐싱
+
+==============================================
+
+조건-UI 책임)
+            - Hook이 반환한 값만 사용
+            - 미리보기 카드 표시
+            - 게임 정보 표시 로직 ❌
+
+==============================================
+
+구현 완료 후 반환) 아래 체크리스트를 반드시 반환할 것.
+            - useGameLinkPreview Hook이 지정된 파일 경로에 구현되었는가
+            - named export만 사용했는가
+            - getSteamGameByAppId Repository만 호출하는가
+            - message 없을 때 상태를 초기화하는가
+            - loading / error / gameInfo 상태가 분리되어 있는가
+            - steam://run/{appId} 패턴을 정확히 감지하는가
+            - 같은 appId에 대한 캐싱이 구현되어 있는가
+            - Repository 에러를 catch하여 error 상태에 저장하는가
+            - Domain / Service 접근이 없는가
+            - 금지 사항이 모두 지켜졌는가
+
