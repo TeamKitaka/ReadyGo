@@ -87,11 +87,13 @@ function generatePlaySchedules(): Array<{ day_type: string; time_slot: string }>
 }
 
 // 테스트 유저 생성
-async function createTestUser(index: number) {
+async function createTestUser(index: number, isColdStart: boolean = false) {
   const email = `test${index}@readygo.test`;
   const password = 'Test1234!';
   const nickname = generateNickname(8); // 최대 8글자 한국어 닉네임 (예: "귀여운고양이")
-  const animalType = ANIMAL_TYPES[Math.floor(Math.random() * ANIMAL_TYPES.length)];
+  const animalType = isColdStart 
+    ? 'unknown' 
+    : ANIMAL_TYPES[Math.floor(Math.random() * ANIMAL_TYPES.length)];
 
   try {
     // 1. Auth 유저 생성
@@ -120,7 +122,9 @@ async function createTestUser(index: number) {
         animal_type: animalType,
         tier: 'bronze',
         temperature_score: Math.floor(Math.random() * 20) + 30, // 30-50
-        bio: `안녕하세요! ${nickname}입니다. 함께 게임해요! 🎮`,
+        bio: isColdStart 
+          ? `안녕하세요! ${nickname}입니다. 함께 게임해요! 🎮`
+          : `안녕하세요! ${nickname}입니다. 함께 게임해요! 🎮`,
       });
 
     if (profileError) {
@@ -128,34 +132,36 @@ async function createTestUser(index: number) {
       return null;
     }
 
-    // 3. User Traits 생성 (동물 타입에 맞는 성향)
-    const traits = generateTraitsForAnimal(animalType as AnimalType);
-    const { error: traitsError } = await supabase
-      .from('user_traits')
-      .insert({
-        user_id: userId,
-        ...traits,
-      });
-
-    if (traitsError) {
-      console.error(`❌ [${index}] Traits 생성 실패:`, traitsError.message);
-      return null;
-    }
-
-    // 4. Play Schedules 생성
-    const schedules = generatePlaySchedules();
-    const { error: schedulesError } = await supabase
-      .from('user_play_schedules')
-      .insert(
-        schedules.map((s) => ({
+    // 3. User Traits 생성 (Cold Start가 아닌 경우만)
+    if (!isColdStart) {
+      const traits = generateTraitsForAnimal(animalType as AnimalType);
+      const { error: traitsError } = await supabase
+        .from('user_traits')
+        .insert({
           user_id: userId,
-          ...s,
-        }))
-      );
+          ...traits,
+        });
 
-    if (schedulesError) {
-      console.error(`❌ [${index}] Schedules 생성 실패:`, schedulesError.message);
-      return null;
+      if (traitsError) {
+        console.error(`❌ [${index}] Traits 생성 실패:`, traitsError.message);
+        return null;
+      }
+
+      // 4. Play Schedules 생성 (Cold Start가 아닌 경우만)
+      const schedules = generatePlaySchedules();
+      const { error: schedulesError } = await supabase
+        .from('user_play_schedules')
+        .insert(
+          schedules.map((s) => ({
+            user_id: userId,
+            ...s,
+          }))
+        );
+
+      if (schedulesError) {
+        console.error(`❌ [${index}] Schedules 생성 실패:`, schedulesError.message);
+        return null;
+      }
     }
 
     // 5. User Settings 생성 (실제 회원가입 플로우와 동일)
@@ -191,7 +197,8 @@ async function createTestUser(index: number) {
       return null;
     }
 
-    console.log(`✅ [${index}] ${email} (${nickname}, ${animalType}, ${randomStatus})`);
+    const statusLabel = isColdStart ? 'COLD_START' : animalType;
+    console.log(`✅ [${index}] ${email} (${nickname}, ${statusLabel}, ${randomStatus})`);
     return userId;
 
   } catch (error) {
@@ -204,14 +211,19 @@ async function createTestUser(index: number) {
 async function main() {
   const START = 1;
   const END = 150; // 150명 생성
+  const COLD_START_COUNT = 25; // Cold Start 계정 수
   const BATCH_SIZE = 10; // 10명씩 배치 처리
 
   console.log('🚀 테스트 유저 생성 시작...');
   console.log(`📊 생성 범위: test${START}@readygo.test ~ test${END}@readygo.test`);
+  console.log(`❄️  Cold Start: test${START} ~ test${COLD_START_COUNT} (${COLD_START_COUNT}명)`);
+  console.log(`🎯 성향분석 완료: test${COLD_START_COUNT + 1} ~ test${END} (${END - COLD_START_COUNT}명)`);
   console.log('');
 
   let successCount = 0;
   let failCount = 0;
+  let coldStartCount = 0;
+  let normalCount = 0;
 
   for (let i = START; i <= END; i += BATCH_SIZE) {
     const batchEnd = Math.min(i + BATCH_SIZE - 1, END);
@@ -219,7 +231,13 @@ async function main() {
 
     const promises = [];
     for (let j = i; j <= batchEnd; j++) {
-      promises.push(createTestUser(j));
+      const isColdStart = j <= COLD_START_COUNT;
+      promises.push(createTestUser(j, isColdStart));
+      if (isColdStart) {
+        coldStartCount++;
+      } else {
+        normalCount++;
+      }
     }
 
     const results = await Promise.all(promises);
@@ -233,11 +251,14 @@ async function main() {
   }
 
   console.log('\n');
-  console.log('=' .repeat(50));
+  console.log('=' .repeat(60));
   console.log('✅ 완료!');
   console.log(`성공: ${successCount}명`);
   console.log(`실패: ${failCount}명`);
-  console.log('=' .repeat(50));
+  console.log('');
+  console.log(`❄️  Cold Start (성향 X, 스팀 X): ${coldStartCount}명`);
+  console.log(`🎯 성향분석 완료 (스팀 연동 예정): ${normalCount}명`);
+  console.log('=' .repeat(60));
 }
 
 main().catch(console.error);

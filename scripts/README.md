@@ -30,29 +30,60 @@ npm run seed:users
 
 ## 생성되는 데이터
 
+### 📊 계정 구성 (총 150명)
+
+#### 1️⃣ Cold Start (25명): test1 ~ test25
+- **목적**: 성향 미분석 사용자 시뮬레이션
+- **상태**: 회원가입만 완료
+- **생성 테이블**:
+  - ✅ auth.users
+  - ✅ user_profiles (animal_type: **unknown**)
+  - ✅ user_settings
+  - ✅ user_status
+  - ❌ user_traits (없음)
+  - ❌ user_play_schedules (없음)
+
+#### 2️⃣ 성향분석 완료 (125명): test26 ~ test150
+- **목적**: 실제 사용자 시뮬레이션
+- **상태**: 회원가입 + 성향분석 완료
+- **생성 테이블**:
+  - ✅ auth.users
+  - ✅ user_profiles (동물 타입 자동 할당)
+  - ✅ user_settings
+  - ✅ user_status (online/offline/away 랜덤)
+  - ✅ user_traits (동물별 성향 자동 생성)
+  - ✅ user_play_schedules (2-4개 랜덤)
+- **Steam 연동**: 이 중 100명에게 batch로 연동 예정
+
 ### 기본 정보
 - **이메일**: `test1@readygo.test` ~ `test150@readygo.test`
 - **비밀번호**: `Test1234!` (모든 계정 공통)
 - **닉네임**: 랜덤 생성 (예: "귀여운고양이", "빠른늑대", "용감한호랑이")
   - 프로젝트 내 `generateNickname()` 함수 사용
   - 한국어 형용사 + 동물 조합
-- **동물 타입**: 18종 중 랜덤
 
 ### 생성되는 테이블 데이터
 
-실제 **회원가입 + 성향분석 완료** 상태와 동일하게 생성:
+#### Cold Start (test1~25)
+1. **auth.users** ✅
+2. **user_profiles** ✅ (animal_type: `unknown`)
+3. **user_settings** ✅ (테마: dark, 알림: 모두 활성화)
+4. **user_status** ✅ (online/offline/away 랜덤)
 
-1. **auth.users** (Supabase Auth)
-2. **user_profiles** (프로필 정보)
-   - 동물 타입 자동 할당 (18종)
-3. **user_traits** (동물 타입에 맞는 성향 점수)
+#### 성향분석 완료 (test26~150)
+1. **auth.users** ✅
+2. **user_profiles** ✅ (동물 타입 자동 할당, 18종)
+3. **user_settings** ✅ (테마: dark, 알림: 모두 활성화)
+4. **user_status** ✅ (online/offline/away 랜덤)
+5. **user_traits** ✅ (동물별 성향 자동 생성)
    - 각 동물의 이상적 벡터 기준 ±10 변동
    - 예: Wolf → leadership 높음, Tiger → exploration 높음
-4. **user_play_schedules** (플레이 시간대 2-4개 랜덤)
-5. **user_settings** (기본 설정)
-   - 테마: dark, 알림: 모두 활성화
-6. **user_status** (온라인 상태)
-   - online / offline / away 랜덤
+6. **user_play_schedules** ✅ (2-4개 시간대 랜덤)
+
+> 💡 **매칭 시스템 테스트 전략**
+> - Cold Start: 기본 매칭 알고리즘 테스트
+> - 성향분석 완료: 정교한 매칭 알고리즘 테스트
+> - 이 중 100명에게 Steam 연동 예정 (batch 작업)
 
 ## 커스터마이징
 
@@ -62,7 +93,14 @@ npm run seed:users
 
 ```typescript
 const START = 1;
-const END = 150; // 원하는 개수로 변경 (예: 200)
+const END = 150; // 전체 계정 수
+const COLD_START_COUNT = 25; // Cold Start 계정 수 (test1~25)
+```
+
+**예시**: 총 200명 중 40명 Cold Start
+```typescript
+const END = 200;
+const COLD_START_COUNT = 40;
 ```
 
 ### 배치 크기 변경
