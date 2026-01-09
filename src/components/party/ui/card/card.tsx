@@ -110,38 +110,29 @@ export default function Card({
   const remainingCount = Math.max(0, memberAvatars.length - 4);
 
   // 시작 시간이 지났는지 확인하는 함수
-  // startTime 형식: "MM/DD 오전/오후 HH:mm" (예: "12/25 오후 03:30")
-  const isStartTimePassed = (startTime: string): boolean => {
+  // startDate: "YYYY-MM-DD" 형식
+  // startTime: "HH:mm:ss" 형식
+  // ISO 형식으로 변환하여 정확하게 비교
+  const isStartTimePassed = (
+    startDate: string | undefined,
+    startTime: string | undefined
+  ): boolean => {
+    if (!startDate || !startTime) {
+      return false; // 날짜/시간 정보가 없으면 만료되지 않은 것으로 간주
+    }
     try {
-      // "MM/DD 오전/오후 HH:mm" 형식 파싱
-      const match = startTime.match(
-        /(\d{2})\/(\d{2})\s+(오전|오후)\s+(\d{2}):(\d{2})/
-      );
-      if (!match) {
-        // 파싱 실패 시 false 반환 (비활성화하지 않음)
+      // ISO 형식으로 변환: "YYYY-MM-DD HH:mm:ss" → "YYYY-MM-DDTHH:mm:ss"
+      const isoString = `${startDate}T${startTime}`;
+      const startDateTime = new Date(isoString);
+      const now = new Date();
+
+      // 유효한 날짜인지 확인
+      if (isNaN(startDateTime.getTime())) {
         return false;
       }
 
-      const [, monthStr, dayStr, period, hourStr, minuteStr] = match;
-      const month = parseInt(monthStr, 10) - 1; // JavaScript Date는 0부터 시작
-      const day = parseInt(dayStr, 10);
-      let hour = parseInt(hourStr, 10);
-      const minute = parseInt(minuteStr, 10);
-
-      // 오전/오후 처리
-      if (period === '오후' && hour !== 12) {
-        hour += 12;
-      } else if (period === '오전' && hour === 12) {
-        hour = 0;
-      }
-
-      // 현재 연도 사용
-      const currentYear = new Date().getFullYear();
-      const startDate = new Date(currentYear, month, day, hour, minute);
-      const now = new Date();
-
       // 시작 시간이 현재 시간보다 이전인지 확인
-      return startDate < now;
+      return startDateTime < now;
     } catch (error) {
       // 파싱 오류 시 false 반환 (비활성화하지 않음)
       console.error('시작 시간 파싱 오류:', error);
@@ -149,7 +140,7 @@ export default function Card({
     }
   };
 
-  const isExpired = isStartTimePassed(_categories.startTime);
+  const isExpired = isStartTimePassed(_startDate, _startTime);
 
   // 시작 시간에서 "새벽"을 "오전"으로 변환하는 함수
   const formatStartTime = (startTime: string): string => {
