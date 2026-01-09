@@ -23,3 +23,23 @@ ON match_results_cache (computed_at);
 COMMENT ON TABLE match_results_cache IS 
 '매칭 결과 캐시: 실시간 계산 결과를 저장하여 다음 조회 시 빠른 응답 제공';
 
+-- ===========================
+-- RLS (Row Level Security)
+-- ===========================
+
+-- RLS 활성화
+ALTER TABLE match_results_cache ENABLE ROW LEVEL SECURITY;
+
+-- SELECT 정책: viewer_id가 본인인 경우에만 조회 가능
+CREATE POLICY "Users can view their own match cache"
+ON match_results_cache
+FOR SELECT
+TO authenticated
+USING (viewer_id = auth.uid());
+
+-- INSERT/UPDATE/DELETE 정책: 서버(service_role)에서만 수행
+-- 명시적 정책 없음 → 일반 사용자는 쓰기 불가
+-- API에서 service role 또는 서버 사이드에서만 접근
+
+COMMENT ON POLICY "Users can view their own match cache" ON match_results_cache IS
+'인증된 사용자는 자신이 viewer인 캐시 결과만 조회 가능';
