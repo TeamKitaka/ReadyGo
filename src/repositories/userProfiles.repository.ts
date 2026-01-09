@@ -86,3 +86,31 @@ export const getAllUserIds = async (
 
   return userIds;
 };
+
+/**
+ * user_traits가 있는 user_profiles의 user id 목록을 조회한다
+ * - user_traits를 조회하여 성향분석 완료된 사용자만 반환
+ * - Cold Start 사용자 제외
+ */
+export const getAllUserIdsWithTraits = async (
+  client: SupabaseClient<Database>
+): Promise<string[]> => {
+  // user_traits를 조회하여 성향분석 완료된 사용자 ID만 반환
+  const { data: traitsData, error: traitsError } = await client
+    .from('user_traits')
+    .select('user_id');
+
+  if (traitsError) {
+    throw traitsError;
+  }
+
+  if (!traitsData || traitsData.length === 0) {
+    return [];
+  }
+
+  const userIdsWithTraits = traitsData
+    .map((row) => row.user_id)
+    .filter((id): id is string => id !== null && id !== undefined);
+
+  return userIdsWithTraits;
+};

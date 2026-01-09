@@ -66,8 +66,8 @@ export async function getMatchList(
   
   // 3. 중복 제외
   const [{ data: recentViews }, { data: recentExposures }] = await Promise.all([
-    matchRecentViewsRepo.findByViewer(client, viewerId, 24), // 24시간
-    matchExposureLogRepo.findRecentByViewer(client, viewerId, 4), // 4시간
+    matchRecentViewsRepo.findByViewer(client, viewerId, 24), // 24시간 (프로필 클릭)
+    matchExposureLogRepo.findRecentByViewer(client, viewerId, 1), // 1시간 (노출 이력) - 새로고침 허용
   ]);
   
   const excludeIds = new Set([
@@ -79,8 +79,8 @@ export async function getMatchList(
   
   const filtered = candidates.filter((c) => !excludeIds.has(c.userId));
   
-  // 4. 실시간 계산 (여유분 포함)
-  const toCalculate = filtered.slice(0, 20);
+  // 4. 실시간 계산 (여유분 많이 - 75% 이상 확보 위해)
+  const toCalculate = filtered.slice(0, 40); // 20 → 40으로 증가
   const calculated = await Promise.allSettled(
     toCalculate.map(async (c) => {
       const result = await calculateMatchResult(client, viewerId, c.userId);

@@ -34,11 +34,13 @@ export const getMatchCandidates = async (
   viewerId: string
 ): Promise<MatchCandidate[]> => {
   // 1. 후보 pool 조회 (Repository 책임)
-  // 현재: 전체 user_profiles 조회
+  // 성향분석 완료된 사용자만 조회 (Cold Start 제외)
   // TODO: 서비스 확장 시 pre-filter 필요 (예: 지역, 티어, 최근 활동 등)
   //       - Repository 레벨에서 WHERE 조건 추가
   //       - 또는 별도 getCandidatePoolWithFilter 함수 생성
-  const candidatePool = await userProfilesRepository.getAllUserIds(client);
+  const candidatePool = await userProfilesRepository.getAllUserIdsWithTraits(
+    client
+  );
 
   if (candidatePool.length === 0) {
     return [];
