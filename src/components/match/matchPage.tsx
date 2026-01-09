@@ -143,7 +143,20 @@ export default function Match() {
     if (isOpen && targetUserId === userId) {
       close();
     } else {
-      open(userId);
+      // 해당 userId의 matchData 찾기
+      const targetMatch = matchData.find((m) => m.userId === userId);
+
+      // matchData와 함께 전달 (즉시 표시, 재계산 불필요)
+      open(
+        userId,
+        targetMatch
+          ? {
+              finalScore: targetMatch.matchRate,
+              reasons: targetMatch.reasons,
+              tags: targetMatch.tagsV2,
+            }
+          : undefined
+      );
     }
   };
 

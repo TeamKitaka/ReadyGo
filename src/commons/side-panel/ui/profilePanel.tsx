@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './styles.module.css';
 import AnimalCard from '../../components/animal-card';
@@ -9,6 +9,10 @@ import { useProfileByUserId } from '@/hooks/useProfileByUserId';
 import { useAuthStore } from '@/stores/auth.store';
 import { AnimalType } from '../../constants/animal';
 import { useChatList } from '@/components/chat/hooks';
+import { useSidePanelStore } from '@/stores/sidePanel.store';
+import { toMatchResultViewModel } from '@/viewmodels/match/toMatchResultViewModel';
+import type { MatchReasonCoreDTO } from '@/commons/types/match/matchReasonCore.dto';
+import type { MatchTagCoreDTO } from '@/commons/types/match/matchTagCore.dto';
 
 export interface ProfilePanelProps {
   userId: string;
@@ -24,6 +28,22 @@ export default function ProfilePanel({
 
   // 쿠키에서 내 userId 가져오기
   const myUserId = useAuthStore((state) => state.user?.id);
+
+  // Store에서 matchData 가져오기
+  const { matchData: storeMatchData } = useSidePanelStore();
+
+  // 필요시 matchData 계산 상태
+  interface CalculatedMatchData {
+    finalScore: number;
+    reasons: MatchReasonCoreDTO[];
+    tags: MatchTagCoreDTO[];
+  }
+  const [calculatedMatchData, setCalculatedMatchData] =
+    useState<CalculatedMatchData | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
+
+  // 본인 프로필 여부
+  const isMyProfile = myUserId === userId;
 
   // 내 프로필 가져오기 (비교용)
   const { viewModel: myProfile } = useProfileByUserId(myUserId);
@@ -84,6 +104,75 @@ export default function ProfilePanel({
       setIsCreatingChat(false);
     }
   };
+
+  // matchData가 없을 때 계산 (채팅 페이지 등에서 열었을 경우)
+  useEffect(() => {
+    // 조건: Store에 matchData 없고, 본인이 아니고, 아직 계산 안 했고, 계산 중이 아닐 때
+    if (
+      !storeMatchData &&
+      !isMyProfile &&
+      !calculatedMatchData &&
+      !isCalculating &&
+      myUserId
+    ) {
+      const fetchMatchData = async () => {
+        setIsCalculating(true);
+        try {
+          const response = await fetch('/api/match/calculate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              viewerId: myUserId,
+              targetUserId: userId,
+            }),
+          });
+
+          if (response.ok) {
+            const { finalScore, reasons, tags } = await response.json();
+            setCalculatedMatchData({ finalScore, reasons, tags });
+          }
+        } catch (error) {
+          console.error('[ProfilePanel] Failed to calculate match:', error);
+        } finally {
+          setIsCalculating(false);
+        }
+      };
+
+      fetchMatchData();
+    }
+  }, [
+    storeMatchData,
+    isMyProfile,
+    myUserId,
+    userId,
+    calculatedMatchData,
+    isCalculating,
+  ]);
+
+  // matchData 우선순위: Store > 계산됨 > null
+  const matchData = storeMatchData || calculatedMatchData;
+
+  // matchReasons 생성 (AnimalCard에 전달할 string[])
+  const matchReasons = useMemo(() => {
+    if (!matchData || isMyProfile) return [];
+
+    // toMatchResultViewModel 사용하여 변환
+    const mockCoreDTO = {
+      userId: myUserId || '',
+      targetUserId: userId,
+      similarityScore: matchData.finalScore,
+      reasons: matchData.reasons,
+      tags: matchData.tags,
+    };
+
+    const viewModel = toMatchResultViewModel(mockCoreDTO);
+
+    // label만 추출하여 string[]로 변환 (최대 3개, fallback 제외)
+    return viewModel.reasons
+      .filter((r) => !r.isFallback)
+      .slice(0, 3)
+      .map((r) => r.label);
+  }, [matchData, isMyProfile, myUserId, userId]);
 
   const containerClasses = [styles.profilePanel, className]
     .filter(Boolean)
@@ -161,7 +250,7 @@ export default function ProfilePanel({
     <div className={containerClasses}>
       {/* Animal Card - 사용자 프로필 */}
       <AnimalCard
-        property="user"
+        property={isMyProfile ? 'my' : 'user'}
         nickname={nickname || '익명 사용자'}
         tier={tier}
         animal={animalType ?? AnimalType.rabbit}
@@ -169,8 +258,8 @@ export default function ProfilePanel({
         activeTime={activeTimeText || '알 수 없음'}
         gameStyle="알 수 없음"
         weeklyAverage="알 수 없음"
-        matchPercentage={0}
-        matchReasons={[]}
+        matchPercentage={isMyProfile ? undefined : matchData?.finalScore ?? 0}
+        matchReasons={isMyProfile ? undefined : matchReasons}
         onMessageClick={handleStartChat}
       />
 
