@@ -65,15 +65,14 @@ export default function GameLinkPreview({
         <Button
           variant="primary"
           size="m"
-          shape="round"
+          shape="rectangle"
           onClick={onGameStart}
           className={styles.gameStartButton}
         >
-          <Icon name="gamepad" size={16} />
+          <Icon name="gamepad" size={20} />
           게임 바로 시작
         </Button>
       </div>
     </div>
   );
 }
-
