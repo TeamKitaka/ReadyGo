@@ -66,9 +66,9 @@ const toReasonViewModel = (
         return {
           type: detail.type,
           icon: '🤝',
-          label: '좋은만남',
-          shortDescription: '첫 파티의 안정감',
-          primaryText: '처음 만나는 파티원으로 부담 없이 시작하기 좋아요',
+          label: '부담없음',
+          shortDescription: '가볍게 시작',
+          primaryText: '가볍게 파티를 시작하기에 부담이 적은 편이에요',
           isHighlight: false,
           isFallback: true,
         };
@@ -167,9 +167,9 @@ const toReasonViewModel = (
           return {
             type: detail.type,
             icon: '🤝',
-            label: '성향유사',
-            shortDescription: '성향 포인트 유사',
-            primaryText: `${traitLabel} 성향에서 공통점이 보여요`,
+            label: '성향탐색',
+            shortDescription: '성향 포인트 관찰 중',
+            primaryText: `플레이를 통해 ${traitLabel} 성향을 더 알아갈 수 있어요`,
             isHighlight: detail.similarityScore >= 70,
           };
         }
@@ -282,9 +282,9 @@ const toReasonViewModel = (
         return {
           type: detail.type,
           icon: '⏰',
-          label: '여유형',
-          shortDescription: '리듬 존중',
-          primaryText: '각자의 리듬을 존중하며 플레이할 수 있어요',
+          label: '리듬존중',
+          shortDescription: '독립적인 플레이',
+          primaryText: '서로 다른 플레이 리듬을 존중하며 즐길 수 있어요',
           isHighlight: false,
         };
       }
@@ -316,7 +316,7 @@ const toReasonViewModel = (
         icon: '⏱️',
         label: '플레이리듬',
         shortDescription: '플레이 템포 유사',
-        primaryText: '게임을 즐기는 속도와 몰입도가 비슷한 편이에요',
+        primaryText: '게임을 플레이하는 템포가 비슷한 편이에요',
         isHighlight: detail.matchScore >= 70,
       };
 
@@ -326,7 +326,7 @@ const toReasonViewModel = (
         icon: '🛡️',
         label: '매너좋음',
         shortDescription: '안정적인 매너',
-        primaryText: '안정적인 플레이 매너를 보여요',
+        primaryText: '파티 매너와 신뢰도가 안정적인 편이에요',
         isHighlight: detail.reliabilityScore >= 70,
       };
 
@@ -346,9 +346,9 @@ const toReasonViewModel = (
       return {
         type: detail.type,
         icon: '🕹️',
-        label: '플스타일유사',
-        shortDescription: '플레이 성향 일치',
-        primaryText: '게임을 대하는 플레이 스타일이 잘 맞아요',
+        label: '플레이방식유사',
+        shortDescription: '게임 플레이 성향',
+        primaryText: '게임을 플레이하는 방식이 비슷한 편이에요',
         isHighlight: true,
       };
 
