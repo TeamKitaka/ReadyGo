@@ -20,7 +20,8 @@
     "seed:steam": "tsx scripts/link-steam-to-test-users.ts",
     "seed:fix": "tsx scripts/fix-failed-users.ts",
     "seed:fix-tier": "tsx scripts/fix-tier-mismatch.ts",
-    "seed:missing": "tsx scripts/create-missing-users.ts"
+    "seed:missing": "tsx scripts/create-missing-users.ts",
+    "seed:redistribute-tier": "tsx scripts/redistribute-tiers.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

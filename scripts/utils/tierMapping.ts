@@ -17,12 +17,18 @@ export function getTierFromTemperature(temperature: number): TierType {
 }
 
 export function getRandomTemperature(): number {
-  // 0-100 랜덤, 정규분포 비슷하게 (중간값 선호)
-  const rand1 = Math.random();
-  const rand2 = Math.random();
-  const normal = (rand1 + rand2) / 2; // 평균 0.5로 정규분포 근사
+  // 0-100 균등 분포 (모든 티어 골고루 분포)
+  return Math.floor(Math.random() * 101); // 0-100
+}
+
+export function getRandomTemperatureByTier(): number {
+  // 각 티어별로 균등하게 배분
+  const tiers: TierType[] = ['bronze', 'silver', 'gold', 'platinum', 'diamond', 'master', 'champion'];
+  const randomTier = tiers[Math.floor(Math.random() * tiers.length)];
+  const range = getTemperatureRange(randomTier);
   
-  return Math.floor(normal * 100);
+  // 해당 티어의 범위 내에서 랜덤 선택
+  return Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
 }
 
 export function getTemperatureRange(tier: TierType): { min: number; max: number } {

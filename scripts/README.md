@@ -197,6 +197,17 @@ Supabase Dashboard:
 
 → `npm run seed:fix-tier` 실행해서 모든 계정의 티어 자동 수정
 
+### Tier 재배분
+
+```
+티어를 골고루 분포시키고 싶은 경우
+```
+
+→ `npm run seed:redistribute-tier` 실행해서 모든 계정의 티어를 균등하게 재배분
+  - 각 티어별로 동일한 비율로 배분
+  - 새로운 온도 점수 + 티어 자동 할당
+  - 매칭 테스트를 위해 다양한 티어 분포 확보
+
 ## 테스트 계정 삭제
 
 Supabase Dashboard에서:
