@@ -69,6 +69,7 @@
   width: 839px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   box-sizing: border-box;
   flex: 1;

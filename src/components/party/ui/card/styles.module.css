@@ -225,9 +225,11 @@
 /* 반응형 디자인 - 웹 (1448px 이하) */
 @media (max-width: 1448px) {
   .card {
-    width: 624px;
+    width: 100%;
+    max-width: 624px;
     height: 358px;
     flex-shrink: 0;
+    box-sizing: border-box;
   }
 }
 
