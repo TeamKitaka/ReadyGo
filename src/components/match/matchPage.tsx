@@ -14,6 +14,8 @@ import { usePresenceStore } from '@/stores/presence.store';
 import { useProfileBinding } from '@/components/overlay/profile/hooks/index.binding.hook';
 import { useSteamOAuth } from '@/components/auth/hooks/useSteamOAuth.hook';
 import { SteamAlert } from '@/commons/layout/ui/steamAlert';
+import { TraitsAlert } from '@/commons/layout/ui/traitsAlert';
+import { AnimalType } from '@/commons/constants/animal/animal.enum';
 
 export default function Match() {
   // 현재 로그인한 사용자 정보
@@ -42,35 +44,52 @@ export default function Match() {
     setIsSteamAlertDismissed(true);
   };
 
+  // 성향 분석 완료 여부 확인
+  const isTraitsCompleted =
+    !profileBindingLoading &&
+    profileBindingData.animalType !== null &&
+    profileBindingData.animalType !== 'unknown' &&
+    profileBindingData.animalType !== AnimalType.unknown;
+
   // 스팀 연동 여부 확인 (로딩 완료 후에만 확인)
   const isSteamNotConnected =
     !profileBindingLoading && profileBindingData.isSteamConnected === false;
   const isSteamConnected =
     !profileBindingLoading && profileBindingData.isSteamConnected === true;
 
-  // 스팀 알림 배너 표시 조건: 스팀 미연동 && 닫지 않음 && 로딩 완료
-  // 매칭 페이지에서는 테스트 완료 여부와 관계없이 스팀 미연동 회원에게 표시
+  // 안내 배너 표시 우선순위:
+  // 1순위: 성향 분석 미완료 → TraitsAlert
+  // 2순위: 성향 완료 + 스팀 미연동 + 닫지 않음 → SteamAlert
+  const shouldShowTraitsAlert = !profileBindingLoading && !isTraitsCompleted;
   const shouldShowSteamAlert =
-    !profileBindingLoading && isSteamNotConnected && !isSteamAlertDismissed;
+    !profileBindingLoading &&
+    isTraitsCompleted &&
+    isSteamNotConnected &&
+    !isSteamAlertDismissed;
 
   // 디버깅용 로그 (개발 환경에서만)
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       // eslint-disable-next-line no-console
-      console.log('Steam Alert Debug:', {
+      console.log('Match Alert Debug:', {
         profileBindingLoading,
+        isTraitsCompleted,
         isSteamNotConnected,
         isSteamAlertDismissed,
+        shouldShowTraitsAlert,
         shouldShowSteamAlert,
         profileBindingData: {
+          animalType: profileBindingData.animalType,
           isSteamConnected: profileBindingData.isSteamConnected,
         },
       });
     }
   }, [
     profileBindingLoading,
+    isTraitsCompleted,
     isSteamNotConnected,
     isSteamAlertDismissed,
+    shouldShowTraitsAlert,
     shouldShowSteamAlert,
     profileBindingData,
   ]);
@@ -175,7 +194,12 @@ export default function Match() {
 
   return (
     <div className={styles.container}>
-      {/* 스팀 연동 알림 배너 (레이아웃 헤더 아래, 매칭 찾기 타이틀 위) */}
+      {/* 성향 분석 안내 배너 (1순위) */}
+      {shouldShowTraitsAlert && (
+        <TraitsAlert className={styles.traitsAlertContainer} />
+      )}
+
+      {/* 스팀 연동 알림 배너 (2순위) */}
       {shouldShowSteamAlert && (
         <SteamAlert
           onConnect={handleSteamLink}
@@ -191,30 +215,39 @@ export default function Match() {
           <p className={styles.subtitle}>너랑 딱 맞는 게임 친구를 찾아봐</p>
         </div>
 
-        {/* 로딩 상태 */}
-        {loading && <MatchListSkeleton isSidePanelOpen={isOpen} />}
-
-        {/* 에러 상태 */}
-        {error && (
-          <div className={styles.error}>
-            매칭 결과를 불러오는 데 실패했습니다: {error.message}
+        {/* 성향 분석 미완료 시 매칭 목록 숨김 */}
+        {shouldShowTraitsAlert ? (
+          <div className={styles.emptyState}>
+            <p>게임 성향 분석을 완료하면 나와 잘 맞는 친구를 찾을 수 있어요!</p>
           </div>
-        )}
+        ) : (
+          <>
+            {/* 로딩 상태 */}
+            {loading && <MatchListSkeleton isSidePanelOpen={isOpen} />}
 
-        {/* 매치 리스트 섹션 */}
-        {!loading && !error && (
-          <MatchList
-            matches={matchData}
-            selectedMatchRate={selectedMatchRate}
-            selectedStatus={selectedStatus}
-            isSidePanelOpen={isOpen}
-            activeProfileUserId={targetUserId}
-            isSteamConnected={isSteamConnected}
-            onMatchRateChange={handleMatchRateChange}
-            onStatusChange={handleStatusChange}
-            onRefresh={handleRefreshWithData}
-            onProfileClick={handleProfileClick}
-          />
+            {/* 에러 상태 */}
+            {error && (
+              <div className={styles.error}>
+                매칭 결과를 불러오는 데 실패했습니다: {error.message}
+              </div>
+            )}
+
+            {/* 매치 리스트 섹션 */}
+            {!loading && !error && (
+              <MatchList
+                matches={matchData}
+                selectedMatchRate={selectedMatchRate}
+                selectedStatus={selectedStatus}
+                isSidePanelOpen={isOpen}
+                activeProfileUserId={targetUserId}
+                isSteamConnected={isSteamConnected}
+                onMatchRateChange={handleMatchRateChange}
+                onStatusChange={handleStatusChange}
+                onRefresh={handleRefreshWithData}
+                onProfileClick={handleProfileClick}
+              />
+            )}
+          </>
         )}
       </div>
     </div>
