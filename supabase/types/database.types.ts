@@ -320,6 +320,33 @@ export type Database = {
         }
         Relationships: []
       }
+      match_results_cache: {
+        Row: {
+          computed_at: string | null
+          reasons: Json
+          score: number
+          tags: Json
+          target_id: string
+          viewer_id: string
+        }
+        Insert: {
+          computed_at?: string | null
+          reasons: Json
+          score: number
+          tags: Json
+          target_id: string
+          viewer_id: string
+        }
+        Update: {
+          computed_at?: string | null
+          reasons?: Json
+          score?: number
+          tags?: Json
+          target_id?: string
+          viewer_id?: string
+        }
+        Relationships: []
+      }
       match_scores: {
         Row: {
           calculated_at: string | null
