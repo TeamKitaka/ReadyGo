@@ -29,13 +29,19 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 
 /**
  * generateNickname() 패턴인지 확인
- * - 한글 + 숫자 조합
+ * - 한글 형용사 + 동물 + 숫자 조합
  * - 예: 행복한토끼1234, 즐거운여우5678
+ * - ❌ 제외: "유저1234" 같은 단순 패턴
  */
 function isGeneratedNickname(nickname: string): boolean {
+  // "유저" + 숫자 패턴은 제외
+  if (/^유저\d+$/.test(nickname)) {
+    return false;
+  }
+  
   // generateNickname()은 한글 형용사 + 동물 + 숫자 형태
-  // 간단한 패턴 체크: 한글로 시작하고 숫자로 끝남
-  const pattern = /^[가-힣]+[0-9]{4}$/;
+  // 최소 4글자 이상의 한글 + 4자리 숫자
+  const pattern = /^[가-힣]{4,}[0-9]{4}$/;
   return pattern.test(nickname);
 }
 
@@ -88,10 +94,14 @@ async function fixUserNickname(userId: string, email: string, oldNickname: strin
     // 새 닉네임 생성 (generateNickname 사용)
     const newNickname = generateNickname(8);
 
-    // user_profiles 업데이트
+    // user_profiles 업데이트 (nickname, bio, avatar_url)
     const { error } = await supabase
       .from('user_profiles')
-      .update({ nickname: newNickname })
+      .update({ 
+        nickname: newNickname,
+        bio: null,
+        avatar_url: null
+      })
       .eq('id', userId);
 
     if (error) {
@@ -99,7 +109,7 @@ async function fixUserNickname(userId: string, email: string, oldNickname: strin
       return { success: false, email, oldNickname, newNickname: null, error: error.message };
     }
 
-    console.log(`✅ [${email}] ${oldNickname} → ${newNickname}`);
+    console.log(`✅ [${email}] ${oldNickname} → ${newNickname} (bio, avatar_url → null)`);
     return { success: true, email, oldNickname, newNickname };
   } catch (error) {
     console.error(`❌ [${email}] 예상치 못한 오류:`, error);
