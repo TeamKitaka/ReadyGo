@@ -14,12 +14,14 @@ import { useLinkRouting } from './hooks/index.link.routing.hook';
 import { useFloatButton } from './hooks/index.float.hook';
 import { useFilter } from './hooks/index.filter.hook';
 import { usePartyTab } from './hooks/index.partyTab.hook';
+import { usePartySort } from './hooks/index.sort.hook';
 import styles from './styles.module.css';
 
 export default function Party() {
   const { activeTab, setActiveTab } = usePartyTab();
   const { selectedGenre, searchQuery, setSelectedGenre, setSearchQuery } =
     useFilter();
+  const { sortOption, setSortOption } = usePartySort();
   const { openPartySubmitModal } = useLinkModal();
   const {
     data: partyList,
@@ -27,7 +29,7 @@ export default function Party() {
     loadMore,
     isLoading,
     error,
-  } = useInfinitePartyList(selectedGenre, searchQuery, activeTab);
+  } = useInfinitePartyList(selectedGenre, searchQuery, activeTab, sortOption);
   const { navigateToPartyDetail } = useLinkRouting();
   const { scrollToTop } = useFloatButton();
 
@@ -43,7 +45,6 @@ export default function Party() {
 
   const genreItems: SelectboxItem[] = [
     { id: 'all', value: '전체' },
-
     { id: 'Action', value: '액션' },
     { id: 'Adventure', value: '모험' },
     { id: 'Casual', value: '캐주얼' },
@@ -111,20 +112,39 @@ export default function Party() {
           </div>
         </div>
         <div className={styles.tabArea}>
-          <button
-            className={`${styles.tab} ${activeTab === 'all' ? '' : styles.tabInactive}`}
-            onClick={() => setActiveTab('all')}
-            data-testid="party-tab-all"
-          >
-            전체 파티
-          </button>
-          <button
-            className={`${styles.tab} ${activeTab === 'participating' ? '' : styles.tabInactive}`}
-            onClick={() => setActiveTab('participating')}
-            data-testid="party-tab-participating"
-          >
-            참여 중인 파티
-          </button>
+          <div className={styles.tabWrapper}>
+            <button
+              className={`${styles.tab} ${activeTab === 'all' ? '' : styles.tabInactive}`}
+              onClick={() => setActiveTab('all')}
+              data-testid="party-tab-all"
+            >
+              전체 파티
+            </button>
+            <button
+              className={`${styles.tab} ${activeTab === 'participating' ? '' : styles.tabInactive}`}
+              onClick={() => setActiveTab('participating')}
+              data-testid="party-tab-participating"
+            >
+              참여 중인 파티
+            </button>
+          </div>
+          <div className={styles.sortArea}>
+            <button
+              className={`${styles.sortOption} ${sortOption === 'latest' ? styles.sortOptionActive : ''}`}
+              onClick={() => setSortOption('latest')}
+              data-testid="party-sort-latest"
+            >
+              최신순
+            </button>
+            <span className={styles.sortSeparator}>|</span>
+            <button
+              className={`${styles.sortOption} ${sortOption === 'deadline' ? styles.sortOptionActive : ''}`}
+              onClick={() => setSortOption('deadline')}
+              data-testid="party-sort-deadline"
+            >
+              마감임박순
+            </button>
+          </div>
         </div>
         <InfiniteScroll
           pageStart={0}
