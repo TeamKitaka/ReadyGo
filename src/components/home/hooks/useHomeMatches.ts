@@ -46,7 +46,6 @@ export const useHomeMatches = () => {
       !profileViewModel.animalType ||
       profileViewModel.animalType === AnimalType.unknown
     ) {
-      console.debug('[useHomeMatches] Cold Start detected, skipping match API');
       setMatchCards([]);
       setLoading(false);
       return;

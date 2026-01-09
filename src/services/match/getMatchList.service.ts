@@ -61,11 +61,8 @@ export async function getMatchList(
     );
     
     if (cached && cached.length >= limit) {
-      console.debug('[getMatchList] Using cached results:', cached.length);
       return await enrichAndSort(client, cached.slice(0, limit), options.statusFilter);
     }
-  } else {
-    console.debug('[getMatchList] Refresh mode: skipping cache');
   }
   
   // 2. 후보 조회
@@ -82,17 +79,7 @@ export async function getMatchList(
     ...(recentExposures?.map((e) => e.target_id) || []),
   ]);
   
-  console.debug('[getMatchList] 🔍 Debug:', {
-    totalCandidates: candidates.length,
-    recentViews: recentViews?.length || 0,
-    recentExposures: recentExposures?.length || 0,
-    excludedCount: excludeIds.size,
-    excludedIds: Array.from(excludeIds).slice(0, 5), // 처음 5개만 로그
-  });
-  
   const filtered = candidates.filter((c) => !excludeIds.has(c.userId));
-  
-  console.debug('[getMatchList] After filtering:', filtered.length);
   
   // 4. 실시간 계산 (여유분 충분히 - 50% 이상 확보)
   const toCalculate = filtered.slice(0, 80); // 40 → 80으로 증가
@@ -110,16 +97,6 @@ export async function getMatchList(
     .filter((r) => r.status === 'fulfilled')
     .map((r) => (r as PromiseFulfilledResult<any>).value)
     .filter((r) => r.finalScore >= minScore);
-  
-  console.debug('[getMatchList] Calculated results:', {
-    total: results.length,
-    minScore,
-    scoreDistribution: {
-      '90+': results.filter(r => r.finalScore >= 90).length,
-      '75-89': results.filter(r => r.finalScore >= 75 && r.finalScore < 90).length,
-      '50-74': results.filter(r => r.finalScore >= 50 && r.finalScore < 75).length,
-    }
-  });
   
   // 5. 랜덤 섞기 (실시간성 우선, 점수 편향 제거)
   // 고득점자(90% 이상)도 랜덤하게 섞어서 다양성 확보
@@ -148,11 +125,6 @@ export async function getMatchList(
     exposedIds,
     'match_list'
   );
-  
-  console.debug('[getMatchList] Exposure recorded:', {
-    count: exposedIds.length,
-    ids: exposedIds.slice(0, 3), // 처음 3개만 로그
-  });
   
   // 8. 프로필/상태 추가 + 온라인 우선 정렬
   return await enrichAndSort(client, top, options.statusFilter);
