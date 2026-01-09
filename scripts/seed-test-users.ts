@@ -73,22 +73,21 @@ function generateTraitsForAnimal(animalType: AnimalType): TraitVector {
   };
 }
 
-// 랜덤 시간대 생성
+// 랜덤 시간대 생성 (중복 제거)
 function generatePlaySchedules(): Array<{ day_type: string; time_slot: string }> {
   const dayTypes = ['weekday', 'weekend'];
   const timeSlots = ['dawn', 'morning', 'afternoon', 'evening'];
-  const schedules: Array<{ day_type: string; time_slot: string }> = [];
   
-  // 랜덤으로 2-4개 시간대 선택
-  const count = Math.floor(Math.random() * 3) + 2;
-  for (let i = 0; i < count; i++) {
-    schedules.push({
-      day_type: dayTypes[Math.floor(Math.random() * dayTypes.length)],
-      time_slot: timeSlots[Math.floor(Math.random() * timeSlots.length)],
-    });
-  }
+  // 모든 가능한 조합 생성
+  const allCombinations = dayTypes.flatMap(dayType =>
+    timeSlots.map(timeSlot => ({ day_type: dayType, time_slot: timeSlot }))
+  );
   
-  return schedules;
+  // 랜덤으로 2-4개 시간대 선택 (중복 없이)
+  const count = Math.floor(Math.random() * 3) + 2; // 2-4
+  const shuffled = allCombinations.sort(() => Math.random() - 0.5);
+  
+  return shuffled.slice(0, count);
 }
 
 // 테스트 유저 생성
