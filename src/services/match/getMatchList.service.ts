@@ -185,10 +185,33 @@ function sampleByScoreRange(results: any[], minScore: number, limit: number): an
 }
 
 /**
- * 배열 랜덤 섞기
+ * 배열 랜덤 섞기 (단순 버전)
  */
 function shuffleArray<T>(array: T[]): T[] {
   return [...array].sort(() => Math.random() - 0.5);
+}
+
+/**
+ * Fisher-Yates shuffle 알고리즘
+ * 
+ * Math.random().sort()보다 더 공정한 랜덤 분포 보장
+ * 시간 복잡도: O(n)
+ * 
+ * @param array 섞을 배열
+ * @returns 섞인 새 배열
+ */
+function fisherYatesShuffle<T>(array: T[]): T[] {
+  const result = [...array];
+  
+  for (let i = result.length - 1; i > 0; i--) {
+    // 0부터 i까지 중 랜덤 인덱스 선택
+    const j = Math.floor(Math.random() * (i + 1));
+    
+    // 요소 교환
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  
+  return result;
 }
 
 /**
@@ -292,13 +315,15 @@ async function enrichAndSort(
     filtered = enriched.filter((r) => !r.isOnline);
   }
   
-  // 온라인 우선 정렬 (같은 상태 내에서는 랜덤)
-  return filtered.sort((a, b) => {
-    if (a.isOnline !== b.isOnline) {
-      return a.isOnline ? -1 : 1; // 온라인 우선
-    }
-    // 같은 상태면 랜덤 (실시간성 우선, 점수 편향 제거)
-    return Math.random() - 0.5;
-  });
+  // 온라인 우선 + 강력한 랜덤 (Fisher-Yates shuffle)
+  const onlineUsers = filtered.filter((r) => r.isOnline);
+  const offlineUsers = filtered.filter((r) => !r.isOnline);
+  
+  // 각 그룹을 Fisher-Yates shuffle로 섞기
+  const shuffledOnline = fisherYatesShuffle(onlineUsers);
+  const shuffledOffline = fisherYatesShuffle(offlineUsers);
+  
+  // 온라인 그룹 + 오프라인 그룹 합치기
+  return [...shuffledOnline, ...shuffledOffline];
 }
 
