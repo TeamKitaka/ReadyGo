@@ -347,6 +347,7 @@ export type Database = {
       match_results_cache: {
         Row: {
           computed_at: string | null
+          context: string
           reasons: Json
           score: number
           tags: Json
@@ -355,6 +356,7 @@ export type Database = {
         }
         Insert: {
           computed_at?: string | null
+          context?: string
           reasons: Json
           score: number
           tags: Json
@@ -363,6 +365,7 @@ export type Database = {
         }
         Update: {
           computed_at?: string | null
+          context?: string
           reasons?: Json
           score?: number
           tags?: Json
