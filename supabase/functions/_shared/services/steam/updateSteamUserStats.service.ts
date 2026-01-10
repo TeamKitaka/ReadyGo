@@ -47,15 +47,25 @@ const filterMeaningfulGames = async (
     return [];
   }
 
-  // 2. 게임 카테고리 필터링
+  // 2. 게임 카테고리 필터링 (배치 처리로 URL 길이 제한 방지)
   const appIds = userGames.map((g) => g.app_id);
-  const { data: gameInfos, error: infoError } = await client
-    .from('steam_game_info')
-    .select('app_id, categories')
-    .in('app_id', appIds);
+  const CHUNK_SIZE = 100;
+  const gameInfos: any[] = [];
 
-  if (infoError) {
-    throw new Error(`Failed to fetch game info: ${infoError.message}`);
+  for (let i = 0; i < appIds.length; i += CHUNK_SIZE) {
+    const chunk = appIds.slice(i, i + CHUNK_SIZE);
+    const { data, error: infoError } = await client
+      .from('steam_game_info')
+      .select('app_id, categories')
+      .in('app_id', chunk);
+
+    if (infoError) {
+      throw new Error(`Failed to fetch game info: ${infoError.message}`);
+    }
+
+    if (data) {
+      gameInfos.push(...data);
+    }
   }
 
   const validGameIds = new Set<number>();
@@ -187,14 +197,25 @@ const analyzeGenreProfile = async (
     return { mainGenres: [] };
   }
 
+  // 배치 처리로 URL 길이 제한 방지
   const appIds = games.map((g) => g.appId);
-  const { data: gameInfos, error } = await client
-    .from('steam_game_info')
-    .select('app_id, genres')
-    .in('app_id', appIds);
+  const CHUNK_SIZE = 100;
+  const gameInfos: any[] = [];
 
-  if (error) {
-    throw new Error(`Failed to fetch game genres: ${error.message}`);
+  for (let i = 0; i < appIds.length; i += CHUNK_SIZE) {
+    const chunk = appIds.slice(i, i + CHUNK_SIZE);
+    const { data, error } = await client
+      .from('steam_game_info')
+      .select('app_id, genres')
+      .in('app_id', chunk);
+
+    if (error) {
+      throw new Error(`Failed to fetch game genres: ${error.message}`);
+    }
+
+    if (data) {
+      gameInfos.push(...data);
+    }
   }
 
   const genreMap = new Map<string, number>();

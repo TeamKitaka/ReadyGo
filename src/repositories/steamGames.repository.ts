@@ -15,6 +15,8 @@ import type { Database } from '@/types/supabase';
 /**
  * 게임 ID 배열로 게임 정보 조회
  * 
+ * URL 길이 제한 방지를 위해 100개씩 배치 처리
+ * 
  * @param client Supabase 클라이언트
  * @param appIds Steam 게임 ID 배열
  * @returns 게임 정보 배열 (app_id, name)
@@ -27,10 +29,26 @@ export async function findByAppIds(
     return { data: [], error: null };
   }
 
-  return await client
-    .from('steam_games')
-    .select('app_id, name')
-    .in('app_id', appIds);
+  const CHUNK_SIZE = 100;
+  const allData: { app_id: number; name: string | null }[] = [];
+
+  for (let i = 0; i < appIds.length; i += CHUNK_SIZE) {
+    const chunk = appIds.slice(i, i + CHUNK_SIZE);
+    const { data, error } = await client
+      .from('steam_games')
+      .select('app_id, name')
+      .in('app_id', chunk);
+
+    if (error) {
+      return { data: null, error };
+    }
+
+    if (data) {
+      allData.push(...data);
+    }
+  }
+
+  return { data: allData, error: null };
 }
 
 /**

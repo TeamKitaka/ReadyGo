@@ -30,6 +30,7 @@ export const upsertSteamGame = async (
  * 책임:
  * - 여러 app_id가 steam_game_info에 존재하는지 배치 조회
  * - 존재하는 app_id 배열 반환
+ * - URL 길이 제한 방지를 위해 청크 단위로 조회
  *
  * @param client - DbClient 인터페이스
  * @param appIds - 확인할 app_id 배열
@@ -43,14 +44,24 @@ export const checkGameExists = async (
     return [];
   }
 
-  const { data, error } = await client
-    .from('steam_game_info')
-    .select('app_id')
-    .in('app_id', appIds);
+  // URL 길이 제한 방지: 100개씩 배치 처리
+  const CHUNK_SIZE = 100;
+  const allExistingIds: number[] = [];
 
-  if (error) {
-    throw error;
+  for (let i = 0; i < appIds.length; i += CHUNK_SIZE) {
+    const chunk = appIds.slice(i, i + CHUNK_SIZE);
+
+    const { data, error } = await client
+      .from('steam_game_info')
+      .select('app_id')
+      .in('app_id', chunk);
+
+    if (error) {
+      throw error;
+    }
+
+    allExistingIds.push(...data.map((row: { app_id: number }) => row.app_id));
   }
 
-  return data.map((row: { app_id: number }) => row.app_id);
+  return allExistingIds;
 };
