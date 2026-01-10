@@ -65,7 +65,8 @@ Deno.serve(async (req) => {
     });
 
     // 3. 배치 동기화 실행 (Service에 위임)
-    const result = await batchSyncSteamGames(supabase, { limit: 50 });
+    // limit: 10명씩 처리 (Edge Function timeout 방지)
+    const result = await batchSyncSteamGames(supabase, { limit: 10 });
 
     // 4. 결과 반환
     return new Response(JSON.stringify(result), {
