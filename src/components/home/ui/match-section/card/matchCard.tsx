@@ -8,6 +8,12 @@ import Icon, { IconName } from '@/commons/components/icon';
 import { useSideProfilePanel } from '@/hooks/useSideProfilePanel';
 import { AnimalType } from '@/commons/constants/animal';
 
+export interface MatchPreference {
+  icon: IconName;
+  label: string;
+  value: string;
+}
+
 export interface MatchCardProps {
   /**
    * 사용자 ID
@@ -34,21 +40,25 @@ export interface MatchCardProps {
    */
   question?: string;
   /**
-   * 동일 게임 선호 (예: "Valorant, Apex")
+   * 매칭 이유 (동적으로 생성된 preferences)
    */
-  gamePreference?: string;
-  /**
-   * 플레이 시간대 (예: "저녁 시간대")
-   */
-  playTime?: string;
-  /**
-   * 유사한 실력대 (예: "플래티넘")
-   */
-  skillLevel?: string;
+  preferences?: MatchPreference[];
   /**
    * 추가 클래스명
    */
   className?: string;
+  /**
+   * @deprecated 대신 preferences 사용
+   */
+  gamePreference?: string;
+  /**
+   * @deprecated 대신 preferences 사용
+   */
+  playTime?: string;
+  /**
+   * @deprecated 대신 preferences 사용
+   */
+  skillLevel?: string;
 }
 
 export default function MatchCard({
@@ -58,9 +68,7 @@ export default function MatchCard({
   status = 'online',
   animalType,
   question = '왜 이 친구와 잘 맞나요?',
-  gamePreference,
-  playTime,
-  skillLevel,
+  preferences = [],
   className = '',
 }: MatchCardProps) {
   const { toggleProfile, isOpen, targetUserId } = useSideProfilePanel();
@@ -69,25 +77,6 @@ export default function MatchCard({
   const containerClasses = [styles.container, className]
     .filter(Boolean)
     .join(' ');
-
-  // 고정된 선호도 항목 설정 (MVP)
-  const preferences = [
-    {
-      icon: 'joystick-alt' as IconName,
-      label: '동일 게임 선호',
-      value: gamePreference,
-    },
-    {
-      icon: 'time' as IconName,
-      label: '플레이 시간대',
-      value: playTime,
-    },
-    {
-      icon: 'trophy' as IconName,
-      label: '유사한 실력대',
-      value: skillLevel,
-    },
-  ].filter((pref) => pref.value); // 값이 있는 항목만 표시
 
   const hasPreferences = preferences.length > 0;
 

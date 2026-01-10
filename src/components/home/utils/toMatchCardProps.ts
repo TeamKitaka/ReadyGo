@@ -10,7 +10,8 @@
  * - API 호출 (Hook에서 처리)
  */
 
-import type { MatchCardProps } from '../ui/match-section/card/matchCard';
+import type { MatchCardProps, MatchPreference } from '../ui/match-section/card/matchCard';
+import type { IconName } from '@/commons/components/icon';
 
 /**
  * 시간대 타입 → 한글 라벨 변환
@@ -38,106 +39,145 @@ const traitLabels: Record<string, string> = {
 /**
  * API 응답을 MatchCardProps로 변환
  * 
- * reasons를 분석하여 UI 표시용 필드 추출:
- * - 우선순위에 따라 3개 필드를 채움
- * - 부족하면 fallback 값 사용
- * - 게임 이름은 이미 service에서 enrichment 완료
+ * reasons를 분석하여 UI 표시용 preferences 생성:
+ * - 각 reason에서 icon, label, value를 동적으로 생성
+ * - 의미있는 데이터만 표시 (fallback 값은 skip)
+ * - 최대 3개의 preferences 반환
  * 
  * @param apiResult API 응답 객체
  * @returns MatchCardProps
  */
 export function toMatchCardProps(apiResult: any): MatchCardProps {
-  let gamePreference: string | undefined;
-  let playTime: string | undefined;
-  let skillLevel: string | undefined;
+  const preferences: MatchPreference[] = [];
 
   // 랜덤 순서로 섞기 (다양성 확보)
   const shuffledReasons = [...(apiResult.reasons || [])].sort(() => Math.random() - 0.5);
-
 
   // reasons 분석 (랜덤 순)
   for (const reason of shuffledReasons) {
     const { detail } = reason;
     const type = detail?.type;
 
+    // 이미 3개 채워졌으면 중단
+    if (preferences.length >= 3) {
+      break;
+    }
+
     // BASELINE, RELIABILITY reason은 건너뛰기 (의미없는 기본값)
     if (type === 'BASELINE' || type === 'RELIABILITY' || reason.isBaseline) {
       continue;
     }
 
-    // 1순위: 게임 취향 (가장 구체적인 것 우선)
-    if (!gamePreference) {
-      if (type === 'COMMON_GAME' && detail.topGames?.length > 0) {
-        // 실제 게임 이름인지 확인 ("Game XXX" 패턴은 skip)
-        const validGames = detail.topGames.filter(
-          (game: string) => !game.match(/^Game \d+$/)
-        );
-        
-        if (validGames.length > 0) {
-          // 실제 게임 이름 표시 (최대 2개)
-          gamePreference = validGames.slice(0, 2).join(', ');
-        }
-        // validGames가 없으면 이 reason은 skip하고 다음 reason으로
-      } else if (type === 'STEAM_GENRE' && detail.genre) {
-        gamePreference = `${detail.genre} 장르`;
-      } else if (type === 'STEAM_PLAYSTYLE' && detail.viewerStyle) {
-        const styleLabels: Record<string, string> = {
-          casual: '캐주얼 플레이',
-          regular: '규칙적 플레이',
-          hardcore: '하드코어 플레이',
-        };
-        gamePreference = styleLabels[detail.viewerStyle] || `${detail.viewerStyle} 스타일`;
+    // 게임 관련 이유
+    if (type === 'COMMON_GAME' && detail.topGames?.length > 0) {
+      // 실제 게임 이름인지 확인 ("Game XXX" 패턴은 skip)
+      const validGames = detail.topGames.filter(
+        (game: string) => !game.match(/^Game \d+$/)
+      );
+      
+      if (validGames.length > 0) {
+        preferences.push({
+          icon: 'joystick-alt',
+          label: '동일 게임 선호',
+          value: validGames.slice(0, 2).join(', '),
+        });
+      }
+    } else if (type === 'STEAM_GENRE' && detail.genre) {
+      preferences.push({
+        icon: 'joystick-alt',
+        label: '선호 장르',
+        value: `${detail.genre} 장르`,
+      });
+    } else if (type === 'STEAM_PLAYSTYLE' && detail.viewerStyle) {
+      const styleLabels: Record<string, string> = {
+        casual: '캐주얼 플레이',
+        regular: '규칙적 플레이',
+        hardcore: '하드코어 플레이',
+      };
+      const styleValue = styleLabels[detail.viewerStyle];
+      if (styleValue) {
+        preferences.push({
+          icon: 'gamepad',
+          label: '플레이 스타일',
+          value: styleValue,
+        });
       }
     }
-
-    // 2순위: 플레이 시간대
-    if (!playTime) {
-      if (type === 'ACTIVITY_PATTERN' && (detail.viewerTimeType || detail.targetTimeType)) {
-        const timeType = detail.viewerTimeType || detail.targetTimeType;
-        const label = timeTypeLabels[timeType];
-        if (label && label !== '유연한 시간') {
-          // '유연한 시간'은 의미없는 fallback이므로 skip
-          playTime = label;
-        }
-      } else if (type === 'TIME_OVERLAP') {
-        playTime = '비슷한 활동 시간';
-      } else if (type === 'PLAY_TIME' && detail.matchScore >= 60) {
-        playTime = `플레이 시간 ${detail.matchScore}% 유사`;
-      } else if (type === 'ONLINE_NOW') {
-        playTime = '지금 온라인';
+    // 시간대 관련 이유
+    else if (type === 'ACTIVITY_PATTERN' && (detail.viewerTimeType || detail.targetTimeType)) {
+      const timeType = detail.viewerTimeType || detail.targetTimeType;
+      const timeLabel = timeTypeLabels[timeType];
+      if (timeLabel && timeLabel !== '유연한 시간') {
+        preferences.push({
+          icon: 'time',
+          label: '플레이 시간대',
+          value: timeLabel,
+        });
       }
+    } else if (type === 'TIME_OVERLAP') {
+      preferences.push({
+        icon: 'time',
+        label: '활동 시간',
+        value: '비슷한 활동 시간',
+      });
+    } else if (type === 'PLAY_TIME' && detail.matchScore >= 60) {
+      preferences.push({
+        icon: 'time',
+        label: '플레이 시간',
+        value: `${detail.matchScore}% 유사`,
+      });
+    } else if (type === 'ONLINE_NOW') {
+      preferences.push({
+        icon: 'circle-dot',
+        label: '지금',
+        value: '온라인 중',
+      });
     }
-
-    // 3순위: 실력/성향
-    if (!skillLevel) {
-      if (type === 'STYLE_SIMILARITY' && detail.similarityScore >= 70 && detail.topTrait) {
-        const trait = detail.topTrait;
-        const label = traitLabels[trait];
-        if (label) {
-          skillLevel = label;
-        }
-      } else if (type === 'PARTY_EXPERIENCE') {
-        skillLevel = '파티 경험 풍부';
-      } else if (type === 'ANIMAL_COMPATIBILITY') {
-        skillLevel = '성향 궁합 좋음';
+    // 성향/실력 관련 이유
+    else if (type === 'STYLE_SIMILARITY' && detail.similarityScore >= 70 && detail.topTrait) {
+      const trait = detail.topTrait;
+      const traitLabel = traitLabels[trait];
+      if (traitLabel) {
+        preferences.push({
+          icon: 'trophy',
+          label: '플레이 성향',
+          value: traitLabel,
+        });
       }
-    }
-
-    // 3개 모두 채워지면 중단
-    if (gamePreference && playTime && skillLevel) {
-      break;
+    } else if (type === 'PARTY_EXPERIENCE') {
+      preferences.push({
+        icon: 'users',
+        label: '파티 경험',
+        value: '경험 풍부',
+      });
+    } else if (type === 'ANIMAL_COMPATIBILITY') {
+      preferences.push({
+        icon: 'heart',
+        label: '성향 궁합',
+        value: '궁합 좋음',
+      });
     }
   }
 
-  // Fallback: 3개 중 채워지지 않은 값이 있으면 기본값 설정
-  if (!gamePreference) {
-    gamePreference = '다양한 게임';
-  }
-  if (!playTime) {
-    playTime = '유연한 시간';
-  }
-  if (!skillLevel) {
-    skillLevel = '긍정적 플레이';
+  // Fallback: preferences가 하나도 없으면 기본값 추가
+  if (preferences.length === 0) {
+    preferences.push(
+      {
+        icon: 'joystick-alt',
+        label: '게임 취향',
+        value: '다양한 게임',
+      },
+      {
+        icon: 'time',
+        label: '플레이 시간',
+        value: '유연한 시간',
+      },
+      {
+        icon: 'trophy',
+        label: '플레이 스타일',
+        value: '긍정적 플레이',
+      }
+    );
   }
 
   return {
@@ -146,9 +186,7 @@ export function toMatchCardProps(apiResult: any): MatchCardProps {
     matchRate: apiResult.score,
     status: apiResult.status,
     animalType: apiResult.profile.animalType,
-    gamePreference,
-    playTime,
-    skillLevel,
+    preferences,
   };
 }
 
