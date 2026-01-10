@@ -68,18 +68,19 @@ export async function getMatchList(
   // 2. 후보 조회
   const candidates = await getMatchCandidates(client, viewerId);
   
-  // 3. 중복 제외
+  // 3. 최근 조회/노출 이력 조회 (우선순위 정렬용)
   const [{ data: recentViews }, { data: recentExposures }] = await Promise.all([
     matchRecentViewsRepo.findByViewer(client, viewerId, 24), // 24시간 (프로필 클릭)
-    matchExposureLogRepo.findRecentByViewer(client, viewerId, 1), // 1시간 (노출 이력) - 새로고침 허용
+    matchExposureLogRepo.findRecentByViewer(client, viewerId, 1), // 1시간 (노출 이력)
   ]);
   
-  const excludeIds = new Set([
+  const recentlyViewedIds = new Set([
     ...(recentViews?.map((v) => v.target_user_id) || []),
     ...(recentExposures?.map((e) => e.target_id) || []),
   ]);
   
-  const filtered = candidates.filter((c) => !excludeIds.has(c.userId));
+  // 완전히 제외하지 않고, 모든 후보를 대상으로 계산
+  const filtered = candidates;
   
   // 4. 실시간 계산 (minScore에 따라 계산량 조정)
   // 높은 매칭율(75% 이상): 40명 (빠름)
@@ -128,8 +129,8 @@ export async function getMatchList(
     'match_list'
   );
   
-  // 8. 프로필/상태 추가 + 온라인 우선 정렬
-  return await enrichAndSort(client, top, options.statusFilter);
+  // 8. 프로필/상태 추가 + 우선순위 정렬 (온라인 > 신규 > 기존)
+  return await enrichAndSort(client, top, options.statusFilter, recentlyViewedIds);
 }
 
 /**
@@ -215,17 +216,25 @@ function fisherYatesShuffle<T>(array: T[]): T[] {
 }
 
 /**
- * 프로필/상태 추가 + 온라인 우선 정렬
+ * 프로필/상태 추가 + 우선순위 정렬
+ * 
+ * 우선순위:
+ * 1. 온라인 + 신규 (조회/노출 이력 없음)
+ * 2. 온라인 + 기존 (조회/노출 이력 있음)
+ * 3. 오프라인 + 신규
+ * 4. 오프라인 + 기존
  * 
  * @param client Supabase 클라이언트
  * @param results 매칭 결과 목록
  * @param statusFilter 상태 필터 ('all' | 'online' | 'offline')
- * @returns 온라인 우선 정렬된 결과
+ * @param recentlyViewedIds 최근 조회/노출된 유저 ID Set
+ * @returns 우선순위 정렬된 결과
  */
 async function enrichAndSort(
   client: SupabaseClient<Database>,
   results: any[],
-  statusFilter?: string
+  statusFilter?: string,
+  recentlyViewedIds?: Set<string>
 ) {
   if (results.length === 0) return [];
   
@@ -315,15 +324,24 @@ async function enrichAndSort(
     filtered = enriched.filter((r) => !r.isOnline);
   }
   
-  // 온라인 우선 + 강력한 랜덤 (Fisher-Yates shuffle)
-  const onlineUsers = filtered.filter((r) => r.isOnline);
-  const offlineUsers = filtered.filter((r) => !r.isOnline);
+  // 우선순위 기반 정렬 (온라인 > 신규 > 기존)
+  const onlineNew = filtered.filter((r) => r.isOnline && !recentlyViewedIds?.has(r.profile.userId));
+  const onlineOld = filtered.filter((r) => r.isOnline && recentlyViewedIds?.has(r.profile.userId));
+  const offlineNew = filtered.filter((r) => !r.isOnline && !recentlyViewedIds?.has(r.profile.userId));
+  const offlineOld = filtered.filter((r) => !r.isOnline && recentlyViewedIds?.has(r.profile.userId));
   
   // 각 그룹을 Fisher-Yates shuffle로 섞기
-  const shuffledOnline = fisherYatesShuffle(onlineUsers);
-  const shuffledOffline = fisherYatesShuffle(offlineUsers);
+  const shuffledOnlineNew = fisherYatesShuffle(onlineNew);
+  const shuffledOnlineOld = fisherYatesShuffle(onlineOld);
+  const shuffledOfflineNew = fisherYatesShuffle(offlineNew);
+  const shuffledOfflineOld = fisherYatesShuffle(offlineOld);
   
-  // 온라인 그룹 + 오프라인 그룹 합치기
-  return [...shuffledOnline, ...shuffledOffline];
+  // 우선순위대로 합치기: 온라인+신규 → 온라인+기존 → 오프라인+신규 → 오프라인+기존
+  return [
+    ...shuffledOnlineNew,
+    ...shuffledOnlineOld,
+    ...shuffledOfflineNew,
+    ...shuffledOfflineOld,
+  ];
 }
 

@@ -84,7 +84,7 @@ export default function MatchList({
             items={statusOptions}
             selectedId={selectedStatus}
             onSelect={onStatusChange}
-            placeholder="온라인"
+            placeholder="모든 접속 상태"
             className={styles.selectbox}
           />
         </div>
