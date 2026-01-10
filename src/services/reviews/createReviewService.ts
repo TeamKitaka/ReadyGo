@@ -50,10 +50,11 @@ export const createReviewService = async (
     typeof params.score_manner !== 'number' ||
     isNaN(params.score_manner) ||
     params.score_manner < 0 ||
-    params.score_manner > 5
+    params.score_manner > 2 ||
+    !Number.isInteger(params.score_manner)
   ) {
     throw new ReviewValidationError(
-      'score_manner는 0 이상 5 이하의 숫자여야 합니다.'
+      'score_manner는 0 이상 2 이하의 정수여야 합니다.'
     );
   }
 
@@ -61,10 +62,11 @@ export const createReviewService = async (
     typeof params.score_teamwork !== 'number' ||
     isNaN(params.score_teamwork) ||
     params.score_teamwork < 0 ||
-    params.score_teamwork > 5
+    params.score_teamwork > 1 ||
+    !Number.isInteger(params.score_teamwork)
   ) {
     throw new ReviewValidationError(
-      'score_teamwork는 0 이상 5 이하의 숫자여야 합니다.'
+      'score_teamwork는 0 이상 1 이하의 정수여야 합니다.'
     );
   }
 
@@ -72,10 +74,11 @@ export const createReviewService = async (
     typeof params.score_communication !== 'number' ||
     isNaN(params.score_communication) ||
     params.score_communication < 0 ||
-    params.score_communication > 5
+    params.score_communication > 2 ||
+    !Number.isInteger(params.score_communication)
   ) {
     throw new ReviewValidationError(
-      'score_communication은 0 이상 5 이하의 숫자여야 합니다.'
+      'score_communication은 0 이상 2 이하의 정수여야 합니다.'
     );
   }
 
