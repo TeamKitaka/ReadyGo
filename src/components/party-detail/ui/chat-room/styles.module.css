@@ -1,5 +1,6 @@
 .chatRoom {
   flex: 1;
+  min-width: 0;
   max-width: 824px;
   padding: 32px;
   display: flex;
@@ -194,61 +195,4 @@
 .messageInput {
   width: 100%;
   height: 100%;
-}
-
-/* 플로팅 버튼 래퍼: 메시지 리스트 하단에 고정 */
-.scrollToBottomButtonWrapper {
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-  display: flex;
-  justify-content: center;
-  pointer-events: none;
-  margin: 0 -24px -24px -24px;
-  padding-left: 24px;
-  padding-right: 24px;
-}
-
-/* 플로팅 버튼: 최근 메시지로 이동 */
-.scrollToBottomButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 20px;
-  background-color: var(--color-bg-primary);
-  border: 1px solid var(--color-border-secondary);
-  border-radius: 24px;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition:
-    background-color 0.2s,
-    box-shadow 0.2s;
-  font-family: var(--typo-body-md-medium-font-family);
-  font-size: var(--typo-body-md-medium-font-size);
-  line-height: var(--typo-body-md-medium-line-height);
-  font-weight: var(--typo-body-md-medium-font-weight);
-  color: var(--color-text-primary);
-  width: fit-content;
-  pointer-events: auto;
-}
-
-.scrollToBottomButton:hover {
-  background-color: var(--color-bg-interactive-teritiary-hover);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.scrollToBottomButton:active {
-  background-color: var(--color-bg-interactive-teritiary-pressed);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.scrollToBottomButton:focus-visible {
-  outline: 2px solid var(--color-border-focus-ring);
-  outline-offset: 2px;
-}
-
-.scrollToBottomButton svg {
-  color: var(--color-icon-primary);
-  flex-shrink: 0;
 }

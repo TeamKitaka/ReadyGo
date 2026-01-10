@@ -272,6 +272,30 @@ export type Database = {
         }
         Relationships: []
       }
+      match_exposure_log: {
+        Row: {
+          context: string | null
+          exposed_at: string | null
+          id: number
+          target_id: string
+          viewer_id: string
+        }
+        Insert: {
+          context?: string | null
+          exposed_at?: string | null
+          id?: number
+          target_id: string
+          viewer_id: string
+        }
+        Update: {
+          context?: string | null
+          exposed_at?: string | null
+          id?: number
+          target_id?: string
+          viewer_id?: string
+        }
+        Relationships: []
+      }
       match_filters: {
         Row: {
           age_range: string | null
@@ -317,6 +341,36 @@ export type Database = {
           target_user_id?: string | null
           user_id?: string | null
           viewed_at?: string | null
+        }
+        Relationships: []
+      }
+      match_results_cache: {
+        Row: {
+          computed_at: string | null
+          context: string
+          reasons: Json
+          score: number
+          tags: Json
+          target_id: string
+          viewer_id: string
+        }
+        Insert: {
+          computed_at?: string | null
+          context?: string
+          reasons: Json
+          score: number
+          tags: Json
+          target_id: string
+          viewer_id: string
+        }
+        Update: {
+          computed_at?: string | null
+          context?: string
+          reasons?: Json
+          score?: number
+          tags?: Json
+          target_id?: string
+          viewer_id?: string
         }
         Relationships: []
       }
@@ -850,7 +904,7 @@ export type Database = {
           nickname?: string | null
           status_message?: string | null
           steam_id?: string | null
-          temperature_score?: number
+          temperature_score: number
           tier?: string
           updated_at?: string | null
         }

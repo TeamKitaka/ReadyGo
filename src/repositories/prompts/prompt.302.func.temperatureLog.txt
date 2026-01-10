@@ -1,0 +1,127 @@
+아래의 조건을 모두 적용하여, 아래의 요구사항을 모두 구현할 것.
+구현 결과를 체크리스트로 반환할 것.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하여 작업하고, 이 작업이 끝나면 해당 rules 적용 결과를 체크리스트로 반환할 것.
+            - @01-common.mdc
+            - @04-func.mdc
+
+==============================================
+
+조건-파일경로) 참고할 Repository 파일경로: src/repositories/reviews.repository.ts
+조건-파일경로) 구현될 Repository 파일경로: src/repositories/temperatureLog.repository.ts
+조건-파일경로) 참고할 타입 파일경로: supabase/types/database.types.ts
+조건-파일경로) 참고할 DB 문서경로: docs/database/04-table-details.md
+
+==============================================
+
+핵심요구사항) 온도로그 기능을 위한 Repository를 구현하고, 적용 결과를 체크리스트로 반환할 것.
+
+            ❗ 전제 조건
+                - 리뷰 작성 시 온도 점수 변경을 기록하는 로그 테이블이다.
+                - 로그를 쌓는 형식이므로 INSERT와 SELECT만 필요하다.
+                - temperature_logs 테이블을 사용할 것.
+
+            1) Repository 기본 구조
+                1-1) Supabase 클라이언트 사용
+                    - src/lib/supabase/admin.ts의 supabaseAdmin을 사용할 것.
+                    - import 경로: import { supabaseAdmin } from '@/lib/supabase/admin';
+                
+                1-2) 타입 정의
+                    - database.types.ts의 Database 타입을 활용할 것.
+                    - temperature_logs 테이블의 Row, Insert 타입을 활용할 것.
+                    - 커스텀 타입이 필요한 경우 파일 내부에 정의할 것.
+
+                1-3) 에러 처리
+                    - 모든 함수는 error가 발생하면 throw error할 것.
+                    - reviews.repository.ts의 패턴을 따를 것.
+                
+                1-4) 권한/RLS 전제 조건
+                    - Repository는 supabaseAdmin(service role)을 사용하므로 RLS를 우회한다.
+                    - 온도로그 생성 권한 검증은 호출부(API Route 또는 Hook)에서 선행되어야 한다.
+                    - Repository 함수는 순수한 데이터 액세스 로직만 담당한다.
+
+            2) 온도로그 조회 함수 (SELECT)
+                2-1) getTemperatureLogsByUser(userId: string, limit: number = 50, offset: number = 0): Promise<TemperatureLog[]>
+                    - 특정 사용자의 온도로그 목록을 조회할 것.
+                    - temperature_logs 테이블 사용할 것.
+                    - 조건:
+                        - user_id = userId
+                        - created_at 기준 내림차순 정렬 (최신 로그가 먼저)
+                    - limit과 offset을 사용하여 페이지네이션 지원할 것.
+                    - 반환 타입: database.types.ts의 temperature_logs.Row[] 타입 활용.
+
+                2-2) getTemperatureLogById(logId: number): Promise<TemperatureLog | null>
+                    - 특정 온도로그 ID로 로그를 조회할 것.
+                    - temperature_logs 테이블 사용할 것.
+                    - 조건: id = logId
+                    - 로그가 없으면 null을 반환할 것.
+                    - 반환 타입: database.types.ts의 temperature_logs.Row | null 타입 활용.
+
+            3) 온도로그 작성 함수 (INSERT)
+                3-1) createTemperatureLog(params: CreateTemperatureLogParams): Promise<TemperatureLog>
+                    - 온도로그를 작성할 것.
+                    - temperature_logs 테이블에 레코드 생성할 것.
+                    - 파라미터 타입:
+                        - user_id: string (온도 점수가 변경된 유저)
+                        - change: number (점수 변화량, 양수 또는 음수)
+                        - reason: string | null (변경 사유, 예: "리뷰 작성", "신고", "시스템 판단" 등)
+                    - insert 필드:
+                        - user_id: 전달받은 user_id
+                        - change: 전달받은 change
+                        - reason: 전달받은 reason (null 가능)
+                        - created_at: 현재 시간 (Supabase 자동 설정)
+                    - 생성된 온도로그 정보를 반환할 것.
+                    - 반환 타입: database.types.ts의 temperature_logs.Row 타입 활용.
+
+            4) 타입 정의
+                4-1) 커스텀 타입 정의
+                    - TemperatureLog: database.types.ts의 temperature_logs.Row 활용.
+                    - CreateTemperatureLogParams: 온도로그 작성 시 필요한 파라미터 타입
+                        - user_id: string
+                        - change: number
+                        - reason?: string | null
+
+                4-2) 함수 파라미터 타입
+                    - 모든 함수의 파라미터는 명시적 타입을 지정할 것.
+                    - uuid 타입은 string으로 처리할 것.
+                    - bigint 타입은 number로 처리할 것.
+
+            5) 구현 주의사항
+                5-1) Supabase 쿼리 패턴
+                    - .from()으로 테이블 선택.
+                    - .select()로 필요한 컬럼만 선택 (성능 최적화).
+                    - .eq()로 필터링.
+                    - .order()로 정렬.
+                    - .limit(), .range()로 페이지네이션.
+                    - .insert()로 생성.
+                    - .single()로 단일 레코드 조회.
+
+                5-2) 에러 처리
+                    - 모든 Supabase 쿼리 결과에서 error 체크할 것.
+                    - error가 존재하면 throw error할 것.
+                    - try-catch는 호출하는 쪽(Hook 등)에서 처리할 것.
+
+                5-3) 테이블 사용 규칙
+                    - ✅ temperature_logs 테이블만 사용할 것.
+                    - ✅ 로그를 쌓는 형식이므로 INSERT와 SELECT만 구현할 것.
+
+==============================================
+
+구현 완료 후 아래 2가지 체크리스트를 반환할 것.
+
+1) 커서룰(@01-common.mdc, @04-func.mdc) 적용 결과 체크리스트
+   - 파일 경로 준수 여부
+   - 라이브러리 사용 규칙 준수 여부
+   - 코드 구조 및 네이밍 규칙 준수 여부
+
+2) 기능 요구사항 구현 체크리스트
+   - 온도로그 조회 함수 구현 완료 여부 (user_id 기준, 페이지네이션 지원)
+   - 온도로그 조회 함수 구현 완료 여부 (log_id 기준)
+   - 온도로그 작성 함수 구현 완료 여부 (INSERT)
+   - temperature_logs 테이블만 사용 여부
+   - 타입 정의 완료 여부 (TemperatureLog, CreateTemperatureLogParams)
+   - 에러 처리 일관성 유지 여부
+   - Supabase 쿼리 패턴 준수 여부
+   - INSERT와 SELECT만 구현 여부

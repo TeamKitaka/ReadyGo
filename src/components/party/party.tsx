@@ -81,34 +81,34 @@ export default function Party() {
             <div className={styles.filterSelect}>
               <Selectbox
                 items={genreItems}
-                selectedId={selectedGenre || 'all'}
+                selectedId={selectedGenre || undefined}
                 onSelect={handleGenreSelect}
                 placeholder="모든 게임 장르"
                 className={styles.selectboxWidth}
                 data-testid="party-genre-select"
               />
             </div>
-            <div className={styles.searchInput}>
-              <Searchbar
-                placeholder="게임 이름으로 검색하기"
-                className={styles.searchbarWidth}
-                value={searchQuery}
-                onChange={handleSearchChange}
-                data-testid="party-search-input"
-              />
+            <div className={styles.newPartyButton}>
+              <Button
+                variant="secondary"
+                size="m"
+                shape="rectangle"
+                className={styles.buttonWidth}
+                onClick={openPartySubmitModal}
+                data-testid="party-create-button"
+              >
+                새 파티 만들기
+              </Button>
             </div>
           </div>
-          <div className={styles.newPartyButton}>
-            <Button
-              variant="secondary"
-              size="m"
-              shape="rectangle"
-              className={styles.buttonWidth}
-              onClick={openPartySubmitModal}
-              data-testid="party-create-button"
-            >
-              새 파티 만들기
-            </Button>
+          <div className={styles.searchInput}>
+            <Searchbar
+              placeholder="게임 이름으로 검색하기"
+              className={styles.searchbarWidth}
+              value={searchQuery}
+              onChange={handleSearchChange}
+              data-testid="party-search-input"
+            />
           </div>
         </div>
         <div className={styles.tabArea}>

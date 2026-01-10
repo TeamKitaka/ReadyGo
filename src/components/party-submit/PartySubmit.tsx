@@ -408,6 +408,17 @@ export default function PartySubmit({
                             onSelect={(item) => {
                               field.onChange(item.value); // value를 저장 ("오전 09:00" 형식)
                             }}
+                            onOpen={(isOpen) => {
+                              if (isOpen && bodyRef.current) {
+                                // body 스크롤을 50% 지점으로 이동
+                                const bodyElement = bodyRef.current;
+                                const { scrollHeight, clientHeight } =
+                                  bodyElement;
+                                const scrollTop =
+                                  (scrollHeight - clientHeight) * 0.5;
+                                bodyElement.scrollTop = scrollTop;
+                              }
+                            }}
                             state={fieldState.error ? 'error' : 'default'}
                           />
                           {fieldState.error && (
