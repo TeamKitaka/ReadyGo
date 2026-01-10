@@ -75,10 +75,10 @@ export const updateTemperatureFromReview = async (
   }
 
   // 6. temperature_logs에 로그 기록
-  // change는 int 타입이므로 밀리 단위(100배)로 저장 (0.15 → 15, 0.75 → 75)
+  // change는 numeric 타입이므로 소수점 값을 직접 저장 (0.15, 0.75 등)
   await temperatureLogRepository.createTemperatureLog({
     user_id: targetUserId,
-    change: Math.round(temperatureChange * 100), // 밀리 단위로 저장
+    change: Math.round(temperatureChange * 100) / 100, // 소수점 둘째 자리까지 반올림
     reason: `리뷰: 매너 ${reviewScores.scoreManner}/2, 팀워크 ${reviewScores.scoreTeamwork}/1, 소통 ${reviewScores.scoreCommunication}/2`,
   });
 
