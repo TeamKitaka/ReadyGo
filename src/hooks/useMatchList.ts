@@ -30,6 +30,7 @@ export interface MatchListOptions {
  */
 export const useMatchList = () => {
   const [filters, setFilters] = useState<MatchListOptions>({});
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -40,9 +41,15 @@ export const useMatchList = () => {
     
     try {
       const params = new URLSearchParams();
-      if (options.minScore) params.set('minScore', String(options.minScore));
-      if (options.statusFilter) params.set('status', options.statusFilter);
-      if (options.refresh) params.set('refresh', 'true');
+      if (options.minScore) {
+        params.set('minScore', String(options.minScore));
+      }
+      if (options.statusFilter) {
+        params.set('status', options.statusFilter);
+      }
+      if (options.refresh) {
+        params.set('refresh', 'true');
+      }
       
       const response = await fetch(`/api/match/list?${params.toString()}`, {
         credentials: 'include',

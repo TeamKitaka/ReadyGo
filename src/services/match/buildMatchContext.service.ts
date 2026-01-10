@@ -293,11 +293,6 @@ const assembleSteamContext = (
       | undefined,
   };
   
-  // 디버깅: steamGames 확인
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[assembleSteamContext] steamGames:', result.steamGames?.length || 0);
-  }
-  
   return result;
 };
 

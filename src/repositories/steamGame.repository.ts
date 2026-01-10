@@ -41,10 +41,14 @@ export const checkGameExists = async (appIds: number[]): Promise<number[]> => {
   const CHUNK_SIZE = 100;
   const allExistingIds: number[] = [];
 
-  for (let i = 0; i < appIds.length; i += CHUNK_SIZE) {
-    const chunk = appIds.slice(i, i + CHUNK_SIZE);
+  const chunks = Array.from(
+    { length: Math.ceil(appIds.length / CHUNK_SIZE) },
+    (_, i) => appIds.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE)
+  );
 
-  const { data, error } = await supabaseAdmin
+  // eslint-disable-next-line no-restricted-syntax
+  for (const chunk of chunks) {
+    const { data, error } = await supabaseAdmin
     .from('steam_game_info')
     .select('app_id')
       .in('app_id', chunk);

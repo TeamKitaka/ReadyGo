@@ -21,10 +21,10 @@ import type { Database } from '@/types/supabase';
  * @param appIds Steam 게임 ID 배열
  * @returns 게임 정보 배열 (app_id, name)
  */
-export async function findByAppIds(
+export const findByAppIds = async (
   client: SupabaseClient<Database>,
   appIds: number[]
-) {
+) => {
   if (appIds.length === 0) {
     return { data: [], error: null };
   }
@@ -32,8 +32,13 @@ export async function findByAppIds(
   const CHUNK_SIZE = 100;
   const allData: { app_id: number; name: string | null }[] = [];
 
-  for (let i = 0; i < appIds.length; i += CHUNK_SIZE) {
-    const chunk = appIds.slice(i, i + CHUNK_SIZE);
+  const chunks = Array.from(
+    { length: Math.ceil(appIds.length / CHUNK_SIZE) },
+    (_, i) => appIds.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE)
+  );
+
+  // eslint-disable-next-line no-restricted-syntax
+  for (const chunk of chunks) {
     const { data, error } = await client
       .from('steam_game_info')
       .select('app_id, name')
@@ -49,7 +54,7 @@ export async function findByAppIds(
   }
 
   return { data: allData, error: null };
-}
+};
 
 /**
  * 게임 ID → 게임 이름 맵 생성
@@ -58,10 +63,10 @@ export async function findByAppIds(
  * @param appIds Steam 게임 ID 배열
  * @returns Map<appId, gameName>
  */
-export async function getGameNameMap(
+export const getGameNameMap = async (
   client: SupabaseClient<Database>,
   appIds: number[]
-): Promise<Map<number, string>> {
+): Promise<Map<number, string>> => {
   const { data, error } = await findByAppIds(client, appIds);
 
   if (error || !data) {
@@ -72,5 +77,5 @@ export async function getGameNameMap(
   return new Map(
     data.map((game) => [game.app_id, game.name || `Game ${game.app_id}`])
   );
-}
+};
 

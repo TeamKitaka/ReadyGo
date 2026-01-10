@@ -20,7 +20,6 @@ import * as matchCacheRepo from '@/repositories/matchResultsCache.repository';
 import * as matchExposureLogRepo from '@/repositories/matchExposureLog.repository';
 import * as matchRecentViewsRepo from '@/repositories/matchRecentViews.repository';
 import * as userProfilesRepo from '@/repositories/userProfiles.repository';
-import * as userStatusRepo from '@/repositories/userStatus.repository';
 import * as steamGamesRepo from '@/repositories/steamGames.repository';
 import { getAvatarImagePath } from '@/lib/avatar/getAvatarImagePath';
 import { getEffectiveStatus } from '@/stores/user-status.store';
@@ -43,11 +42,11 @@ export interface MatchListOptions {
  * @param options 필터 옵션
  * @returns 온라인 우선 정렬된 매칭 결과
  */
-export async function getMatchList(
+export const getMatchList = async (
   client: SupabaseClient<Database>,
   viewerId: string,
   options: MatchListOptions = {}
-) {
+) => {
   const minScore = options.minScore ?? DEFAULT_MIN_SCORE;
   const limit = options.limit ?? 12;
   const refresh = options.refresh ?? false;
@@ -100,6 +99,7 @@ export async function getMatchList(
   
   const results = calculated
     .filter((r) => r.status === 'fulfilled')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((r) => (r as PromiseFulfilledResult<any>).value)
     .filter((r) => r.finalScore >= minScore);
   
@@ -131,7 +131,7 @@ export async function getMatchList(
   
   // 8. 프로필/상태 추가 + 우선순위 정렬 (온라인 > 신규 > 기존)
   return await enrichAndSort(client, top, options.statusFilter, recentlyViewedIds);
-}
+};
 
 /**
  * 점수대별 샘플링
@@ -146,14 +146,24 @@ export async function getMatchList(
  * @param limit 목표 개수
  * @returns 샘플링된 결과
  */
-function sampleByScoreRange(results: any[], minScore: number, limit: number): any[] {
-  if (results.length === 0) return [];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sampleByScoreRange = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  results: any[],
+  minScore: number,
+  limit: number
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): any[] => {
+  if (results.length === 0) {
+    return [];
+  }
   
   // 점수대별로 분류
   const high = results.filter(r => r.finalScore >= 75); // 75% 이상
   const mid = results.filter(r => r.finalScore >= 65 && r.finalScore < 75); // 65~75%
   const low = results.filter(r => r.finalScore >= 50 && r.finalScore < 65); // 50~65%
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let sampled: any[] = [];
   
   if (minScore >= 75) {
@@ -183,14 +193,14 @@ function sampleByScoreRange(results: any[], minScore: number, limit: number): an
   
   // 최종 강력한 랜덤 섞기 (Fisher-Yates)
   return fisherYatesShuffle(sampled).slice(0, limit);
-}
+};
 
 /**
  * 배열 랜덤 섞기 (단순 버전)
  */
-function shuffleArray<T>(array: T[]): T[] {
+const _shuffleArray = <T,>(array: T[]): T[] => {
   return [...array].sort(() => Math.random() - 0.5);
-}
+};
 
 /**
  * Fisher-Yates shuffle 알고리즘
@@ -201,9 +211,10 @@ function shuffleArray<T>(array: T[]): T[] {
  * @param array 섞을 배열
  * @returns 섞인 새 배열
  */
-function fisherYatesShuffle<T>(array: T[]): T[] {
+const fisherYatesShuffle = <T,>(array: T[]): T[] => {
   const result = [...array];
   
+  // eslint-disable-next-line no-restricted-syntax
   for (let i = result.length - 1; i > 0; i--) {
     // 0부터 i까지 중 랜덤 인덱스 선택
     const j = Math.floor(Math.random() * (i + 1));
@@ -213,7 +224,7 @@ function fisherYatesShuffle<T>(array: T[]): T[] {
   }
   
   return result;
-}
+};
 
 /**
  * 프로필/상태 추가 + 우선순위 정렬
@@ -230,44 +241,46 @@ function fisherYatesShuffle<T>(array: T[]): T[] {
  * @param recentlyViewedIds 최근 조회/노출된 유저 ID Set
  * @returns 우선순위 정렬된 결과
  */
-async function enrichAndSort(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const enrichAndSort = async (
   client: SupabaseClient<Database>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   results: any[],
   statusFilter?: string,
   recentlyViewedIds?: Set<string>
-) {
-  if (results.length === 0) return [];
+) => {
+  if (results.length === 0) {
+    return [];
+  }
   
   // targetUserId 추출 (캐시: target_id, 실시간: targetUserId)
   const userIds = results.map((r) => r.target_id || r.targetUserId);
   
   // 1. reasons에서 모든 게임 ID 추출
   const allGameIds = new Set<number>();
-  for (const result of results) {
+  results.forEach((result) => {
     if (result.reasons) {
-      for (const reason of result.reasons) {
+      result.reasons.forEach((reason: { detail: { type: string; topGames?: string[] } }) => {
         if (reason.detail.type === 'COMMON_GAME' && reason.detail.topGames) {
           // "Game 570" → 570으로 변환
-          for (const gameStr of reason.detail.topGames) {
+          reason.detail.topGames.forEach((gameStr: string) => {
             const match = gameStr.match(/Game (\d+)/);
             if (match) {
               allGameIds.add(parseInt(match[1], 10));
             }
-          }
+          });
         }
-      }
+      });
     }
-  }
+  });
   
   // 2. 프로필, 상태, 게임 정보 병렬 조회
-  const [{ data: profiles }, { data: statuses }, gameNameMap] = await Promise.all([
+  const [{ data: profiles }, gameNameMap] = await Promise.all([
     userProfilesRepo.findByUserIds(client, userIds),
-    userStatusRepo.findByUserIds(client, userIds),
     steamGamesRepo.getGameNameMap(client, Array.from(allGameIds)),
   ]);
   
   const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
-  const statusMap = new Map(statuses?.map((s) => [s.user_id, s.status]) || []);
   
   // 3. 게임 이름 변환 헬퍼
   const replaceGameNames = (topGames: string[]): string[] => {
@@ -288,6 +301,7 @@ async function enrichAndSort(
     
     // 4. reasons의 게임 이름 변환
     const enrichedReasons = r.reasons
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ? r.reasons.map((reason: any) => {
           if (reason.detail.type === 'COMMON_GAME' && reason.detail.topGames) {
             return {
@@ -343,5 +357,5 @@ async function enrichAndSort(
     ...shuffledOfflineNew,
     ...shuffledOfflineOld,
   ];
-}
+};
 

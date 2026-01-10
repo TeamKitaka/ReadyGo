@@ -22,7 +22,6 @@
 
 import type { MatchContextCoreDTO } from '@/commons/types/match/matchContextCore.dto';
 import type { MatchTagCoreDTO } from '@/commons/types/match/matchTagCore.dto';
-import { calculateTraitsSimilarity } from '../utils/traitsSimilarity';
 import { calculateScheduleSimilarity } from '../utils/scheduleSimilarity';
 import { calculateGenreSimilarity } from '../utils/steamGenreSimilarity';
 import { animalCompatibilities } from '@/commons/constants/animal/animal.compat';
@@ -36,11 +35,11 @@ import { AnimalType } from '@/commons/constants/animal';
  * @param tags - 현재 태그 배열
  * @param label - 추가할 태그 레이블
  */
-function addTagIfNotExists(tags: MatchTagCoreDTO[], label: string): void {
+const addTagIfNotExists = (tags: MatchTagCoreDTO[], label: string): void => {
   if (!tags.some((t) => t.label === label)) {
     tags.push({ label });
   }
-}
+};
 
 /**
  * 매칭 태그 생성
@@ -334,9 +333,10 @@ export const generateMatchTags = (
     let weekendCount = 0;
 
     targetSchedule.forEach((slot) => {
-      const timeSlot = slot.timeSlot;
+      const { timeSlot } = slot;
       const [startTime] = timeSlot.split('-');
-      const startHour = parseInt(startTime.split(':')[0], 10);
+      const [startHourStr] = startTime.split(':');
+      const startHour = parseInt(startHourStr, 10);
 
       // 시간대 카운트
       if (startHour >= 6 && startHour < 12) {

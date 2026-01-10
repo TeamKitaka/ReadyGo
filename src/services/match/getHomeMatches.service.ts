@@ -33,10 +33,10 @@ import { getAvatarImagePath } from '@/lib/avatar/getAvatarImagePath';
  * @param viewerId viewer 사용자 ID
  * @returns 프로필 정보가 포함된 매칭 결과 (최대 4개)
  */
-export async function getHomeMatches(
+export const getHomeMatches = async (
   client: SupabaseClient<Database>,
   viewerId: string
-) {
+) => {
   // 1. 후보 조회 (채팅/친구/차단 제외)
   const candidates = await getMatchCandidates(client, viewerId);
   const candidateIds = candidates.map((c) => c.userId);
@@ -115,10 +115,12 @@ export async function getHomeMatches(
  * @param results 매칭 결과 배열
  * @returns 프로필 정보가 추가된 결과
  */
-async function enrichWithProfiles(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const enrichWithProfiles = async (
   client: SupabaseClient<Database>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   results: any[]
-) {
+) => {
   if (results.length === 0) {
     return [];
   }
@@ -177,6 +179,7 @@ async function enrichWithProfiles(
 
     // 4. reasons의 게임 이름 변환
     const enrichedReasons = r.reasons
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ? r.reasons.map((reason: any) => {
           if (reason.detail.type === 'COMMON_GAME' && reason.detail.topGames) {
             return {
@@ -203,5 +206,5 @@ async function enrichWithProfiles(
       status: statusMap.get(r.target_id) || 'offline',
     };
   });
-}
+};
 

@@ -19,6 +19,7 @@ import type { Database } from '@/types/supabase';
 export const findAppIdsByUserId = async (
   client: SupabaseClient<Database>,
   userId: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<{ data: number[] | null; error: any }> => {
   const { data, error } = await client
     .from('steam_user_games')

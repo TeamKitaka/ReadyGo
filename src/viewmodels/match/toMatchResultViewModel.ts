@@ -104,7 +104,7 @@ const toReasonViewModel = (
 
     case 'STYLE_SIMILARITY': {
       // topTrait에 따라 구체적인 메시지 제공
-      const topTrait = detail.topTrait;
+      const { topTrait } = detail;
 
       switch (topTrait) {
         case 'cooperation':

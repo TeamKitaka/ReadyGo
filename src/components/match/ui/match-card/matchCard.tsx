@@ -72,7 +72,7 @@ export default function MatchCard({
   status = 'online',
   avatarUrl,
   animalType,
-  tags,
+  tags: _tags,
   reasons,
   tagsV2,
   isSteamConnected,

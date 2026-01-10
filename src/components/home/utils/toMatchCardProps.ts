@@ -11,7 +11,6 @@
  */
 
 import type { MatchCardProps, MatchPreference } from '../ui/match-section/card/matchCard';
-import type { IconName } from '@/commons/components/icon';
 
 /**
  * 시간대 타입 → 한글 라벨 변환
@@ -47,7 +46,8 @@ const traitLabels: Record<string, string> = {
  * @param apiResult API 응답 객체
  * @returns MatchCardProps
  */
-export function toMatchCardProps(apiResult: any): MatchCardProps {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const toMatchCardProps = (apiResult: any): MatchCardProps => {
   const preferences: MatchPreference[] = [];
 
   // 랜덤 순서로 섞기 (다양성 확보)
@@ -192,5 +192,5 @@ export function toMatchCardProps(apiResult: any): MatchCardProps {
     animalType: apiResult.profile.animalType,
     preferences,
   };
-}
+};
 

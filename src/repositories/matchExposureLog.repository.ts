@@ -21,11 +21,11 @@ import type { Database } from '@/types/supabase';
  * @param hours 조회할 시간 범위 (시간 단위)
  * @returns 최근 노출된 target_id 목록
  */
-export async function findRecentByViewer(
+export const findRecentByViewer = async (
   client: SupabaseClient<Database>,
   viewerId: string,
   hours: number
-) {
+) => {
   const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000);
   
   return await client
@@ -34,7 +34,7 @@ export async function findRecentByViewer(
     .eq('viewer_id', viewerId)
     .gte('exposed_at', cutoffTime.toISOString())
     .order('exposed_at', { ascending: false });
-}
+};
 
 /**
  * 여러 노출 이력 한 번에 기록 (중복 무시)
@@ -45,12 +45,12 @@ export async function findRecentByViewer(
  * @param context 노출 컨텍스트 (기본값: 'match_list')
  * @returns 삽입된 레코드
  */
-export async function bulkInsert(
+export const bulkInsert = async (
   client: SupabaseClient<Database>,
   viewerId: string,
   targetIds: string[],
   context: string = 'match_list'
-) {
+) => {
   if (targetIds.length === 0) {
     return { data: [], error: null };
   }
@@ -67,7 +67,7 @@ export async function bulkInsert(
     .from('match_exposure_log')
     .insert(records)
     .select();
-}
+};
 
 /**
  * 오래된 로그 정리 (Cron용)
@@ -76,15 +76,15 @@ export async function bulkInsert(
  * @param days 삭제할 기준 일수 (기본값: 7일)
  * @returns 삭제 결과
  */
-export async function deleteOldRecords(
+export const deleteOldRecords = async (
   client: SupabaseClient<Database>,
   days: number = 7
-) {
+) => {
   const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
   
   return await client
     .from('match_exposure_log')
     .delete()
     .lt('exposed_at', cutoffDate.toISOString());
-}
+};
 

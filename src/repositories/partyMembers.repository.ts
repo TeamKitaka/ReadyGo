@@ -31,9 +31,9 @@ export type PartyMember = PartyMemberRow;
  * // 5
  * ```
  */
-export async function getPartyMemberCountByUserId(
+export const getPartyMemberCountByUserId = async (
   userId: string
-): Promise<number> {
+): Promise<number> => {
   try {
     // RLS 우회를 위해 supabaseAdmin 사용
     const { count, error } = await supabaseAdmin
@@ -51,7 +51,7 @@ export async function getPartyMemberCountByUserId(
     console.error('[PartyMembersRepository] Unexpected error:', err);
     return 0; // 예외 시 0 반환
   }
-}
+};
 
 /**
  * 특정 사용자가 참여한 파티 목록 조회
@@ -66,13 +66,13 @@ export async function getPartyMemberCountByUserId(
  * // [{ post_id: 1, user_id: 'uuid', role: 'member', ... }, ...]
  * ```
  */
-export async function getPartyMembersByUserId(
+export const getPartyMembersByUserId = async (
   userId: string,
   options?: {
     limit?: number;
     offset?: number;
   }
-): Promise<PartyMember[]> {
+): Promise<PartyMember[]> => {
   try {
     let query = supabaseAdmin
       .from('party_members')
@@ -103,5 +103,5 @@ export async function getPartyMembersByUserId(
     console.error('[PartyMembersRepository] Unexpected error:', err);
     return [];
   }
-}
+};
 

@@ -110,20 +110,10 @@ export const generateMatchReasons = (
   const viewerGames = context.viewer.steam?.steamGames ?? [];
   const targetGames = context.target.steam?.steamGames ?? [];
   
-  // 디버깅
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[generateMatchReasons] viewer games:', viewerGames.length);
-    console.log('[generateMatchReasons] target games:', targetGames.length);
-  }
-  
   if (viewerGames.length > 0 && targetGames.length > 0) {
     const commonGames = viewerGames.filter((game) =>
       targetGames.includes(game)
     );
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[generateMatchReasons] common games:', commonGames.length);
-    }
     
     if (commonGames.length > 0) {
       // 실제로는 게임 ID를 게임 이름으로 변환하는 로직 필요
@@ -275,6 +265,7 @@ export const generateMatchReasons = (
       },
       {
         detail: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           type: 'BASELINE' as any, // 4번째 후보 (새로운조합)
           score: 50,
         },
@@ -369,9 +360,9 @@ export const generateMatchReasons = (
  * schedule 배열을 분석하여 가장 대표적인 시간대 타입을 반환
  * UI에서 관계 기반 메시지 생성에 사용
  */
-function calculateTimeType(
+const calculateTimeType = (
   schedule: Array<{ dayType: string; timeSlot: string }>
-): 'morning' | 'afternoon' | 'evening' | 'lateNight' | 'flexible' | 'weekend' {
+): 'morning' | 'afternoon' | 'evening' | 'lateNight' | 'flexible' | 'weekend' => {
   if (schedule.length === 0) {
     return 'flexible';
   }
@@ -431,4 +422,4 @@ function calculateTimeType(
   }
 
   return 'flexible';
-}
+};

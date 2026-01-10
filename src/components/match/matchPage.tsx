@@ -8,7 +8,7 @@ import { useMatchFilters } from './hooks/useMatchFilters';
 import { useSidePanelStore } from '@/stores/sidePanel.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { useMatchList } from '@/hooks/useMatchList';
-import { MatchData, MatchResultWithProfile } from './types/match.types';
+import { MatchData } from './types/match.types';
 import { getEffectiveStatus } from '@/stores/user-status.store';
 import { usePresenceStore } from '@/stores/presence.store';
 import { useProfileBinding } from '@/components/overlay/profile/hooks/index.binding.hook';
@@ -19,8 +19,7 @@ import { AnimalType } from '@/commons/constants/animal/animal.enum';
 
 export default function Match() {
   // 현재 로그인한 사용자 정보
-  const { user } = useAuthStore();
-  const viewerId = user?.id;
+  useAuthStore();
 
   // 스팀 연동 상태 확인
   const { profileData: profileBindingData, isLoading: profileBindingLoading } =
@@ -110,7 +109,7 @@ export default function Match() {
   const { isOpen, targetUserId, open, close } = useSidePanelStore();
 
   // 매칭 결과 가져오기 (초기 로드만, 필터는 버튼 클릭 시 적용)
-  const { results, loading, error, filters, refetch } = useMatchList();
+  const { results, loading, error, refetch } = useMatchList();
 
   // 매칭 결과를 MatchData 형식으로 변환 및 Presence 기반 정렬
   const matchData = useMemo(() => {

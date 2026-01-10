@@ -91,6 +91,7 @@ export const filterMeaningfulGames = async (
       // categories가 jsonb[] 형태이므로 확인
       if (info.categories && Array.isArray(info.categories)) {
         // 카테고리 중 하나라도 게임 관련이면 포함
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const isGame = info.categories.some((cat: any) => {
           const label = cat?.label?.toLowerCase() || '';
           return (

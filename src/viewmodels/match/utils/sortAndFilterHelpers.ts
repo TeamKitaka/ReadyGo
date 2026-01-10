@@ -30,9 +30,9 @@ const PRIORITY_ORDER: Record<MatchReasonCoreDTO['priority'], number> = {
 /**
  * Reason 배열을 UI 우선순위로 정렬
  */
-export function sortReasonsByPriority(
+export const sortReasonsByPriority = (
   reasons: MatchReasonCoreDTO[]
-): MatchReasonCoreDTO[] {
+): MatchReasonCoreDTO[] => {
   return [...reasons].sort((a, b) => {
     // 1. UI_REASON_SORT_ORDER 기준
     const aIndex = UI_REASON_SORT_ORDER.indexOf(a.detail.type);
@@ -55,25 +55,25 @@ export function sortReasonsByPriority(
 
     return 0;
   });
-}
+};
 
 /**
  * 상위 N개 reason 선택
  */
-export function pickTopReasons(
+export const pickTopReasons = (
   reasons: MatchReasonCoreDTO[],
   count: number
-): MatchReasonCoreDTO[] {
+): MatchReasonCoreDTO[] => {
   return reasons.slice(0, count);
-}
+};
 
 /**
  * 상위 N개 tag 선택
  */
-export function pickTopTags(
+export const pickTopTags = (
   tags: MatchTagCoreDTO[],
   count: number
-): MatchTagCoreDTO[] {
+): MatchTagCoreDTO[] => {
   return tags.slice(0, count);
-}
+};
 

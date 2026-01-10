@@ -71,9 +71,9 @@ const FALLBACK_REASONS: MatchReasonViewModel[] = [
 /**
  * Tag label을 reason type으로 매핑 (강조도 계산용)
  */
-function mapLabelToReasonType(
+const mapLabelToReasonType = (
   label: string
-): MatchReasonCoreDTO['detail']['type'] | undefined {
+): MatchReasonCoreDTO['detail']['type'] | undefined => {
   const mapping: Record<string, MatchReasonCoreDTO['detail']['type'] | undefined> = {
     같은게임: 'COMMON_GAME',
     플타임일치: 'PLAY_TIME',
@@ -111,16 +111,16 @@ function mapLabelToReasonType(
     좋은만남: undefined,
   };
   return mapping[label];
-}
+};
 
 /**
  * CoreDTO를 ViewModel로 변환
  */
-export function buildMatchExplanationVM(
+export const buildMatchExplanationVM = (
   reasons: MatchReasonCoreDTO[],
   tags: MatchTagCoreDTO[],
   options: BuildMatchExplanationVMOptions
-): MatchCardExplanationVM {
+): MatchCardExplanationVM => {
   const { variant, isSteamConnected } = options;
 
   // 1. Reason 처리
@@ -242,5 +242,5 @@ export function buildMatchExplanationVM(
     tags: tagsVM,
     shortSummary,
   };
-}
+};
 

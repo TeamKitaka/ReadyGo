@@ -154,7 +154,9 @@ export default function ProfilePanel({
 
   // matchReasons 생성 (AnimalCard에 전달할 string[])
   const matchReasons = useMemo(() => {
-    if (!matchData || isMyProfile) return [];
+    if (!matchData || isMyProfile) {
+      return [];
+    }
 
     // toMatchResultViewModel 사용하여 변환
     const mockCoreDTO = {
@@ -171,7 +173,9 @@ export default function ProfilePanel({
     // 표시 개수 결정: 상위 2개 길이 합이 15자 이하면 3개, 초과하면 2개
     const allReasons = viewModel.reasons.map((r) => r.shortDescription);
     
-    if (allReasons.length === 0) return [];
+    if (allReasons.length === 0) {
+      return [];
+    }
     
     // 상위 2개 길이 체크
     const top2Length = allReasons.slice(0, 2).join('').length;

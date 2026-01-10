@@ -121,10 +121,10 @@ export default function Home() {
   } = useProfile();
 
   // 매칭 데이터 fetch (Step 1: 캐시 기반)
-  const { matchCards, loading: matchLoading } = useHomeMatches();
+  const { matchCards } = useHomeMatches();
 
   // Presence 상태 구독 (실시간 온라인 상태 반영)
-  const { presenceUserIds } = usePresenceStore();
+  usePresenceStore();
 
   // Presence 기반 실시간 상태 반영
   const matchCardsWithPresence = useMemo(() => {
@@ -132,7 +132,7 @@ export default function Home() {
       ...card,
       status: getEffectiveStatus(card.userId),
     }));
-  }, [matchCards, presenceUserIds]);
+  }, [matchCards]);
 
   // 테스트 완료 여부 확인 (animalType이 unknown이 아니고 null/undefined가 아니며, 또는 traits가 존재하면 완료)
   const isTestCompleted =
