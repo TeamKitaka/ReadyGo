@@ -109,12 +109,12 @@ export const generateMatchReasons = (
   // 1. COMMON_GAME (Steam 연동 시) - HIGH priority
   const viewerGames = context.viewer.steam?.steamGames ?? [];
   const targetGames = context.target.steam?.steamGames ?? [];
-  
+
   if (viewerGames.length > 0 && targetGames.length > 0) {
     const commonGames = viewerGames.filter((game) =>
       targetGames.includes(game)
     );
-    
+
     if (commonGames.length > 0) {
       // 실제로는 게임 ID를 게임 이름으로 변환하는 로직 필요
       // 여기서는 단순화를 위해 게임 ID를 그대로 사용
@@ -170,7 +170,7 @@ export const generateMatchReasons = (
       // Viewer와 Target의 시간대 타입 계산 (UI 메시지 세분화용)
       const viewerTimeType = calculateTimeType(viewerSchedule);
       const targetTimeType = calculateTimeType(targetSchedule);
-      
+
       // UI 가공 제거: 원시 데이터만 전달
       reasons.push({
         detail: {
@@ -276,7 +276,8 @@ export const generateMatchReasons = (
 
     // 이미 존재하는 타입 제외
     const availableBaselines = baselineCandidates.filter(
-      (candidate) => !reasons.some((r) => r.detail.type === candidate.detail.type)
+      (candidate) =>
+        !reasons.some((r) => r.detail.type === candidate.detail.type)
     );
 
     // 필요한 개수만큼 랜덤 선택
@@ -356,23 +357,29 @@ export const generateMatchReasons = (
 
 /**
  * 시간대 타입 계산 헬퍼 (내부 함수)
- * 
+ *
  * schedule 배열을 분석하여 가장 대표적인 시간대 타입을 반환
  * UI에서 관계 기반 메시지 생성에 사용
  */
 const calculateTimeType = (
   schedule: Array<{ dayType: string; timeSlot: string }>
-): 'morning' | 'afternoon' | 'evening' | 'lateNight' | 'flexible' | 'weekend' => {
+):
+  | 'morning'
+  | 'afternoon'
+  | 'evening'
+  | 'lateNight'
+  | 'flexible'
+  | 'weekend' => {
   if (schedule.length === 0) {
     return 'flexible';
   }
 
   // 시간대와 요일 분석
   const timePatterns = {
-    morning: 0,    // 06-12
-    afternoon: 0,  // 12-18
-    evening: 0,    // 18-22
-    lateNight: 0,  // 22-04
+    morning: 0, // 06-12
+    afternoon: 0, // 12-18
+    evening: 0, // 18-22
+    lateNight: 0, // 22-04
   };
   let weekendCount = 0;
   let weekdayCount = 0;

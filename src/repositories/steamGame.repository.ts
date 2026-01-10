@@ -49,13 +49,13 @@ export const checkGameExists = async (appIds: number[]): Promise<number[]> => {
   // eslint-disable-next-line no-restricted-syntax
   for (const chunk of chunks) {
     const { data, error } = await supabaseAdmin
-    .from('steam_game_info')
-    .select('app_id')
+      .from('steam_game_info')
+      .select('app_id')
       .in('app_id', chunk);
 
-  if (error) {
-    throw error;
-  }
+    if (error) {
+      throw error;
+    }
 
     allExistingIds.push(...data.map((row) => row.app_id));
   }

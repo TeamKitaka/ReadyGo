@@ -29,9 +29,9 @@ import { AnimalType } from '@/commons/constants/animal';
 
 /**
  * 태그 중복 방지 헬퍼 함수
- * 
+ *
  * 이미 존재하는 태그가 아닌 경우에만 추가
- * 
+ *
  * @param tags - 현재 태그 배열
  * @param label - 추가할 태그 레이블
  */
@@ -148,26 +148,27 @@ export const generateMatchTags = (
       { key: 'leadership', value: targetTraits.leadership, label: '리더형' },
       { key: 'social', value: targetTraits.social, label: '사교형' },
     ];
-    
+
     // 가장 높은 trait 찾기
-    const topTrait = traits.reduce((max, trait) => 
+    const topTrait = traits.reduce((max, trait) =>
       trait.value > max.value ? trait : max
     );
-    
+
     // Target의 특성이 명확하면 (60 이상) 태그 추가
     if (topTrait.value >= 60) {
       tags.push({ label: topTrait.label });
     }
-    
+
     // 3-2. 상호보완적인 trait 찾기 (viewer가 낮고 target이 높은 경우)
     if (viewerTraits) {
-      const complementaryTraits = traits.filter(trait => {
-        const viewerValue = viewerTraits[trait.key as keyof typeof viewerTraits];
+      const complementaryTraits = traits.filter((trait) => {
+        const viewerValue =
+          viewerTraits[trait.key as keyof typeof viewerTraits];
         const targetValue = trait.value;
         // viewer가 50 이하이고, target이 70 이상이면 상호보완적
         return viewerValue <= 50 && targetValue >= 70;
       });
-      
+
       // 상호보완적인 trait가 있으면 태그 추가
       if (complementaryTraits.length > 0) {
         tags.push({ label: '보완궁합' });
@@ -257,9 +258,13 @@ export const generateMatchTags = (
   }
 
   // 8. 천생연분 / 궁합좋음 (동물 궁합)
-  const viewerAnimal = context.viewer.traits?.animalType as AnimalType | undefined;
-  const targetAnimal = context.target.traits?.animalType as AnimalType | undefined;
-  
+  const viewerAnimal = context.viewer.traits?.animalType as
+    | AnimalType
+    | undefined;
+  const targetAnimal = context.target.traits?.animalType as
+    | AnimalType
+    | undefined;
+
   if (
     viewerAnimal &&
     targetAnimal &&
@@ -304,8 +309,10 @@ export const generateMatchTags = (
   // 12. 꾸준함 (신뢰도 데이터 존재 또는 파티 경험 존재)
   // 조건 완화: reliabilityScore >= 50 → 데이터만 있으면 OK (성향 불필요)
   // 또는 파티 경험이 5개 이상이면 꾸준함으로 인정
-  const hasReliabilityData = reliabilityScore !== undefined && reliabilityScore > 0;
-  const hasPartyExperience = targetPartyCount !== undefined && targetPartyCount >= 5;
+  const hasReliabilityData =
+    reliabilityScore !== undefined && reliabilityScore > 0;
+  const hasPartyExperience =
+    targetPartyCount !== undefined && targetPartyCount >= 5;
   if (hasReliabilityData || hasPartyExperience) {
     addTagIfNotExists(tags, '꾸준함');
   }
@@ -315,7 +322,11 @@ export const generateMatchTags = (
   // (이전에는 여기서 다시 추가하여 같은 태그가 2개씩 생성되는 문제가 있었음)
 
   // 15. 집중형 (긴 세션 플레이 - Steam totalPlayTime이 많은 경우)
-  if (targetSteam && targetSteam.totalPlayTime && targetSteam.totalPlayTime >= 1000) {
+  if (
+    targetSteam &&
+    targetSteam.totalPlayTime &&
+    targetSteam.totalPlayTime >= 1000
+  ) {
     tags.push({ label: '집중형' });
   }
 
@@ -323,12 +334,12 @@ export const generateMatchTags = (
   if (targetSchedule.length > 0) {
     // 시간대와 dayType 분석
     const timeSlotCounts: Record<string, number> = {
-      morning: 0,    // 06-12 (아침형)
-      afternoon: 0,  // 12-18 (오후형)
-      evening: 0,    // 18-22 (저녁형)
-      lateNight: 0,  // 22-04 (올빼미형)
+      morning: 0, // 06-12 (아침형)
+      afternoon: 0, // 12-18 (오후형)
+      evening: 0, // 18-22 (저녁형)
+      lateNight: 0, // 22-04 (올빼미형)
     };
-    
+
     let weekdayCount = 0;
     let weekendCount = 0;
 
@@ -349,7 +360,7 @@ export const generateMatchTags = (
         // 22-24시 또는 00-04시
         timeSlotCounts.lateNight++;
       }
-      
+
       // 요일 카운트
       if (slot.dayType === 'weekend') {
         weekendCount++;
@@ -365,11 +376,17 @@ export const generateMatchTags = (
 
     // 16-2. 유연형 (시간대가 다양하고 고른 분포)
     const totalSlots = targetSchedule.length;
-    const nonZeroCounts = Object.values(timeSlotCounts).filter(c => c > 0).length;
+    const nonZeroCounts = Object.values(timeSlotCounts).filter(
+      (c) => c > 0
+    ).length;
     const maxTimeCount = Math.max(...Object.values(timeSlotCounts));
-    
+
     // 4개 이상 시간대 + 특정 시간대 집중도가 낮음 (50% 미만)
-    if (totalSlots >= 4 && nonZeroCounts >= 3 && maxTimeCount / totalSlots < 0.5) {
+    if (
+      totalSlots >= 4 &&
+      nonZeroCounts >= 3 &&
+      maxTimeCount / totalSlots < 0.5
+    ) {
       tags.push({ label: '유연형' });
     }
     // 16-3. 특정 시간대형 (가장 많은 시간대, 최소 1개 이상)
@@ -397,11 +414,11 @@ export const generateMatchTags = (
     // Fallback 태그 후보 목록 (랜덤 선택용)
     // 조건 없이 추가 가능한 일반적/긍정적 태그만
     const fallbackCandidates = [
-      '좋은만남',      // 새로운 만남 긍정 메시지
-      '매너좋음',      // 기본 매너 (긍정 이미지)
-      '활동적',        // 활동성 (일반적 표현)
-      '꾸준함',        // 지속성 (긍정 신호)
-      '협동형',        // 기본 성향 (구체적)
+      '좋은만남', // 새로운 만남 긍정 메시지
+      '매너좋음', // 기본 매너 (긍정 이미지)
+      '활동적', // 활동성 (일반적 표현)
+      '꾸준함', // 지속성 (긍정 신호)
+      '협동형', // 기본 성향 (구체적)
     ];
 
     // 이미 추가되지 않은 태그만 필터링

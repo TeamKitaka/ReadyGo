@@ -64,4 +64,3 @@ export const calculateGenreSimilarity = (
   // 백분율로 변환 (0~100)
   return Math.round(similarity * 100);
 };
-

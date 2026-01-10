@@ -1,10 +1,10 @@
 /**
  * Match Results Cache Repository
- * 
+ *
  * 책임:
  * - match_results_cache 테이블 CRUD
  * - 순수 DB 접근만 담당
- * 
+ *
  * 비책임:
  * - 비즈니스 로직 (Service에서 처리)
  * - 데이터 변환 (ViewModel에서 처리)
@@ -30,7 +30,7 @@ export interface CachedMatchResult {
 
 /**
  * viewer 기준으로 캐시 조회
- * 
+ *
  * @param client Supabase 클라이언트
  * @param viewerId viewer 사용자 ID
  * @param targetIds target 사용자 ID 목록
@@ -51,7 +51,7 @@ export const findByViewer = async (
 
 /**
  * context별 캐시 조회 (5분 TTL 강제)
- * 
+ *
  * @param client Supabase 클라이언트
  * @param viewerId viewer 사용자 ID
  * @param context 캐시 컨텍스트 ('home' | 'match')
@@ -63,7 +63,7 @@ export const findByViewerAndContext = async (
   context: 'home' | 'match'
 ) => {
   const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-  
+
   return await client
     .from('match_results_cache')
     .select('*')
@@ -75,7 +75,7 @@ export const findByViewerAndContext = async (
 
 /**
  * 캐시 저장 (upsert)
- * 
+ *
  * @param client Supabase 클라이언트
  * @param data 저장할 캐시 데이터 (context 포함)
  */
@@ -92,23 +92,21 @@ export const upsert = async (
     context?: 'home' | 'match';
   }
 ) => {
-  return await client
-    .from('match_results_cache')
-    .upsert(
-      {
-        ...data,
-        context: data.context || 'home',
-        computed_at: new Date().toISOString(),
-      },
-      {
-        onConflict: 'viewer_id,target_id,context',
-      }
-    );
+  return await client.from('match_results_cache').upsert(
+    {
+      ...data,
+      context: data.context || 'home',
+      computed_at: new Date().toISOString(),
+    },
+    {
+      onConflict: 'viewer_id,target_id,context',
+    }
+  );
 };
 
 /**
  * 특정 캐시 삭제
- * 
+ *
  * @param client Supabase 클라이언트
  * @param viewerId viewer 사용자 ID
  * @param targetId target 사용자 ID
@@ -127,7 +125,7 @@ export const deleteByViewerAndTarget = async (
 
 /**
  * viewer의 모든 캐시 삭제
- * 
+ *
  * @param client Supabase 클라이언트
  * @param viewerId viewer 사용자 ID
  */
@@ -140,4 +138,3 @@ export const deleteAllByViewer = async (
     .delete()
     .eq('viewer_id', viewerId);
 };
-

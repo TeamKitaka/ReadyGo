@@ -38,16 +38,13 @@ export const upsert = async (
   client: SupabaseClient<Database>,
   data: Omit<SteamUserStatsRow, 'updated_at'>
 ) => {
-  return await client
-    .from('steam_user_stats')
-    .upsert(
-      {
-        ...data,
-        updated_at: new Date().toISOString(),
-      },
-      {
-        onConflict: 'user_id',
-      }
-    );
+  return await client.from('steam_user_stats').upsert(
+    {
+      ...data,
+      updated_at: new Date().toISOString(),
+    },
+    {
+      onConflict: 'user_id',
+    }
+  );
 };
-

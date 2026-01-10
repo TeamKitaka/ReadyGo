@@ -41,5 +41,3 @@ export const traitLabels: Record<TraitKey, string> = {
 export type RadarTraitKey = TraitKey;
 
 export const radarTraitLabels: Record<RadarTraitKey, string> = traitLabels;
-
-

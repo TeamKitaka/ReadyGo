@@ -66,5 +66,3 @@ export const updateStatus = async (
     { onConflict: 'user_id' }
   );
 };
-
-

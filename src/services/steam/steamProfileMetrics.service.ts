@@ -81,8 +81,7 @@ export const calculateActivityMetrics = (
     // 2. 없으면 → total / (계정 생성 후 주 수)
     const now = new Date();
     const weeksSinceCreation =
-      (now.getTime() - accountCreatedAt.getTime()) /
-      (7 * 24 * 60 * 60 * 1000);
+      (now.getTime() - accountCreatedAt.getTime()) / (7 * 24 * 60 * 60 * 1000);
     if (weeksSinceCreation > 0) {
       avgWeeklyPlaytimeHours = Math.round(
         totalPlaytimeMinutes / 60 / weeksSinceCreation
@@ -260,4 +259,3 @@ export const updateSteamUserStats = async (
     throw new Error(`Failed to update steam_user_stats: ${error.message}`);
   }
 };
-

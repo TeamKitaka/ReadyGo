@@ -1,16 +1,19 @@
 /**
  * API 응답 → MatchCardProps 변환
- * 
+ *
  * 책임:
  * - API 응답 데이터를 UI 컴포넌트 Props로 변환
  * - reasons에서 UI 표시 정보 추출
- * 
+ *
  * 비책임:
  * - 비즈니스 로직 (Service에서 처리)
  * - API 호출 (Hook에서 처리)
  */
 
-import type { MatchCardProps, MatchPreference } from '../ui/match-section/card/matchCard';
+import type {
+  MatchCardProps,
+  MatchPreference,
+} from '../ui/match-section/card/matchCard';
 
 /**
  * 시간대 타입 → 한글 라벨 변환
@@ -37,12 +40,12 @@ const traitLabels: Record<string, string> = {
 
 /**
  * API 응답을 MatchCardProps로 변환
- * 
+ *
  * reasons를 분석하여 UI 표시용 preferences 생성:
  * - 각 reason에서 icon, label, value를 동적으로 생성
  * - 의미있는 데이터만 표시 (fallback 값은 skip)
  * - 최대 3개의 preferences 반환
- * 
+ *
  * @param apiResult API 응답 객체
  * @returns MatchCardProps
  */
@@ -51,7 +54,9 @@ export const toMatchCardProps = (apiResult: any): MatchCardProps => {
   const preferences: MatchPreference[] = [];
 
   // 랜덤 순서로 섞기 (다양성 확보)
-  const shuffledReasons = [...(apiResult.reasons || [])].sort(() => Math.random() - 0.5);
+  const shuffledReasons = [...(apiResult.reasons || [])].sort(
+    () => Math.random() - 0.5
+  );
 
   // reasons 분석 (랜덤 순)
   for (const reason of shuffledReasons) {
@@ -74,7 +79,7 @@ export const toMatchCardProps = (apiResult: any): MatchCardProps => {
       const validGames = detail.topGames.filter(
         (game: string) => !game.match(/^Game \d+$/)
       );
-      
+
       if (validGames.length > 0) {
         preferences.push({
           icon: 'joystick-alt',
@@ -104,7 +109,10 @@ export const toMatchCardProps = (apiResult: any): MatchCardProps => {
       }
     }
     // 시간대 관련 이유
-    else if (type === 'ACTIVITY_PATTERN' && (detail.viewerTimeType || detail.targetTimeType)) {
+    else if (
+      type === 'ACTIVITY_PATTERN' &&
+      (detail.viewerTimeType || detail.targetTimeType)
+    ) {
       const timeType = detail.viewerTimeType || detail.targetTimeType;
       const timeLabel = timeTypeLabels[timeType];
       if (timeLabel && timeLabel !== '유연한 시간') {
@@ -134,7 +142,11 @@ export const toMatchCardProps = (apiResult: any): MatchCardProps => {
       });
     }
     // 성향/실력 관련 이유
-    else if (type === 'STYLE_SIMILARITY' && detail.similarityScore >= 70 && detail.topTrait) {
+    else if (
+      type === 'STYLE_SIMILARITY' &&
+      detail.similarityScore >= 70 &&
+      detail.topTrait
+    ) {
       const trait = detail.topTrait;
       const traitLabel = traitLabels[trait];
       if (traitLabel) {
@@ -193,4 +205,3 @@ export const toMatchCardProps = (apiResult: any): MatchCardProps => {
     preferences,
   };
 };
-

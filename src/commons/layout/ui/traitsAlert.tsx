@@ -45,7 +45,9 @@ export const TraitsAlert = ({ className = '' }: TraitsAlertProps) => {
         <div className={styles.featuresSection}>
           {/* 기능 목록 */}
           <div className={styles.featuresContainer}>
-            <p className={styles.featuresTitle}>분석 완료 후 사용할 수 있는 기능</p>
+            <p className={styles.featuresTitle}>
+              분석 완료 후 사용할 수 있는 기능
+            </p>
             <div className={styles.featuresList}>
               <div className={styles.featureItem}>
                 <div className={styles.checkIcon}>
@@ -91,4 +93,3 @@ export const TraitsAlert = ({ className = '' }: TraitsAlertProps) => {
     </div>
   );
 };
-

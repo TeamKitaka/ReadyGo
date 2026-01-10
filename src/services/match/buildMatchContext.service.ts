@@ -292,7 +292,7 @@ const assembleSteamContext = (
       | 'hardcore'
       | undefined,
   };
-  
+
   return result;
 };
 

@@ -1172,7 +1172,8 @@ export default function RealtimeChatTestPage() {
                             fontSize: 'var(--typo-body-sm-font-size)',
                             lineHeight: 'var(--typo-body-sm-line-height)',
                             fontWeight: 'var(--typo-body-sm-font-weight)',
-                            color: 'var(--color-text-interactive-secondary, #999)',
+                            color:
+                              'var(--color-text-interactive-secondary, #999)',
                             whiteSpace: 'nowrap',
                             flexShrink: 0,
                             paddingBottom: '12px',
@@ -1186,7 +1187,8 @@ export default function RealtimeChatTestPage() {
                             alignItems: 'center',
                             gap: '8px',
                             padding: '12px 20px',
-                            background: 'var(--color-bg-interactive-primary-hover, #56e5ce)',
+                            background:
+                              'var(--color-bg-interactive-primary-hover, #56e5ce)',
                             borderRadius: '24px',
                           }}
                         >
@@ -1196,7 +1198,8 @@ export default function RealtimeChatTestPage() {
                               fontSize: 'var(--typo-body-lg-font-size)',
                               lineHeight: 'var(--typo-body-lg-line-height)',
                               fontWeight: 'var(--typo-body-lg-font-weight)',
-                              color: 'var(--color-text-interactive-inverse, #fff)',
+                              color:
+                                'var(--color-text-interactive-inverse, #fff)',
                               whiteSpace: 'normal',
                               wordBreak: 'normal',
                               overflowWrap: 'normal',
@@ -1260,7 +1263,8 @@ export default function RealtimeChatTestPage() {
                               fontSize: 'var(--typo-body-sm-font-size)',
                               lineHeight: 'var(--typo-body-sm-line-height)',
                               fontWeight: 'var(--typo-body-sm-font-weight)',
-                              color: 'var(--color-text-interactive-secondary, #999)',
+                              color:
+                                'var(--color-text-interactive-secondary, #999)',
                               whiteSpace: 'nowrap',
                               flexShrink: 0,
                               paddingBottom: '12px',

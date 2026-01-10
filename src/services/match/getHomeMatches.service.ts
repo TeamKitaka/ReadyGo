@@ -1,11 +1,11 @@
 /**
  * Get Home Matches Service
- * 
+ *
  * 책임:
  * - 홈 화면용 매칭 결과 조회 (최고 4명)
  * - 캐시 우선 조회 + 실시간 fallback
  * - 프로필/상태 정보 추가
- * 
+ *
  * 비책임:
  * - Domain 계산 로직 (calculateMatchResult에 위임)
  * - UI 변환 (toMatchCardProps에 위임)
@@ -23,12 +23,12 @@ import { getAvatarImagePath } from '@/lib/avatar/getAvatarImagePath';
 
 /**
  * 홈 화면 매칭 결과 조회
- * 
+ *
  * 전략:
  * 1. 캐시에서 4개 이상 있으면 즉시 반환
  * 2. 부족하면 실시간 계산으로 보충
  * 3. 실시간 계산 결과는 캐시에 저장 (다음을 위해)
- * 
+ *
  * @param client Supabase 클라이언트
  * @param viewerId viewer 사용자 ID
  * @returns 프로필 정보가 포함된 매칭 결과 (최대 4개)
@@ -106,11 +106,11 @@ export const getHomeMatches = async (
   const sorted = all.sort((a, b) => b.score - a.score).slice(0, 4);
 
   return await enrichWithProfiles(client, sorted);
-}
+};
 
 /**
  * 프로필 및 상태 정보 추가
- * 
+ *
  * @param client Supabase 클라이언트
  * @param results 매칭 결과 배열
  * @returns 프로필 정보가 추가된 결과
@@ -146,17 +146,16 @@ const enrichWithProfiles = async (
   }
 
   // 2. 프로필, 상태, 게임 정보 병렬 조회
-  const [{ data: profiles }, { data: statuses }, gameNameMap] = await Promise.all([
-    userProfilesRepo.findByUserIds(client, userIds),
-    userStatusRepo.findByUserIds(client, userIds),
-    steamGamesRepo.getGameNameMap(client, Array.from(allGameIds)),
-  ]);
+  const [{ data: profiles }, { data: statuses }, gameNameMap] =
+    await Promise.all([
+      userProfilesRepo.findByUserIds(client, userIds),
+      userStatusRepo.findByUserIds(client, userIds),
+      steamGamesRepo.getGameNameMap(client, Array.from(allGameIds)),
+    ]);
 
   // Map으로 변환 (빠른 조회)
   const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
-  const statusMap = new Map(
-    statuses?.map((s) => [s.user_id, s.status]) || []
-  );
+  const statusMap = new Map(statuses?.map((s) => [s.user_id, s.status]) || []);
 
   // 3. 게임 이름 변환 헬퍼
   const replaceGameNames = (topGames: string[]): string[] => {
@@ -179,8 +178,8 @@ const enrichWithProfiles = async (
 
     // 4. reasons의 게임 이름 변환
     const enrichedReasons = r.reasons
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? r.reasons.map((reason: any) => {
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        r.reasons.map((reason: any) => {
           if (reason.detail.type === 'COMMON_GAME' && reason.detail.topGames) {
             return {
               ...reason,
@@ -207,4 +206,3 @@ const enrichWithProfiles = async (
     };
   });
 };
-

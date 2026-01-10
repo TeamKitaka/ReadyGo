@@ -29,8 +29,12 @@ export default function MatchListSkeleton({
       {/* 필터 섹션 스켈레톤 */}
       <div className={styles.filterSection}>
         <div className={styles.filterGroup}>
-          <Skeleton className={`${styles.selectbox} ${styles.selectboxFirst}`} />
-          <Skeleton className={`${styles.selectbox} ${styles.selectboxSecond}`} />
+          <Skeleton
+            className={`${styles.selectbox} ${styles.selectboxFirst}`}
+          />
+          <Skeleton
+            className={`${styles.selectbox} ${styles.selectboxSecond}`}
+          />
         </div>
         <Skeleton className={styles.refreshButton} />
       </div>
@@ -46,4 +50,3 @@ export default function MatchListSkeleton({
     </div>
   );
 }
-

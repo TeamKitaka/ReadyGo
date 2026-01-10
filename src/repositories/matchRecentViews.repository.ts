@@ -1,11 +1,11 @@
 /**
  * Match Recent Views Repository
- * 
+ *
  * 책임:
  * - match_recent_views 테이블 CRUD
  * - 프로필 조회 이력 관리
  * - 순수 DB 접근만 담당
- * 
+ *
  * 비책임:
  * - 비즈니스 로직 (Service에서 처리)
  */
@@ -15,7 +15,7 @@ import type { Database } from '@/types/supabase';
 
 /**
  * 최근 N시간 내 조회한 target_user_id 조회
- * 
+ *
  * @param client Supabase 클라이언트
  * @param userId 기준 유저 ID
  * @param hours 조회할 시간 범위 (시간 단위)
@@ -27,7 +27,7 @@ export const findByViewer = async (
   hours: number
 ) => {
   const cutoffTime = new Date(Date.now() - hours * 60 * 60 * 1000);
-  
+
   return await client
     .from('match_recent_views')
     .select('target_user_id')
@@ -38,7 +38,7 @@ export const findByViewer = async (
 
 /**
  * 프로필 조회 이력 기록
- * 
+ *
  * @param client Supabase 클라이언트
  * @param userId 기준 유저 ID
  * @param targetUserId 조회한 대상 유저 ID
@@ -61,7 +61,7 @@ export const insert = async (
 
 /**
  * 오래된 조회 이력 정리 (Cron용)
- * 
+ *
  * @param client Supabase 클라이언트
  * @param days 삭제할 기준 일수 (기본값: 30일)
  * @returns 삭제 결과
@@ -71,10 +71,9 @@ export const deleteOldRecords = async (
   days: number = 30
 ) => {
   const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-  
+
   return await client
     .from('match_recent_views')
     .delete()
     .lt('viewed_at', cutoffDate.toISOString());
 };
-

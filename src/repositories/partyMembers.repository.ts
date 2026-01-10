@@ -1,11 +1,11 @@
 /**
  * Party Members Repository
- * 
+ *
  * 📌 책임:
  * - party_members 테이블에 대한 데이터 접근
  * - RLS 우회를 위해 supabaseAdmin 사용
  * - 특정 사용자의 파티 참여 개수 조회
- * 
+ *
  * 📌 주의:
  * - admin client 사용으로 RLS 무시
  * - 민감한 데이터 접근 시 주의 필요
@@ -21,10 +21,10 @@ export type PartyMember = PartyMemberRow;
 
 /**
  * 특정 사용자가 참여한 파티 개수 조회
- * 
+ *
  * @param userId - 사용자 ID (UUID)
  * @returns 참여한 파티 개수
- * 
+ *
  * @example
  * ```typescript
  * const count = await getPartyMemberCountByUserId('user-uuid');
@@ -42,7 +42,10 @@ export const getPartyMemberCountByUserId = async (
       .eq('user_id', userId);
 
     if (error) {
-      console.error('[PartyMembersRepository] Error fetching party count:', error);
+      console.error(
+        '[PartyMembersRepository] Error fetching party count:',
+        error
+      );
       return 0; // 에러 시 0 반환 (Cold Start 대응)
     }
 
@@ -55,11 +58,11 @@ export const getPartyMemberCountByUserId = async (
 
 /**
  * 특정 사용자가 참여한 파티 목록 조회
- * 
+ *
  * @param userId - 사용자 ID (UUID)
  * @param options - 조회 옵션
  * @returns 참여한 파티 목록
- * 
+ *
  * @example
  * ```typescript
  * const members = await getPartyMembersByUserId('user-uuid', { limit: 10 });
@@ -94,7 +97,10 @@ export const getPartyMembersByUserId = async (
     const { data, error } = await query;
 
     if (error) {
-      console.error('[PartyMembersRepository] Error fetching party members:', error);
+      console.error(
+        '[PartyMembersRepository] Error fetching party members:',
+        error
+      );
       return [];
     }
 
@@ -104,4 +110,3 @@ export const getPartyMembersByUserId = async (
     return [];
   }
 };
-

@@ -164,12 +164,24 @@ export type MatchReasonDetail =
        * Viewer의 시간대 타입
        * UI에서 관계 기반 메시지 생성에 사용
        */
-      viewerTimeType?: 'morning' | 'afternoon' | 'evening' | 'lateNight' | 'flexible' | 'weekend';
+      viewerTimeType?:
+        | 'morning'
+        | 'afternoon'
+        | 'evening'
+        | 'lateNight'
+        | 'flexible'
+        | 'weekend';
       /**
        * Target의 시간대 타입
        * UI에서 관계 기반 메시지 생성에 사용
        */
-      targetTimeType?: 'morning' | 'afternoon' | 'evening' | 'lateNight' | 'flexible' | 'weekend';
+      targetTimeType?:
+        | 'morning'
+        | 'afternoon'
+        | 'evening'
+        | 'lateNight'
+        | 'flexible'
+        | 'weekend';
     };
 
 /**

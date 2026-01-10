@@ -183,4 +183,3 @@ export const getDateWeeksAgo = (weeksAgo: number): Date => {
   date.setDate(date.getDate() - weeksAgo * 7);
   return date;
 };
-

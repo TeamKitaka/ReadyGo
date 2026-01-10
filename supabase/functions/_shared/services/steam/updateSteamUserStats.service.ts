@@ -55,13 +55,13 @@ const filterMeaningfulGames = async (
   for (let i = 0; i < appIds.length; i += CHUNK_SIZE) {
     const chunk = appIds.slice(i, i + CHUNK_SIZE);
     const { data, error: infoError } = await client
-    .from('steam_game_info')
-    .select('app_id, categories')
+      .from('steam_game_info')
+      .select('app_id, categories')
       .in('app_id', chunk);
 
-  if (infoError) {
-    throw new Error(`Failed to fetch game info: ${infoError.message}`);
-  }
+    if (infoError) {
+      throw new Error(`Failed to fetch game info: ${infoError.message}`);
+    }
 
     if (data) {
       gameInfos.push(...data);
@@ -197,12 +197,12 @@ const analyzeGenreProfile = async (
   for (let i = 0; i < appIds.length; i += CHUNK_SIZE) {
     const chunk = appIds.slice(i, i + CHUNK_SIZE);
     const { data, error } = await client
-    .from('steam_game_info')
-    .select('app_id, genres')
+      .from('steam_game_info')
+      .select('app_id, genres')
       .in('app_id', chunk);
 
-  if (error) {
-    throw new Error(`Failed to fetch game genres: ${error.message}`);
+    if (error) {
+      throw new Error(`Failed to fetch game genres: ${error.message}`);
     }
 
     if (data) {

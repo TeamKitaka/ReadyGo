@@ -29,10 +29,7 @@ export const findByUserId = async (client: DbClient, userId: string) => {
 /**
  * steam_user_stats를 upsert
  */
-export const upsert = async (
-  client: DbClient,
-  params: SteamUserStatsInput
-) => {
+export const upsert = async (client: DbClient, params: SteamUserStatsInput) => {
   return await client.from('steam_user_stats').upsert(
     {
       user_id: params.userId,
@@ -47,4 +44,3 @@ export const upsert = async (
     }
   );
 };
-

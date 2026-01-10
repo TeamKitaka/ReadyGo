@@ -232,10 +232,7 @@ describe('generateMatchReasons', () => {
       );
 
       expect(onlineNowReason).toBeDefined();
-      if (
-        onlineNowReason &&
-        onlineNowReason.detail.type === 'ONLINE_NOW'
-      ) {
+      if (onlineNowReason && onlineNowReason.detail.type === 'ONLINE_NOW') {
         expect(onlineNowReason.detail.isOnline).toBe(true);
         expect(onlineNowReason.priority).toBe('MEDIUM');
       }
@@ -473,4 +470,3 @@ describe('generateMatchReasons', () => {
     });
   });
 });
-

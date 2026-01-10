@@ -1,10 +1,10 @@
 /**
  * Steam Games Repository
- * 
+ *
  * 책임:
  * - steam_game_info 테이블 조회
  * - 게임 ID → 게임 이름 변환
- * 
+ *
  * 비책임:
  * - 비즈니스 로직
  */
@@ -14,9 +14,9 @@ import type { Database } from '@/types/supabase';
 
 /**
  * 게임 ID 배열로 게임 정보 조회
- * 
+ *
  * URL 길이 제한 방지를 위해 100개씩 배치 처리
- * 
+ *
  * @param client Supabase 클라이언트
  * @param appIds Steam 게임 ID 배열
  * @returns 게임 정보 배열 (app_id, name)
@@ -58,7 +58,7 @@ export const findByAppIds = async (
 
 /**
  * 게임 ID → 게임 이름 맵 생성
- * 
+ *
  * @param client Supabase 클라이언트
  * @param appIds Steam 게임 ID 배열
  * @returns Map<appId, gameName>
@@ -78,4 +78,3 @@ export const getGameNameMap = async (
     data.map((game) => [game.app_id, game.name || `Game ${game.app_id}`])
   );
 };
-

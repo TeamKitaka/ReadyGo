@@ -69,7 +69,10 @@ export const POST = async (request: NextRequest) => {
         await matchCacheRepo.deleteAllByViewer(supabaseAdmin, user.id);
       } catch (cacheError) {
         // 캐시 삭제 실패는 치명적이지 않으므로 로그만 남김
-        console.error('[POST /api/steam/sync] Cache invalidation failed:', cacheError);
+        console.error(
+          '[POST /api/steam/sync] Cache invalidation failed:',
+          cacheError
+        );
       }
     }
 

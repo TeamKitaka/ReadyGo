@@ -1,12 +1,12 @@
 /**
  * Get Match List Service
- * 
+ *
  * 책임:
  * - 매칭 화면용 매칭 목록 조회 (12개)
  * - 5분 캐시 + 실시간 계산
  * - 중복 방지 (조회 24h + 노출 4h)
  * - 온라인 우선 정렬
- * 
+ *
  * 비책임:
  * - DB 접근 (Repository에서 처리)
  * - API 응답 (API Route에서 처리)
@@ -36,7 +36,7 @@ export interface MatchListOptions {
 
 /**
  * 매칭 화면용 매칭 목록 조회
- * 
+ *
  * @param client Supabase 클라이언트
  * @param viewerId viewer 사용자 ID
  * @param options 필터 옵션
@@ -50,7 +50,7 @@ export const getMatchList = async (
   const minScore = options.minScore ?? DEFAULT_MIN_SCORE;
   const limit = options.limit ?? 12;
   const refresh = options.refresh ?? false;
-  
+
   // 1. 캐시 확인 (refresh=true일 때는 스킵)
   if (!refresh) {
     const { data: cached } = await matchCacheRepo.findByViewerAndContext(
@@ -58,29 +58,33 @@ export const getMatchList = async (
       viewerId,
       CACHE_CONTEXT
     );
-    
+
     if (cached && cached.length >= limit) {
-      return await enrichAndSort(client, cached.slice(0, limit), options.statusFilter);
+      return await enrichAndSort(
+        client,
+        cached.slice(0, limit),
+        options.statusFilter
+      );
     }
   }
-  
+
   // 2. 후보 조회
   const candidates = await getMatchCandidates(client, viewerId);
-  
+
   // 3. 최근 조회/노출 이력 조회 (우선순위 정렬용)
   const [{ data: recentViews }, { data: recentExposures }] = await Promise.all([
     matchRecentViewsRepo.findByViewer(client, viewerId, 24), // 24시간 (프로필 클릭)
     matchExposureLogRepo.findRecentByViewer(client, viewerId, 1), // 1시간 (노출 이력)
   ]);
-  
+
   const recentlyViewedIds = new Set([
     ...(recentViews?.map((v) => v.target_user_id) || []),
     ...(recentExposures?.map((e) => e.target_id) || []),
   ]);
-  
+
   // 완전히 제외하지 않고, 모든 후보를 대상으로 계산
   const filtered = candidates;
-  
+
   // 4. 실시간 계산 (minScore에 따라 계산량 조정)
   // 높은 매칭율(75% 이상): 40명 (빠름)
   // 중간 매칭율(65% 이상): 60명 (중간)
@@ -96,16 +100,16 @@ export const getMatchList = async (
       };
     })
   );
-  
+
   const results = calculated
     .filter((r) => r.status === 'fulfilled')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((r) => (r as PromiseFulfilledResult<any>).value)
     .filter((r) => r.finalScore >= minScore);
-  
+
   // 5. 점수대별 샘플링 (다양성 확보)
   const top = sampleByScoreRange(results, minScore, limit);
-  
+
   // 6. 캐시 저장
   await Promise.all(
     top.map((r) =>
@@ -119,7 +123,7 @@ export const getMatchList = async (
       })
     )
   );
-  
+
   // 7. 노출 이력 기록
   const exposedIds = top.map((r) => r.targetUserId);
   await matchExposureLogRepo.bulkInsert(
@@ -128,19 +132,24 @@ export const getMatchList = async (
     exposedIds,
     'match_list'
   );
-  
+
   // 8. 프로필/상태 추가 + 우선순위 정렬 (온라인 > 신규 > 기존)
-  return await enrichAndSort(client, top, options.statusFilter, recentlyViewedIds);
+  return await enrichAndSort(
+    client,
+    top,
+    options.statusFilter,
+    recentlyViewedIds
+  );
 };
 
 /**
  * 점수대별 샘플링
- * 
+ *
  * 전략:
  * - 75% 이상: 고득점만 (높은 매칭율)
  * - 65% 이상: 65~75% 위주 + 75% 이상 소수 (중간 매칭율)
  * - 50% 이상: 전 구간 골고루 (모든 매칭율)
- * 
+ *
  * @param results 모든 매칭 결과
  * @param minScore 최소 점수
  * @param limit 목표 개수
@@ -157,15 +166,15 @@ const sampleByScoreRange = (
   if (results.length === 0) {
     return [];
   }
-  
+
   // 점수대별로 분류
-  const high = results.filter(r => r.finalScore >= 75); // 75% 이상
-  const mid = results.filter(r => r.finalScore >= 65 && r.finalScore < 75); // 65~75%
-  const low = results.filter(r => r.finalScore >= 50 && r.finalScore < 65); // 50~65%
-  
+  const high = results.filter((r) => r.finalScore >= 75); // 75% 이상
+  const mid = results.filter((r) => r.finalScore >= 65 && r.finalScore < 75); // 65~75%
+  const low = results.filter((r) => r.finalScore >= 50 && r.finalScore < 65); // 50~65%
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let sampled: any[] = [];
-  
+
   if (minScore >= 75) {
     // "높은 매칭율 (75% 이상)": 75% 이상만
     sampled = fisherYatesShuffle(high).slice(0, limit);
@@ -173,7 +182,7 @@ const sampleByScoreRange = (
     // "중간 매칭율 (65% 이상)": 65~75% 위주 + 75% 이상 소수
     const midCount = Math.min(mid.length, Math.ceil(limit * 0.7)); // 70%
     const highCount = Math.min(high.length, limit - midCount); // 나머지
-    
+
     sampled = [
       ...fisherYatesShuffle(mid).slice(0, midCount),
       ...fisherYatesShuffle(high).slice(0, highCount),
@@ -183,14 +192,14 @@ const sampleByScoreRange = (
     const lowCount = Math.min(low.length, Math.ceil(limit * 0.4)); // 40%
     const midCount = Math.min(mid.length, Math.ceil(limit * 0.35)); // 35%
     const highCount = Math.min(high.length, limit - lowCount - midCount); // 나머지 25%
-    
+
     sampled = [
       ...fisherYatesShuffle(low).slice(0, lowCount),
       ...fisherYatesShuffle(mid).slice(0, midCount),
       ...fisherYatesShuffle(high).slice(0, highCount),
     ];
   }
-  
+
   // 최종 강력한 랜덤 섞기 (Fisher-Yates)
   return fisherYatesShuffle(sampled).slice(0, limit);
 };
@@ -198,43 +207,43 @@ const sampleByScoreRange = (
 /**
  * 배열 랜덤 섞기 (단순 버전)
  */
-const _shuffleArray = <T,>(array: T[]): T[] => {
+const _shuffleArray = <T>(array: T[]): T[] => {
   return [...array].sort(() => Math.random() - 0.5);
 };
 
 /**
  * Fisher-Yates shuffle 알고리즘
- * 
+ *
  * Math.random().sort()보다 더 공정한 랜덤 분포 보장
  * 시간 복잡도: O(n)
- * 
+ *
  * @param array 섞을 배열
  * @returns 섞인 새 배열
  */
-const fisherYatesShuffle = <T,>(array: T[]): T[] => {
+const fisherYatesShuffle = <T>(array: T[]): T[] => {
   const result = [...array];
-  
+
   // eslint-disable-next-line no-restricted-syntax
   for (let i = result.length - 1; i > 0; i--) {
     // 0부터 i까지 중 랜덤 인덱스 선택
     const j = Math.floor(Math.random() * (i + 1));
-    
+
     // 요소 교환
     [result[i], result[j]] = [result[j], result[i]];
   }
-  
+
   return result;
 };
 
 /**
  * 프로필/상태 추가 + 우선순위 정렬
- * 
+ *
  * 우선순위:
  * 1. 온라인 + 신규 (조회/노출 이력 없음)
  * 2. 온라인 + 기존 (조회/노출 이력 있음)
  * 3. 오프라인 + 신규
  * 4. 오프라인 + 기존
- * 
+ *
  * @param client Supabase 클라이언트
  * @param results 매칭 결과 목록
  * @param statusFilter 상태 필터 ('all' | 'online' | 'offline')
@@ -252,36 +261,38 @@ const enrichAndSort = async (
   if (results.length === 0) {
     return [];
   }
-  
+
   // targetUserId 추출 (캐시: target_id, 실시간: targetUserId)
   const userIds = results.map((r) => r.target_id || r.targetUserId);
-  
+
   // 1. reasons에서 모든 게임 ID 추출
   const allGameIds = new Set<number>();
   results.forEach((result) => {
     if (result.reasons) {
-      result.reasons.forEach((reason: { detail: { type: string; topGames?: string[] } }) => {
-        if (reason.detail.type === 'COMMON_GAME' && reason.detail.topGames) {
-          // "Game 570" → 570으로 변환
-          reason.detail.topGames.forEach((gameStr: string) => {
-            const match = gameStr.match(/Game (\d+)/);
-            if (match) {
-              allGameIds.add(parseInt(match[1], 10));
-            }
-          });
+      result.reasons.forEach(
+        (reason: { detail: { type: string; topGames?: string[] } }) => {
+          if (reason.detail.type === 'COMMON_GAME' && reason.detail.topGames) {
+            // "Game 570" → 570으로 변환
+            reason.detail.topGames.forEach((gameStr: string) => {
+              const match = gameStr.match(/Game (\d+)/);
+              if (match) {
+                allGameIds.add(parseInt(match[1], 10));
+              }
+            });
+          }
         }
-      });
+      );
     }
   });
-  
+
   // 2. 프로필, 상태, 게임 정보 병렬 조회
   const [{ data: profiles }, gameNameMap] = await Promise.all([
     userProfilesRepo.findByUserIds(client, userIds),
     steamGamesRepo.getGameNameMap(client, Array.from(allGameIds)),
   ]);
-  
+
   const profileMap = new Map(profiles?.map((p) => [p.id, p]) || []);
-  
+
   // 3. 게임 이름 변환 헬퍼
   const replaceGameNames = (topGames: string[]): string[] => {
     return topGames.map((gameStr) => {
@@ -293,16 +304,16 @@ const enrichAndSort = async (
       return gameStr;
     });
   };
-  
+
   const enriched = results.map((r) => {
     const userId = r.target_id || r.targetUserId;
     const profile = profileMap.get(userId);
     const status = getEffectiveStatus(userId); // Presence 반영
-    
+
     // 4. reasons의 게임 이름 변환
     const enrichedReasons = r.reasons
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? r.reasons.map((reason: any) => {
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        r.reasons.map((reason: any) => {
           if (reason.detail.type === 'COMMON_GAME' && reason.detail.topGames) {
             return {
               ...reason,
@@ -315,7 +326,7 @@ const enrichAndSort = async (
           return reason;
         })
       : [];
-    
+
     return {
       ...r,
       reasons: enrichedReasons,
@@ -323,13 +334,16 @@ const enrichAndSort = async (
         userId,
         nickname: profile?.nickname || '알 수 없음',
         animalType: profile?.animal_type,
-        avatarUrl: getAvatarImagePath(profile?.avatar_url, profile?.animal_type),
+        avatarUrl: getAvatarImagePath(
+          profile?.avatar_url,
+          profile?.animal_type
+        ),
       },
       status,
       isOnline: status === 'online' || status === 'in_game',
     };
   });
-  
+
   // 필터 적용
   let filtered = enriched;
   if (statusFilter === 'online') {
@@ -337,19 +351,27 @@ const enrichAndSort = async (
   } else if (statusFilter === 'offline') {
     filtered = enriched.filter((r) => !r.isOnline);
   }
-  
+
   // 우선순위 기반 정렬 (온라인 > 신규 > 기존)
-  const onlineNew = filtered.filter((r) => r.isOnline && !recentlyViewedIds?.has(r.profile.userId));
-  const onlineOld = filtered.filter((r) => r.isOnline && recentlyViewedIds?.has(r.profile.userId));
-  const offlineNew = filtered.filter((r) => !r.isOnline && !recentlyViewedIds?.has(r.profile.userId));
-  const offlineOld = filtered.filter((r) => !r.isOnline && recentlyViewedIds?.has(r.profile.userId));
-  
+  const onlineNew = filtered.filter(
+    (r) => r.isOnline && !recentlyViewedIds?.has(r.profile.userId)
+  );
+  const onlineOld = filtered.filter(
+    (r) => r.isOnline && recentlyViewedIds?.has(r.profile.userId)
+  );
+  const offlineNew = filtered.filter(
+    (r) => !r.isOnline && !recentlyViewedIds?.has(r.profile.userId)
+  );
+  const offlineOld = filtered.filter(
+    (r) => !r.isOnline && recentlyViewedIds?.has(r.profile.userId)
+  );
+
   // 각 그룹을 Fisher-Yates shuffle로 섞기
   const shuffledOnlineNew = fisherYatesShuffle(onlineNew);
   const shuffledOnlineOld = fisherYatesShuffle(onlineOld);
   const shuffledOfflineNew = fisherYatesShuffle(offlineNew);
   const shuffledOfflineOld = fisherYatesShuffle(offlineOld);
-  
+
   // 우선순위대로 합치기: 온라인+신규 → 온라인+기존 → 오프라인+신규 → 오프라인+기존
   return [
     ...shuffledOnlineNew,
@@ -358,4 +380,3 @@ const enrichAndSort = async (
     ...shuffledOfflineOld,
   ];
 };
-

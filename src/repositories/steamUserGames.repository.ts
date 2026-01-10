@@ -33,4 +33,3 @@ export const findAppIdsByUserId = async (
   const appIds = data?.map((row) => row.app_id) ?? [];
   return { data: appIds, error: null };
 };
-

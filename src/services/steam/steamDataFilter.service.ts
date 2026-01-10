@@ -61,9 +61,7 @@ export const filterMeaningfulGames = async (
     .eq('user_id', userId);
 
   if (gamesError) {
-    throw new Error(
-      `Failed to fetch user games: ${gamesError.message}`
-    );
+    throw new Error(`Failed to fetch user games: ${gamesError.message}`);
   }
 
   if (!userGames || userGames.length === 0) {
@@ -78,9 +76,7 @@ export const filterMeaningfulGames = async (
     .in('app_id', appIds);
 
   if (infoError) {
-    throw new Error(
-      `Failed to fetch game info: ${infoError.message}`
-    );
+    throw new Error(`Failed to fetch game info: ${infoError.message}`);
   }
 
   // 게임 카테고리 확인: categories 배열에 { id: number, label: string }[] 형태로 저장됨
@@ -187,4 +183,3 @@ export const calculateWeightedPlaytime = (
     return total;
   }
 };
-

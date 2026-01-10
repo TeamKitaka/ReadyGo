@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
 
     // 1. Authorization 체크 (필수)
     const authHeader = req.headers.get('authorization');
-    
+
     if (!authHeader) {
       console.error('[Edge Function] Unauthorized: No authorization header');
       return new Response(

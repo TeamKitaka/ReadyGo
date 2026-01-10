@@ -43,7 +43,10 @@ describe('calculateGenreSimilarity', () => {
       // A = ['RPG', 'Action'], B = ['RPG', 'Action', 'Strategy']
       // Intersection: 2, Union: 3 → 2/3 ≈ 66.67% → 67%
       expect(
-        calculateGenreSimilarity(['RPG', 'Action'], ['RPG', 'Action', 'Strategy'])
+        calculateGenreSimilarity(
+          ['RPG', 'Action'],
+          ['RPG', 'Action', 'Strategy']
+        )
       ).toBe(67);
     });
   });
@@ -123,4 +126,3 @@ describe('calculateGenreSimilarity', () => {
     });
   });
 });
-

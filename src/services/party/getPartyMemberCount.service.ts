@@ -65,4 +65,3 @@ export const getPartyMemberCount = async (userId: string): Promise<number> => {
   // 결과 반환 (항상 0 이상)
   return Math.max(0, count);
 };
-

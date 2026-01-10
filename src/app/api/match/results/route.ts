@@ -8,7 +8,7 @@ import { getHomeMatches } from '@/services/match/getHomeMatches.service';
  *
  * 홈 화면용 매칭 결과를 조회합니다.
  * Step 1: 캐시 우선 조회 + 실시간 fallback
- * 
+ *
  * 전략:
  * - 캐시에 4개 이상 있으면 즉시 반환 (~50ms)
  * - 부족하면 실시간 계산으로 보충 (~300ms)

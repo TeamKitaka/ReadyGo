@@ -43,7 +43,8 @@ export const sortReasonsByPriority = (
     }
 
     // 2. Domain Priority 기준 (같은 카테고리 내)
-    const priorityDiff = PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
+    const priorityDiff =
+      PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
     if (priorityDiff !== 0) {
       return priorityDiff;
     }
@@ -76,4 +77,3 @@ export const pickTopTags = (
 ): MatchTagCoreDTO[] => {
   return tags.slice(0, count);
 };
-

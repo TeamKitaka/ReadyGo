@@ -90,4 +90,3 @@ describe('steamUserStats.repository', () => {
     });
   });
 });
-

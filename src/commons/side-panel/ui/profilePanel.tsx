@@ -172,15 +172,15 @@ export default function ProfilePanel({
     // shortDescription 추출하여 string[]로 변환
     // 표시 개수 결정: 상위 2개 길이 합이 15자 이하면 3개, 초과하면 2개
     const allReasons = viewModel.reasons.map((r) => r.shortDescription);
-    
+
     if (allReasons.length === 0) {
       return [];
     }
-    
+
     // 상위 2개 길이 체크
     const top2Length = allReasons.slice(0, 2).join('').length;
     const displayCount = top2Length <= 15 ? 3 : 2;
-    
+
     return allReasons.slice(0, displayCount);
   }, [matchData, isMyProfile, myUserId, userId]);
 
@@ -268,7 +268,7 @@ export default function ProfilePanel({
         activeTime={activeTimeText || '알 수 없음'}
         gameStyle="알 수 없음"
         weeklyAverage="알 수 없음"
-        matchPercentage={isMyProfile ? undefined : matchData?.finalScore ?? 0}
+        matchPercentage={isMyProfile ? undefined : (matchData?.finalScore ?? 0)}
         matchReasons={isMyProfile ? undefined : matchReasons}
         onMessageClick={handleStartChat}
       />

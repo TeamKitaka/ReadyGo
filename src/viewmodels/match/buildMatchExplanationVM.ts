@@ -74,7 +74,10 @@ const FALLBACK_REASONS: MatchReasonViewModel[] = [
 const mapLabelToReasonType = (
   label: string
 ): MatchReasonCoreDTO['detail']['type'] | undefined => {
-  const mapping: Record<string, MatchReasonCoreDTO['detail']['type'] | undefined> = {
+  const mapping: Record<
+    string,
+    MatchReasonCoreDTO['detail']['type'] | undefined
+  > = {
     같은게임: 'COMMON_GAME',
     플타임일치: 'PLAY_TIME',
     시간잘맞음: 'ACTIVITY_PATTERN',
@@ -136,7 +139,7 @@ export const buildMatchExplanationVM = (
     reasons: selectedReasons,
     tags: [],
   };
-  
+
   const viewModelResult = toMatchResultViewModel(mockCoreDTO);
   const headlineReasons = viewModelResult.reasons.map((reason) => ({
     ...reason,
@@ -163,16 +166,30 @@ export const buildMatchExplanationVM = (
     const isHighPriority = tagType
       ? ['STYLE_SIMILARITY', 'ACTIVITY_PATTERN', 'ONLINE_NOW'].includes(tagType)
       : false;
-    
+
     // 동물 궁합 태그 (천생연분, 궁합좋음)
     const isAnimalCompatibility = ['천생연분', '궁합좋음'].includes(tag.label);
-    
+
     // 시간대 태그 (아침형, 저녁형, 오후형, 올빼미형, 유연형, 주말형)
-    const isTimeSlotTag = ['아침형', '저녁형', '오후형', '올빼미형', '유연형', '주말형'].includes(tag.label);
-    
+    const isTimeSlotTag = [
+      '아침형',
+      '저녁형',
+      '오후형',
+      '올빼미형',
+      '유연형',
+      '주말형',
+    ].includes(tag.label);
+
     // Trait 태그 (Target의 성향 특성)
-    const isTraitTag = ['협동형', '탐험형', '전략형', '리더형', '사교형', '보완궁합'].includes(tag.label);
-    
+    const isTraitTag = [
+      '협동형',
+      '탐험형',
+      '전략형',
+      '리더형',
+      '사교형',
+      '보완궁합',
+    ].includes(tag.label);
+
     // MVP 핵심 태그 (꾸준함 등 행동 기반)
     const isMVPTag = ['꾸준함', '파티러버', '베테랑'].includes(tag.label);
 
@@ -243,4 +260,3 @@ export const buildMatchExplanationVM = (
     shortSummary,
   };
 };
-

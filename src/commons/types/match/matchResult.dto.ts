@@ -65,5 +65,3 @@ export interface MatchResultDTO {
    */
   availabilityHint: 'online' | 'offline' | 'unknown';
 }
-
-
