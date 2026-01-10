@@ -37,7 +37,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | animal_type       | text        | ❌       | 성향 동물 타입                   |
 | steam_id          | text        | ⭕       | Steam 계정 ID                    |
 | tier              | text        | ❌       | 현재 티어                        |
-| temperature_score | int         | ❌       | 온도 점수                        |
+| temperature_score | numeric     | ❌       | 온도 점수                        |
 | status_message    | text        | ⭕       | 상태 메시지                      |
 | created_at        | timestamptz | ⭕       | 생성 시각                        |
 | updated_at        | timestamptz | ⭕       | 수정 시각                        |
@@ -487,7 +487,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | ---------- | ----------- | -------- | ----------- |
 | id         | bigint      | ❌       | PK          |
 | user_id    | uuid        | ⭕       | 유저        |
-| change     | int         | ⭕       | 점수 변화   |
+| change     | numeric     | ⭕       | 점수 변화   |
 | reason     | text        | ⭕       | 변경 사유   |
 | created_at | timestamptz | ⭕       | 발생 시각   |
 

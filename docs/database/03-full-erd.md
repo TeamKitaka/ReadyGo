@@ -179,8 +179,8 @@ erDiagram
 
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
-- **Last Updated At**: 2025-12-31
-- **Document Version**: v1.0.4
+- **Last Updated At**: 2025-01-07
+- **Document Version**: v1.0.5
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
