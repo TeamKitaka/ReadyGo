@@ -19,6 +19,10 @@ type TargetUser = {
 
 /**
  * steam_id가 있는 유저 목록 조회
+ * 
+ * 우선순위:
+ * 1. steam_user_games에 데이터 없는 유저 (미동기화)
+ * 2. 오래전에 동기화된 유저 (created_at 오름차순)
  *
  * @param client - DB 클라이언트
  * @param limit - 조회할 최대 유저 수 (기본: 100)
@@ -28,17 +32,51 @@ const fetchTargetUsers = async (
   client: DbClient,
   limit: number = 100
 ): Promise<TargetUser[]> => {
-  const { data: users, error } = await client
+  // 1. 이미 동기화된 유저 목록 조회
+  const { data: syncedUsers, error: syncedError } = await client
+    .from('steam_user_games')
+    .select('user_id')
+    .limit(1000);
+
+  if (syncedError) {
+    console.error('[Batch Sync] Failed to fetch synced users:', syncedError);
+    // 에러 발생 시 모든 유저 대상 (fallback)
+  }
+
+  const syncedUserIds = new Set(syncedUsers?.map((u) => u.user_id) || []);
+
+  // 2. steam_id 있는 모든 유저 조회
+  const { data: allUsers, error } = await client
     .from('user_profiles')
-    .select('id')
+    .select('id, created_at')
     .not('steam_id', 'is', null)
-    .limit(limit);
+    .order('created_at', { ascending: true })
+    .limit(1000);
 
   if (error) {
     throw new Error(`Failed to fetch users: ${error.message}`);
   }
 
-  return users || [];
+  if (!allUsers || allUsers.length === 0) {
+    return [];
+  }
+
+  // 3. 미동기화 유저 우선, 이후 동기화된 유저 (오래된 순)
+  const unsyncedUsers = allUsers.filter((u) => !syncedUserIds.has(u.id));
+  const syncedUsersSorted = allUsers.filter((u) => syncedUserIds.has(u.id));
+
+  const targetUsers = [...unsyncedUsers, ...syncedUsersSorted]
+    .slice(0, limit)
+    .map((u) => ({ id: u.id }));
+
+  console.log(
+    `[Batch Sync] Target users: ${targetUsers.length} (${unsyncedUsers.length} unsynced, ${Math.min(
+      syncedUsersSorted.length,
+      limit - unsyncedUsers.length
+    )} synced)`
+  );
+
+  return targetUsers;
 };
 
 /**
