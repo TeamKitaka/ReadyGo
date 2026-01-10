@@ -60,20 +60,27 @@ export function toMatchCardProps(apiResult: any): MatchCardProps {
     const { detail } = reason;
     const type = detail?.type;
 
-    // BASELINE reason은 건너뛰기 (의미없는 기본값)
-    if (type === 'BASELINE' || reason.isBaseline) {
+    // BASELINE, RELIABILITY reason은 건너뛰기 (의미없는 기본값)
+    if (type === 'BASELINE' || type === 'RELIABILITY' || reason.isBaseline) {
       continue;
     }
 
     // 1순위: 게임 취향 (가장 구체적인 것 우선)
     if (!gamePreference) {
       if (type === 'COMMON_GAME' && detail.topGames?.length > 0) {
-        // 실제 게임 이름 표시 (최대 2개)
-        const games = detail.topGames.slice(0, 2);
-        gamePreference = games.join(', ');
-      } else if (type === 'STEAM_GENRE') {
+        // 실제 게임 이름인지 확인 ("Game XXX" 패턴은 skip)
+        const validGames = detail.topGames.filter(
+          (game: string) => !game.match(/^Game \d+$/)
+        );
+        
+        if (validGames.length > 0) {
+          // 실제 게임 이름 표시 (최대 2개)
+          gamePreference = validGames.slice(0, 2).join(', ');
+        }
+        // validGames가 없으면 이 reason은 skip하고 다음 reason으로
+      } else if (type === 'STEAM_GENRE' && detail.genre) {
         gamePreference = `${detail.genre} 장르`;
-      } else if (type === 'STEAM_PLAYSTYLE') {
+      } else if (type === 'STEAM_PLAYSTYLE' && detail.viewerStyle) {
         const styleLabels: Record<string, string> = {
           casual: '캐주얼 플레이',
           regular: '규칙적 플레이',
@@ -85,9 +92,13 @@ export function toMatchCardProps(apiResult: any): MatchCardProps {
 
     // 2순위: 플레이 시간대
     if (!playTime) {
-      if (type === 'ACTIVITY_PATTERN') {
+      if (type === 'ACTIVITY_PATTERN' && (detail.viewerTimeType || detail.targetTimeType)) {
         const timeType = detail.viewerTimeType || detail.targetTimeType;
-        playTime = timeTypeLabels[timeType] || '활동 시간';
+        const label = timeTypeLabels[timeType];
+        if (label && label !== '유연한 시간') {
+          // '유연한 시간'은 의미없는 fallback이므로 skip
+          playTime = label;
+        }
       } else if (type === 'TIME_OVERLAP') {
         playTime = '비슷한 활동 시간';
       } else if (type === 'PLAY_TIME' && detail.matchScore >= 60) {
@@ -99,17 +110,11 @@ export function toMatchCardProps(apiResult: any): MatchCardProps {
 
     // 3순위: 실력/성향
     if (!skillLevel) {
-      if (type === 'STYLE_SIMILARITY' && detail.similarityScore >= 70) {
+      if (type === 'STYLE_SIMILARITY' && detail.similarityScore >= 70 && detail.topTrait) {
         const trait = detail.topTrait;
-        skillLevel = traitLabels[trait] || '균형잡힌 스타일';
-      } else if (type === 'RELIABILITY' && detail.reliabilityScore >= 60) {
-        const score = detail.reliabilityScore;
-        if (score >= 90) {
-          skillLevel = '신뢰도 최상';
-        } else if (score >= 75) {
-          skillLevel = '신뢰도 높음';
-        } else {
-          skillLevel = '매너 좋음';
+        const label = traitLabels[trait];
+        if (label) {
+          skillLevel = label;
         }
       } else if (type === 'PARTY_EXPERIENCE') {
         skillLevel = '파티 경험 풍부';
