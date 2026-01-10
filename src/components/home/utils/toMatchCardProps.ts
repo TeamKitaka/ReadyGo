@@ -51,17 +51,11 @@ export function toMatchCardProps(apiResult: any): MatchCardProps {
   let playTime: string | undefined;
   let skillLevel: string | undefined;
 
-  // Priority 기반 정렬 (HIGH → MEDIUM → LOW)
-  const sortedReasons = [...(apiResult.reasons || [])].sort((a, b) => {
-    const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
-    return (
-      (priorityOrder[a.priority as keyof typeof priorityOrder] ?? 3) -
-      (priorityOrder[b.priority as keyof typeof priorityOrder] ?? 3)
-    );
-  });
+  // 랜덤 순서로 섞기 (다양성 확보)
+  const shuffledReasons = [...(apiResult.reasons || [])].sort(() => Math.random() - 0.5);
 
-  // reasons 분석 (우선순위 순)
-  for (const reason of sortedReasons) {
+  // reasons 분석 (랜덤 순)
+  for (const reason of shuffledReasons) {
     const { type, detail } = reason;
 
     // 1순위: 게임 취향 (가장 구체적인 것 우선)

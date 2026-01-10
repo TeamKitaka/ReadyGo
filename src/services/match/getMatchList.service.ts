@@ -157,15 +157,15 @@ function sampleByScoreRange(results: any[], minScore: number, limit: number): an
   
   if (minScore >= 75) {
     // "높은 매칭율 (75% 이상)": 75% 이상만
-    sampled = shuffleArray(high).slice(0, limit);
+    sampled = fisherYatesShuffle(high).slice(0, limit);
   } else if (minScore >= 65) {
     // "중간 매칭율 (65% 이상)": 65~75% 위주 + 75% 이상 소수
     const midCount = Math.min(mid.length, Math.ceil(limit * 0.7)); // 70%
     const highCount = Math.min(high.length, limit - midCount); // 나머지
     
     sampled = [
-      ...shuffleArray(mid).slice(0, midCount),
-      ...shuffleArray(high).slice(0, highCount),
+      ...fisherYatesShuffle(mid).slice(0, midCount),
+      ...fisherYatesShuffle(high).slice(0, highCount),
     ];
   } else {
     // "모든 매칭율 (50% 이상)": 전 구간 골고루
@@ -174,14 +174,14 @@ function sampleByScoreRange(results: any[], minScore: number, limit: number): an
     const highCount = Math.min(high.length, limit - lowCount - midCount); // 나머지 25%
     
     sampled = [
-      ...shuffleArray(low).slice(0, lowCount),
-      ...shuffleArray(mid).slice(0, midCount),
-      ...shuffleArray(high).slice(0, highCount),
+      ...fisherYatesShuffle(low).slice(0, lowCount),
+      ...fisherYatesShuffle(mid).slice(0, midCount),
+      ...fisherYatesShuffle(high).slice(0, highCount),
     ];
   }
   
-  // 최종 랜덤 섞기 (점수대 내에서는 랜덤)
-  return shuffleArray(sampled).slice(0, limit);
+  // 최종 강력한 랜덤 섞기 (Fisher-Yates)
+  return fisherYatesShuffle(sampled).slice(0, limit);
 }
 
 /**
