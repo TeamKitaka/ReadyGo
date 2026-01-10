@@ -158,10 +158,20 @@ export default function Match() {
   }, [results, presenceUserIds]); // Presence 변경 시 재정렬 (presenceUserIds는 getEffectiveStatus 내부에서 사용됨)
 
   // 프로필 클릭 핸들러
-  const handleProfileClick = (userId: string) => {
+  const handleProfileClick = async (userId: string) => {
     if (isOpen && targetUserId === userId) {
       close();
     } else {
+      // 프로필 조회 이력 기록 (비동기, 백그라운드)
+      fetch('/api/match/view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUserId: userId }),
+        credentials: 'include',
+      }).catch((err) => {
+        console.error('[Match] Failed to log profile view:', err);
+      });
+
       // 해당 userId의 matchData 찾기
       const targetMatch = matchData.find((m) => m.userId === userId);
 
