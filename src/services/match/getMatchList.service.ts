@@ -25,7 +25,7 @@ import * as steamGamesRepo from '@/repositories/steamGames.repository';
 import { getAvatarImagePath } from '@/lib/avatar/getAvatarImagePath';
 import { getEffectiveStatus } from '@/stores/user-status.store';
 
-const DEFAULT_MIN_SCORE = 65; // 기본값: 65% 이상 (중간 매칭율, 셀렉트 박스 미선택 시)
+const DEFAULT_MIN_SCORE = 75; // 기본값: 75% 이상 (높은 매칭율, 셀렉트 박스 미선택 시)
 const CACHE_CONTEXT = 'match';
 
 export interface MatchListOptions {

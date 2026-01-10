@@ -67,6 +67,12 @@ export const useHomeMatches = () => {
 
         const data = await response.json();
         
+        // 디버깅용 로그 (개발 환경에서만)
+        if (process.env.NODE_ENV === 'development' && data.results?.length > 0) {
+          console.log('[useHomeMatches] API Response (first result):', data.results[0]);
+          console.log('[useHomeMatches] Reasons from API:', data.results[0]?.reasons);
+        }
+        
         // API 응답을 MatchCardProps로 변환
         const cards = (data.results || []).map(toMatchCardProps);
         

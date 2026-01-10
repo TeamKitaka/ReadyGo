@@ -20,7 +20,7 @@ import { getMatchList } from '@/services/match/getMatchList.service';
 export const GET = async (request: Request) => {
   try {
     const { searchParams } = new URL(request.url);
-    const minScore = parseInt(searchParams.get('minScore') || '65', 10); // 기본값: 65% (중간 매칭율)
+    const minScore = parseInt(searchParams.get('minScore') || '75', 10); // 기본값: 75% (높은 매칭율)
     const statusFilter = (searchParams.get('status') as 'all' | 'online' | 'offline') || 'all';
     const refresh = searchParams.get('refresh') === 'true';
     

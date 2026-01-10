@@ -56,7 +56,9 @@ export function toMatchCardProps(apiResult: any): MatchCardProps {
 
   // 디버깅용 로그 (개발 환경에서만)
   if (process.env.NODE_ENV === 'development' && shuffledReasons.length > 0) {
-    console.log('[toMatchCardProps] Reasons:', shuffledReasons.map(r => r.detail?.type));
+    console.log('[toMatchCardProps] Full reasons:', JSON.stringify(shuffledReasons, null, 2));
+    console.log('[toMatchCardProps] Reason types:', shuffledReasons.map(r => r.detail?.type));
+    console.log('[toMatchCardProps] First reason detail:', shuffledReasons[0]?.detail);
   }
 
   // reasons 분석 (랜덤 순)
