@@ -77,13 +77,25 @@ export default function ReviewSubmit({
     }
 
     // 체크박스 선택에 따라 점수 계산
-    const mannerOptions = reviewOptions.filter((opt) => opt.category === 'manner');
-    const teamworkOptions = reviewOptions.filter((opt) => opt.category === 'teamwork');
-    const communicationOptions = reviewOptions.filter((opt) => opt.category === 'communication');
+    const mannerOptions = reviewOptions.filter(
+      (opt) => opt.category === 'manner'
+    );
+    const teamworkOptions = reviewOptions.filter(
+      (opt) => opt.category === 'teamwork'
+    );
+    const communicationOptions = reviewOptions.filter(
+      (opt) => opt.category === 'communication'
+    );
 
-    const checkedMannerCount = mannerOptions.filter((opt) => opt.checked).length;
-    const checkedTeamworkCount = teamworkOptions.filter((opt) => opt.checked).length;
-    const checkedCommunicationCount = communicationOptions.filter((opt) => opt.checked).length;
+    const checkedMannerCount = mannerOptions.filter(
+      (opt) => opt.checked
+    ).length;
+    const checkedTeamworkCount = teamworkOptions.filter(
+      (opt) => opt.checked
+    ).length;
+    const checkedCommunicationCount = communicationOptions.filter(
+      (opt) => opt.checked
+    ).length;
 
     // 체크당 0.15점이지만, 리뷰 점수는 0-5 범위이므로 체크된 개수를 그대로 사용
     // 매너: 0-2, 팀워크: 0-1, 소통: 0-2
@@ -111,7 +123,11 @@ export default function ReviewSubmit({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || errorData.message || errorData.detail || '후기 제출에 실패했습니다.';
+        const errorMessage =
+          errorData.error ||
+          errorData.message ||
+          errorData.detail ||
+          '후기 제출에 실패했습니다.';
         throw new Error(errorMessage);
       }
 
@@ -123,7 +139,8 @@ export default function ReviewSubmit({
       }
     } catch (error) {
       console.error('Failed to submit review:', error);
-      const errorMessage = error instanceof Error ? error.message : '후기 제출에 실패했습니다.';
+      const errorMessage =
+        error instanceof Error ? error.message : '후기 제출에 실패했습니다.';
       console.error('Error details:', {
         error,
         message: errorMessage,

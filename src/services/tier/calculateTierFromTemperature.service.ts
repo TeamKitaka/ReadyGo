@@ -32,9 +32,7 @@ import { TierType } from '@/commons/constants/tierType.enum';
  * const tier7 = calculateTierFromTemperature(98); // TierType.champion
  * ```
  */
-export const calculateTierFromTemperature = (
-  temperature: number
-): TierType => {
+export const calculateTierFromTemperature = (temperature: number): TierType => {
   // 온도 범위를 0~100으로 제한
   const clampedTemperature = Math.min(100, Math.max(0, temperature));
 

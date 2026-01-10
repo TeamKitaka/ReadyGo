@@ -48,10 +48,7 @@ export class TemperatureLogFetchError extends Error {
   readonly statusCode = 500;
   readonly originalError?: string;
 
-  constructor(
-    resource: 'log' | 'logs',
-    originalError?: string
-  ) {
+  constructor(resource: 'log' | 'logs', originalError?: string) {
     super(`Failed to fetch ${resource}: ${originalError || 'Unknown error'}`);
     this.name = 'TemperatureLogFetchError';
     this.originalError = originalError;
@@ -77,7 +74,9 @@ export class TemperatureLogCreateError extends Error {
   readonly originalError?: string;
 
   constructor(originalError?: string) {
-    super(`Failed to create temperature log: ${originalError || 'Unknown error'}`);
+    super(
+      `Failed to create temperature log: ${originalError || 'Unknown error'}`
+    );
     this.name = 'TemperatureLogCreateError';
     this.originalError = originalError;
 

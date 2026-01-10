@@ -30,13 +30,8 @@ export const createTemperatureLogService = async (
     );
   }
 
-  if (
-    typeof params.change !== 'number' ||
-    isNaN(params.change)
-  ) {
-    throw new TemperatureLogValidationError(
-      'change는 숫자여야 합니다.'
-    );
+  if (typeof params.change !== 'number' || isNaN(params.change)) {
+    throw new TemperatureLogValidationError('change는 숫자여야 합니다.');
   }
 
   // reason은 선택적이지만, 제공된 경우 검증
@@ -54,7 +49,8 @@ export const createTemperatureLogService = async (
   };
 
   try {
-    const log = await temperatureLogRepository.createTemperatureLog(validatedParams);
+    const log =
+      await temperatureLogRepository.createTemperatureLog(validatedParams);
 
     if (!log) {
       throw new TemperatureLogCreateError('온도로그 생성에 실패했습니다.');

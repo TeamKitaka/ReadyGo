@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic';
  *   comment?: string | null;
  * }
  */
-export async function POST(request: NextRequest) {
+export const POST = async (request: NextRequest) => {
   try {
     // 1. Supabase SSR 클라이언트 생성
     const supabase = createClient();
@@ -46,7 +46,13 @@ export async function POST(request: NextRequest) {
 
     // 2. 요청 body 파싱
     const body = await request.json();
-    const { targetUserId, scoreManner, scoreTeamwork, scoreCommunication, comment } = body;
+    const {
+      targetUserId,
+      scoreManner,
+      scoreTeamwork,
+      scoreCommunication,
+      comment,
+    } = body;
 
     // 3. 입력 검증
     if (!targetUserId || typeof targetUserId !== 'string') {
@@ -99,7 +105,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (comment !== undefined && comment !== null && typeof comment !== 'string') {
+    if (
+      comment !== undefined &&
+      comment !== null &&
+      typeof comment !== 'string'
+    ) {
       return NextResponse.json(
         { error: 'comment는 문자열이어야 합니다.' },
         { status: 400 }
@@ -131,26 +141,17 @@ export async function POST(request: NextRequest) {
 
     // ReviewValidationError → 400
     if (error instanceof ReviewValidationError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     // ReviewCreateError → 500
     if (error instanceof ReviewCreateError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     // 기타 에러 → 500
     const errorMessage =
       error instanceof Error ? error.message : '후기 제출에 실패했습니다.';
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
-}
+};

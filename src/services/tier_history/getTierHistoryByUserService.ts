@@ -21,11 +21,7 @@ export const getTierHistoryByUserService = async (
   offset: number = 0
 ) => {
   // 입력 검증
-  if (
-    !userId ||
-    typeof userId !== 'string' ||
-    !userId.trim()
-  ) {
+  if (!userId || typeof userId !== 'string' || !userId.trim()) {
     throw new TierHistoryValidationError(
       'userId는 비어있지 않은 문자열이어야 합니다.'
     );

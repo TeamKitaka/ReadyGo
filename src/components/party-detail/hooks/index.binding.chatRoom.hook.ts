@@ -62,9 +62,7 @@ export interface UseChatRoomReturn {
   ) => boolean;
   shouldScrollToBottom: boolean;
   clearScrollTriggers: () => void;
-  setMessageListContainerRef: (
-    ref: React.RefObject<HTMLDivElement>
-  ) => void;
+  setMessageListContainerRef: (ref: React.RefObject<HTMLDivElement>) => void;
 }
 
 /**

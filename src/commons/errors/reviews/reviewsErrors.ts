@@ -48,10 +48,7 @@ export class ReviewFetchError extends Error {
   readonly statusCode = 500;
   readonly originalError?: string;
 
-  constructor(
-    resource: 'review' | 'reviews',
-    originalError?: string
-  ) {
+  constructor(resource: 'review' | 'reviews', originalError?: string) {
     super(`Failed to fetch ${resource}: ${originalError || 'Unknown error'}`);
     this.name = 'ReviewFetchError';
     this.originalError = originalError;

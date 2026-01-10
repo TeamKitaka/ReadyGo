@@ -1,8 +1,4 @@
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import type { Database } from '@/types/supabase';
-
-// 타입 정의
-type ChatRoomMember = Database['public']['Tables']['chat_room_members']['Row'];
 
 // ============================================
 // 채팅방 멤버 관련 함수

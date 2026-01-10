@@ -29,9 +29,7 @@ export interface ReviewScores {
  * const change = calculateTemperatureChange(scores); // 0.75
  * ```
  */
-export const calculateTemperatureChange = (
-  scores: ReviewScores
-): number => {
+export const calculateTemperatureChange = (scores: ReviewScores): number => {
   // 체크당 0.15점
   const POINTS_PER_CHECK = 0.15;
 

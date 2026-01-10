@@ -20,28 +20,22 @@ export const getReviewsBetweenUsersService = async (
   userId2: string
 ) => {
   // 입력 검증
-  if (
-    !userId1 ||
-    typeof userId1 !== 'string' ||
-    !userId1.trim()
-  ) {
+  if (!userId1 || typeof userId1 !== 'string' || !userId1.trim()) {
     throw new ReviewValidationError(
       'userId1는 비어있지 않은 문자열이어야 합니다.'
     );
   }
 
-  if (
-    !userId2 ||
-    typeof userId2 !== 'string' ||
-    !userId2.trim()
-  ) {
+  if (!userId2 || typeof userId2 !== 'string' || !userId2.trim()) {
     throw new ReviewValidationError(
       'userId2는 비어있지 않은 문자열이어야 합니다.'
     );
   }
 
   if (userId1.trim() === userId2.trim()) {
-    throw new ReviewValidationError('userId1과 userId2는 서로 다른 값이어야 합니다.');
+    throw new ReviewValidationError(
+      'userId1과 userId2는 서로 다른 값이어야 합니다.'
+    );
   }
 
   try {

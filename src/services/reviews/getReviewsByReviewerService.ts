@@ -21,11 +21,7 @@ export const getReviewsByReviewerService = async (
   offset: number = 0
 ) => {
   // 입력 검증
-  if (
-    !reviewerId ||
-    typeof reviewerId !== 'string' ||
-    !reviewerId.trim()
-  ) {
+  if (!reviewerId || typeof reviewerId !== 'string' || !reviewerId.trim()) {
     throw new ReviewValidationError(
       'reviewerId는 비어있지 않은 문자열이어야 합니다.'
     );

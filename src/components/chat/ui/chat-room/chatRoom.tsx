@@ -23,7 +23,7 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
   // 사이드 프로필 패널 제어
   const { toggleProfile, openProfile, isOpen, targetUserId } =
     useSideProfilePanel();
-  
+
   // 모달 제어
   const { openModal } = useModal();
 

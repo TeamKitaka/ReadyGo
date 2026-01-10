@@ -58,7 +58,8 @@ export const createTierHistoryService = async (
   };
 
   try {
-    const history = await tierHistoryRepository.createTierHistory(validatedParams);
+    const history =
+      await tierHistoryRepository.createTierHistory(validatedParams);
 
     if (!history) {
       throw new TierHistoryCreateError('티어 히스토리 생성에 실패했습니다.');

@@ -16,9 +16,7 @@ import type { CreateReviewParams } from '@/repositories/reviews.repository';
  * - 권한 체크
  * - Domain 로직
  */
-export const createReviewService = async (
-  params: CreateReviewParams
-) => {
+export const createReviewService = async (params: CreateReviewParams) => {
   // 입력 검증
   if (
     !params.reviewer_id ||

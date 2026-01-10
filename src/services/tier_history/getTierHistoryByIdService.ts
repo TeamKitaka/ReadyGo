@@ -16,12 +16,12 @@ import {
  * - 권한 체크
  * - Domain 로직
  */
-export const getTierHistoryByIdService = async (
-  historyId: number
-) => {
+export const getTierHistoryByIdService = async (historyId: number) => {
   // 입력 검증
   if (typeof historyId !== 'number' || isNaN(historyId) || historyId < 1) {
-    throw new TierHistoryValidationError('historyId는 1 이상의 숫자여야 합니다.');
+    throw new TierHistoryValidationError(
+      'historyId는 1 이상의 숫자여야 합니다.'
+    );
   }
 
   try {

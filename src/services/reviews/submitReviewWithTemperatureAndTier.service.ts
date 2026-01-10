@@ -40,7 +40,13 @@ export const submitReviewWithTemperatureAndTier = async (
   params: SubmitReviewParams,
   reviewerId: string
 ): Promise<SubmitReviewResult> => {
-  const { targetUserId, scoreManner, scoreTeamwork, scoreCommunication, comment } = params;
+  const {
+    targetUserId,
+    scoreManner,
+    scoreTeamwork,
+    scoreCommunication,
+    comment,
+  } = params;
 
   // 1. 리뷰 생성
   const review = await createReviewService({
@@ -78,8 +84,10 @@ export const submitReviewWithTemperatureAndTier = async (
       userId: targetUserId,
       newTemperature,
     });
-    newTier = tierResult.newTier;
-    tierChanged = tierResult.tierChanged;
+    const { newTier: updatedTier, tierChanged: updatedTierChanged } =
+      tierResult;
+    newTier = updatedTier;
+    tierChanged = updatedTierChanged;
   } catch (error) {
     console.error('Failed to update tier from temperature:', error);
     throw new Error(

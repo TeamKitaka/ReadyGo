@@ -21,22 +21,22 @@ export const getTemperatureLogsByUserService = async (
   offset: number = 0
 ) => {
   // 입력 검증
-  if (
-    !userId ||
-    typeof userId !== 'string' ||
-    !userId.trim()
-  ) {
+  if (!userId || typeof userId !== 'string' || !userId.trim()) {
     throw new TemperatureLogValidationError(
       'userId는 비어있지 않은 문자열이어야 합니다.'
     );
   }
 
   if (typeof limit !== 'number' || isNaN(limit) || limit < 1) {
-    throw new TemperatureLogValidationError('limit은 1 이상의 숫자여야 합니다.');
+    throw new TemperatureLogValidationError(
+      'limit은 1 이상의 숫자여야 합니다.'
+    );
   }
 
   if (typeof offset !== 'number' || isNaN(offset) || offset < 0) {
-    throw new TemperatureLogValidationError('offset은 0 이상의 숫자여야 합니다.');
+    throw new TemperatureLogValidationError(
+      'offset은 0 이상의 숫자여야 합니다.'
+    );
   }
 
   try {

@@ -16,12 +16,12 @@ import {
  * - 권한 체크
  * - Domain 로직
  */
-export const getTemperatureLogByIdService = async (
-  logId: number
-) => {
+export const getTemperatureLogByIdService = async (logId: number) => {
   // 입력 검증
   if (typeof logId !== 'number' || isNaN(logId) || logId < 1) {
-    throw new TemperatureLogValidationError('logId는 1 이상의 숫자여야 합니다.');
+    throw new TemperatureLogValidationError(
+      'logId는 1 이상의 숫자여야 합니다.'
+    );
   }
 
   try {

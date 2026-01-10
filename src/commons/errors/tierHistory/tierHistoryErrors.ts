@@ -48,10 +48,7 @@ export class TierHistoryFetchError extends Error {
   readonly statusCode = 500;
   readonly originalError?: string;
 
-  constructor(
-    resource: 'history' | 'histories',
-    originalError?: string
-  ) {
+  constructor(resource: 'history' | 'histories', originalError?: string) {
     super(`Failed to fetch ${resource}: ${originalError || 'Unknown error'}`);
     this.name = 'TierHistoryFetchError';
     this.originalError = originalError;
