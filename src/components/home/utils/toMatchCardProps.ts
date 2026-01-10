@@ -54,9 +54,15 @@ export function toMatchCardProps(apiResult: any): MatchCardProps {
   // 랜덤 순서로 섞기 (다양성 확보)
   const shuffledReasons = [...(apiResult.reasons || [])].sort(() => Math.random() - 0.5);
 
+  // 디버깅용 로그 (개발 환경에서만)
+  if (process.env.NODE_ENV === 'development' && shuffledReasons.length > 0) {
+    console.log('[toMatchCardProps] Reasons:', shuffledReasons.map(r => r.detail?.type));
+  }
+
   // reasons 분석 (랜덤 순)
   for (const reason of shuffledReasons) {
-    const { type, detail } = reason;
+    const { detail } = reason;
+    const type = detail?.type;
 
     // 1순위: 게임 취향 (가장 구체적인 것 우선)
     if (!gamePreference) {

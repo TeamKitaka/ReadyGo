@@ -137,9 +137,8 @@ export default function Match() {
       };
     });
 
-    // Presence 기반 실시간 정렬 (서버에서 이미 정렬되었지만, Presence 변경 시 재정렬)
-    // 1순위: 온라인 상태 (Presence 기반)
-    // 2순위: 매칭 점수 높은 순
+    // 서버에서 이미 Fisher-Yates shuffle로 랜덤 정렬됨
+    // 단, Presence 변경 시에만 온라인 우선 재정렬
     return matchDataArray.sort((a, b) => {
       const aStatus = getEffectiveStatus(a.userId);
       const bStatus = getEffectiveStatus(b.userId);
@@ -152,8 +151,8 @@ export default function Match() {
         return aOnline ? -1 : 1;
       }
 
-      // 온라인 상태가 같으면 점수 높은 순
-      return b.matchRate - a.matchRate;
+      // 온라인 상태가 같으면 서버의 랜덤 순서 유지 (정렬 안 함)
+      return 0;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results, presenceUserIds]); // Presence 변경 시 재정렬 (presenceUserIds는 getEffectiveStatus 내부에서 사용됨)
