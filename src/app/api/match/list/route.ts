@@ -15,6 +15,7 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getMatchList } from '@/services/match/getMatchList.service';
 
 export const GET = async (request: Request) => {
@@ -24,6 +25,7 @@ export const GET = async (request: Request) => {
     const statusFilter = (searchParams.get('status') as 'all' | 'online' | 'offline') || 'all';
     const refresh = searchParams.get('refresh') === 'true';
     
+    // 인증 확인용 클라이언트
     const supabase = createClient();
     const {
       data: { user },
@@ -34,7 +36,8 @@ export const GET = async (request: Request) => {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const results = await getMatchList(supabase, user.id, {
+    // 매칭 계산은 Admin 클라이언트 사용 (RLS 우회, 모든 유저 데이터 접근)
+    const results = await getMatchList(supabaseAdmin, user.id, {
       minScore,
       statusFilter,
       limit: 12,

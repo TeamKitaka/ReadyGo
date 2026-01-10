@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getHomeMatches } from '@/services/match/getHomeMatches.service';
 
 /**
@@ -17,7 +18,7 @@ import { getHomeMatches } from '@/services/match/getHomeMatches.service';
  */
 export const GET = async () => {
   try {
-    // 1. 서버 사이드 Supabase 클라이언트 생성
+    // 1. 인증 확인용 클라이언트
     const supabase = createClient();
 
     // 2. 현재 로그인한 사용자 확인
@@ -30,8 +31,8 @@ export const GET = async () => {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 3. 홈 매칭 결과 조회 (캐시 + fallback)
-    const results = await getHomeMatches(supabase, user.id);
+    // 3. 홈 매칭 결과 조회 (Admin 클라이언트 사용 - RLS 우회)
+    const results = await getHomeMatches(supabaseAdmin, user.id);
 
     // 4. 결과 반환
     return NextResponse.json({ results });
