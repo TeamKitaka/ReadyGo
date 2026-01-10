@@ -1,4 +1,5 @@
 import { AnimalType } from '@/commons/constants/animal/animal.enum';
+import { TierType } from '@/commons/constants/tierType.enum';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 
@@ -73,4 +74,93 @@ export const getAllUserIds = async (
     .filter((id): id is string => id !== null && id !== undefined);
 
   return userIds;
+};
+
+/**
+ * user_profiles의 temperature_score를 조회한다
+ * - DB 접근만 수행, 에러 처리는 상위 레이어에서 담당
+ */
+export const getTemperatureScore = async (
+  client: SupabaseClient<Database>,
+  userId: string
+): Promise<number | null> => {
+  const { data, error } = await client
+    .from('user_profiles')
+    .select('temperature_score')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.temperature_score ?? null;
+};
+
+/**
+ * user_profiles의 temperature_score를 업데이트한다 (기존 점수 + change)
+ * - DB 접근만 수행, 에러 처리는 상위 레이어에서 담당
+ */
+export const updateTemperatureScore = async (
+  client: SupabaseClient<Database>,
+  userId: string,
+  change: number
+): Promise<void> => {
+  // 현재 온도 점수 조회
+  const currentScore = await getTemperatureScore(client, userId);
+  if (currentScore === null) {
+    throw new Error(`User profile not found for userId: ${userId}`);
+  }
+
+  // 새로운 온도 점수 계산 (기존 점수 + change)
+  const newScore = Math.max(0, Math.min(100, currentScore + change));
+
+  const { error } = await client
+    .from('user_profiles')
+    .update({ temperature_score: newScore })
+    .eq('id', userId);
+
+  if (error) {
+    throw error;
+  }
+};
+
+/**
+ * user_profiles의 tier를 조회한다
+ * - DB 접근만 수행, 에러 처리는 상위 레이어에서 담당
+ */
+export const getTier = async (
+  client: SupabaseClient<Database>,
+  userId: string
+): Promise<TierType | null> => {
+  const { data, error } = await client
+    .from('user_profiles')
+    .select('tier')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (data?.tier as TierType) ?? null;
+};
+
+/**
+ * user_profiles의 tier를 업데이트한다
+ * - DB 접근만 수행, 에러 처리는 상위 레이어에서 담당
+ */
+export const updateTier = async (
+  client: SupabaseClient<Database>,
+  userId: string,
+  newTier: TierType
+): Promise<void> => {
+  const { error } = await client
+    .from('user_profiles')
+    .update({ tier: newTier })
+    .eq('id', userId);
+
+  if (error) {
+    throw error;
+  }
 };

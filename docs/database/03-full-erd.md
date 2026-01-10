@@ -179,8 +179,8 @@ erDiagram
 
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
-- **Last Updated At**: 2025-01-15
-- **Document Version**: v1.0.5
+- **Last Updated At**: 2025-12-31
+- **Document Version**: v1.0.4
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
@@ -188,11 +188,10 @@ erDiagram
 
 ## Version History
 
-| Version | Date       | Description                                                                                 |
-| ------: | ---------- | ------------------------------------------------------------------------------------------- |
-|  v1.0.0 | 2025-12-24 | Full integrated ERD                                                                         |
-|  v1.0.1 | 2025-12-26 | steam_game_sync_logs 테이블 추가에 따른 ERD 수정                                            |
-|  v1.0.2 | 2025-12-29 | User/Profile Domain에 user_status 추가                                                      |
-|  v1.0.3 | 2025-12-29 | user_play_schedules 테이블 추가에 따른 ERD 수정                                             |
-|  v1.0.4 | 2025-01-13 | chat_blocks를 user_blocks로 변경, User/Profile Domain으로 이동                              |
-|  v1.0.5 | 2025-01-15 | user_profiles.temperature_score, temperature_logs.change 컬럼 타입을 int → numeric으로 변경 |
+| Version | Date       | Description                                                    |
+| ------: | ---------- | -------------------------------------------------------------- |
+|  v1.0.0 | 2025-12-24 | Full integrated ERD                                            |
+|  v1.0.1 | 2025-12-26 | steam_game_sync_logs 테이블 추가에 따른 ERD 수정               |
+|  v1.0.2 | 2025-12-29 | User/Profile Domain에 user_status 추가                         |
+|  v1.0.3 | 2025-12-29 | user_play_schedules 테이블 추가에 따른 ERD 수정                |
+|  v1.0.4 | 2025-01-13 | chat_blocks를 user_blocks로 변경, User/Profile Domain으로 이동 |

@@ -1,8 +1,10 @@
-/* Container */
+/* Container - 반응형 디자인 */
 .container {
   display: flex;
   flex-direction: column;
-  width: 672px;
+  width: 100%;
+  max-width: 672px;
+  max-height: 90vh;
   background-color: var(--color-bg-primary);
   border: 1px solid var(--color-transparent-16);
   border-radius: 16px;
@@ -11,6 +13,16 @@
     0px 4px 6px -4px var(--color-shadow-subtle);
   overflow: hidden;
   box-sizing: border-box;
+  margin: 20px;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .container {
+    max-width: calc(100% - 40px);
+    margin: 20px;
+    max-height: 95vh;
+  }
 }
 
 /* Header */
@@ -23,6 +35,7 @@
   align-items: center;
   padding: 16px;
   box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .headerContent {
@@ -70,13 +83,15 @@
   white-space: nowrap;
 }
 
-/* Main Area */
+/* Main Area - 스크롤 가능 */
 .mainArea {
   width: 100%;
-  min-height: 724px;
+  flex: 1;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .contentWrapper {
@@ -84,6 +99,15 @@
   flex-direction: column;
   gap: 32px;
   padding: 32px;
+  min-height: min-content;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .contentWrapper {
+    gap: 24px;
+    padding: 24px 20px;
+  }
 }
 
 .titleSection {
@@ -92,7 +116,15 @@
   gap: 24px;
   align-items: center;
   justify-content: center;
-  padding: 0 74px;
+  padding: 0 20px;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .titleSection {
+    gap: 16px;
+    padding: 0;
+  }
 }
 
 .titleTextSection {
@@ -109,8 +141,16 @@
   font-weight: var(--typo-heading-lg-font-weight);
   color: var(--color-text-primary);
   text-align: center;
-  white-space: nowrap;
   margin: 0;
+  word-break: keep-all;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .title {
+    font-size: var(--typo-heading-md-font-size);
+    line-height: var(--typo-heading-md-line-height);
+  }
 }
 
 .description {
@@ -120,8 +160,8 @@
   font-weight: var(--typo-body-lg-font-weight);
   color: var(--color-text-interactive-secondary);
   text-align: center;
-  white-space: nowrap;
   margin: 0;
+  word-break: keep-all;
 }
 
 /* Options Section */
@@ -145,6 +185,14 @@
     background-color 0.2s,
     border-color 0.2s,
     box-shadow 0.2s;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .optionItem {
+    padding: 12px;
+    min-height: 48px;
+  }
 }
 
 .checkboxContainer {
@@ -206,6 +254,15 @@
   font-weight: var(--typo-body-lg-font-weight);
   color: var(--color-text-tertiary);
   flex: 1;
+  word-break: keep-all;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .optionText {
+    font-size: var(--typo-body-md-font-size);
+    line-height: var(--typo-body-md-line-height);
+  }
 }
 
 .optionTextSelected {
@@ -219,6 +276,10 @@
   gap: 12px;
 }
 
+.inputLabel {
+  /* 필요시 스타일 추가 */
+}
+
 /* Footer */
 .buttonArea {
   width: 100%;
@@ -230,6 +291,15 @@
   justify-content: flex-end;
   padding: 24px;
   box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .buttonArea {
+    min-height: 80px;
+    padding: 20px;
+  }
 }
 
 .buttonWrapper {

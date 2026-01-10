@@ -2,7 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { Database } from '@/types/supabase';
 
 // 타입 정의
-export type Review = Database['public']['Tables']['reviews']['Row'];
+type Review = Database['public']['Tables']['reviews']['Row'];
 
 export type CreateReviewParams = {
   reviewer_id: string;
