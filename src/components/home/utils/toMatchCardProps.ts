@@ -54,17 +54,16 @@ export function toMatchCardProps(apiResult: any): MatchCardProps {
   // 랜덤 순서로 섞기 (다양성 확보)
   const shuffledReasons = [...(apiResult.reasons || [])].sort(() => Math.random() - 0.5);
 
-  // 디버깅용 로그 (개발 환경에서만)
-  if (process.env.NODE_ENV === 'development' && shuffledReasons.length > 0) {
-    console.log('[toMatchCardProps] Full reasons:', JSON.stringify(shuffledReasons, null, 2));
-    console.log('[toMatchCardProps] Reason types:', shuffledReasons.map(r => r.detail?.type));
-    console.log('[toMatchCardProps] First reason detail:', shuffledReasons[0]?.detail);
-  }
 
   // reasons 분석 (랜덤 순)
   for (const reason of shuffledReasons) {
     const { detail } = reason;
     const type = detail?.type;
+
+    // BASELINE reason은 건너뛰기 (의미없는 기본값)
+    if (type === 'BASELINE' || reason.isBaseline) {
+      continue;
+    }
 
     // 1순위: 게임 취향 (가장 구체적인 것 우선)
     if (!gamePreference) {
@@ -100,7 +99,7 @@ export function toMatchCardProps(apiResult: any): MatchCardProps {
 
     // 3순위: 실력/성향
     if (!skillLevel) {
-      if (type === 'STYLE_SIMILARITY') {
+      if (type === 'STYLE_SIMILARITY' && detail.similarityScore >= 70) {
         const trait = detail.topTrait;
         skillLevel = traitLabels[trait] || '균형잡힌 스타일';
       } else if (type === 'RELIABILITY' && detail.reliabilityScore >= 60) {
