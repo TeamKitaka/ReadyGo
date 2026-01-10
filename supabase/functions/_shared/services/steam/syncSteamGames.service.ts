@@ -5,6 +5,7 @@ import * as steamSyncLogRepository from '../../repositories/steamSyncLogReposito
 import * as steamGameRepository from '../../repositories/steamGameRepository.ts';
 import * as steamApiClient from './steamApiClient.ts';
 import * as steamStoreApiClient from './steamStoreApiClient.ts';
+import { updateSteamUserStats } from './updateSteamUserStats.service.ts';
 
 /**
  * syncSteamGames Service
@@ -308,9 +309,6 @@ export const syncSteamGames = async (
 
   // 8. steam_user_stats 업데이트
   try {
-    const { updateSteamUserStats } = await import(
-      './updateSteamUserStats.service.ts'
-    );
     await updateSteamUserStats(client, userId);
     console.log(`[Sync User ${userId}] Steam user stats updated`);
   } catch (statsError) {
