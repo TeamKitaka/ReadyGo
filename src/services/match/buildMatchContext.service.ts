@@ -45,6 +45,7 @@ import * as userProfilesRepository from '@/repositories/userProfiles.repository'
 import * as userTraitsRepository from '@/repositories/userTraits.repository';
 import * as userPlaySchedulesRepository from '@/repositories/userPlaySchedules.repository';
 import * as steamUserStatsRepository from '@/repositories/steamUserStats.repository';
+import * as steamUserGamesRepository from '@/repositories/steamUserGames.repository';
 import { getPartyMemberCount } from '@/services/party/getPartyMemberCount.service';
 
 /**
@@ -87,22 +88,26 @@ export const buildMatchContext = async (
     viewerTraits,
     viewerSchedules,
     viewerSteamStats,
+    viewerSteamGames,
     viewerPartyCount,
     targetProfile,
     targetTraits,
     targetSchedules,
     targetSteamStats,
+    targetSteamGames,
     targetPartyCount,
   ] = await Promise.all([
     userProfilesRepository.findByUserId(client, viewerId),
     userTraitsRepository.findByUserId(client, viewerId),
     userPlaySchedulesRepository.findByUserId(client, viewerId),
     steamUserStatsRepository.findByUserId(client, viewerId),
+    steamUserGamesRepository.findAppIdsByUserId(client, viewerId),
     getPartyMemberCount(viewerId),
     userProfilesRepository.findByUserId(client, targetUserId),
     userTraitsRepository.findByUserId(client, targetUserId),
     userPlaySchedulesRepository.findByUserId(client, targetUserId),
     steamUserStatsRepository.findByUserId(client, targetUserId),
+    steamUserGamesRepository.findAppIdsByUserId(client, targetUserId),
     getPartyMemberCount(targetUserId),
   ]);
 
@@ -112,7 +117,10 @@ export const buildMatchContext = async (
     viewerProfile.data
   );
   const viewerActivityContext = assembleActivityContext(viewerSchedules.data);
-  const viewerSteamContext = assembleSteamContext(viewerSteamStats.data);
+  const viewerSteamContext = assembleSteamContext(
+    viewerSteamStats.data,
+    viewerSteamGames.data
+  );
   const viewerReliabilityContext = assembleReliabilityContext(viewerPartyCount);
 
   // 3. target의 하위 Context 조립
@@ -121,7 +129,10 @@ export const buildMatchContext = async (
     targetProfile.data
   );
   const targetActivityContext = assembleActivityContext(targetSchedules.data);
-  const targetSteamContext = assembleSteamContext(targetSteamStats.data);
+  const targetSteamContext = assembleSteamContext(
+    targetSteamStats.data,
+    targetSteamGames.data
+  );
   const targetReliabilityContext = assembleReliabilityContext(targetPartyCount);
 
   // 4. viewer UserMatchInput 조립
@@ -249,12 +260,13 @@ const assembleActivityContext = (
  * Steam Context 조립 (내부 헬퍼)
  *
  * @param steamStatsData - steam_user_stats 조회 결과의 data 필드
+ * @param steamGamesData - steam_user_games 조회 결과의 data 필드 (app_id 배열)
  * @returns SteamContextInput 또는 undefined
  *
  * 📌 조립 규칙:
- * - steam_user_stats 데이터가 없으면 → undefined 반환
- * - steam_user_stats 데이터가 있으면 → SteamContextInput 구조로 변환
- * - mainGenres, playStyle 추출
+ * - steam_user_stats와 steam_user_games 데이터가 모두 없으면 → undefined 반환
+ * - 데이터가 있으면 → SteamContextInput 구조로 변환
+ * - steamGames, mainGenres, playStyle 추출
  * - 기본값 삽입 ❌
  */
 const assembleSteamContext = (
@@ -262,18 +274,31 @@ const assembleSteamContext = (
     play_style: string;
     avg_weekly_playtime: number;
     main_genres: string[];
-  } | null
+  } | null,
+  steamGamesData: number[] | null
 ) => {
-  // steam_user_stats 데이터가 없으면 undefined 반환
-  if (!steamStatsData) {
+  // steam_user_stats와 steam_user_games 데이터가 모두 없으면 undefined 반환
+  if (!steamStatsData && (!steamGamesData || steamGamesData.length === 0)) {
     return undefined;
   }
 
   // SteamContextInput 반환
-  return {
-    mainGenres: steamStatsData.main_genres || [],
-    playStyle: steamStatsData.play_style as 'casual' | 'regular' | 'hardcore',
+  const result = {
+    steamGames: steamGamesData || [],
+    mainGenres: steamStatsData?.main_genres || [],
+    playStyle: steamStatsData?.play_style as
+      | 'casual'
+      | 'regular'
+      | 'hardcore'
+      | undefined,
   };
+  
+  // 디버깅: steamGames 확인
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[assembleSteamContext] steamGames:', result.steamGames?.length || 0);
+  }
+  
+  return result;
 };
 
 /**

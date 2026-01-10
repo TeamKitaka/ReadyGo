@@ -109,10 +109,22 @@ export const generateMatchReasons = (
   // 1. COMMON_GAME (Steam 연동 시) - HIGH priority
   const viewerGames = context.viewer.steam?.steamGames ?? [];
   const targetGames = context.target.steam?.steamGames ?? [];
+  
+  // 디버깅
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[generateMatchReasons] viewer games:', viewerGames.length);
+    console.log('[generateMatchReasons] target games:', targetGames.length);
+  }
+  
   if (viewerGames.length > 0 && targetGames.length > 0) {
     const commonGames = viewerGames.filter((game) =>
       targetGames.includes(game)
     );
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[generateMatchReasons] common games:', commonGames.length);
+    }
+    
     if (commonGames.length > 0) {
       // 실제로는 게임 ID를 게임 이름으로 변환하는 로직 필요
       // 여기서는 단순화를 위해 게임 ID를 그대로 사용

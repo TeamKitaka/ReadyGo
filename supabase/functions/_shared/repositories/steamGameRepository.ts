@@ -51,14 +51,14 @@ export const checkGameExists = async (
   for (let i = 0; i < appIds.length; i += CHUNK_SIZE) {
     const chunk = appIds.slice(i, i + CHUNK_SIZE);
 
-    const { data, error } = await client
-      .from('steam_game_info')
-      .select('app_id')
+  const { data, error } = await client
+    .from('steam_game_info')
+    .select('app_id')
       .in('app_id', chunk);
 
-    if (error) {
-      throw error;
-    }
+  if (error) {
+    throw error;
+  }
 
     allExistingIds.push(...data.map((row: { app_id: number }) => row.app_id));
   }

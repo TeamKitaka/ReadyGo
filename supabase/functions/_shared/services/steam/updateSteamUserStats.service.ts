@@ -22,7 +22,7 @@ interface FilteredGame {
 
 interface ActivityMetrics {
   totalPlaytimeHours: number;
-  avgWeeklyPlaytimeHours: number | null;
+  avgWeeklyPlaytimeHours: number; // 항상 계산됨 (최근 2주 기준)
   hasRecentActivity: boolean;
 }
 
@@ -68,29 +68,9 @@ const filterMeaningfulGames = async (
     }
   }
 
-  const validGameIds = new Set<number>();
-  if (gameInfos) {
-    for (const info of gameInfos) {
-      if (info.categories && Array.isArray(info.categories)) {
-        const isGame = info.categories.some((cat: any) => {
-          const label = cat?.label?.toLowerCase() || '';
-          return (
-            label.includes('game') &&
-            !label.includes('tool') &&
-            !label.includes('demo') &&
-            !label.includes('soundtrack')
-          );
-        });
-        if (isGame) {
-          validGameIds.add(info.app_id);
-        }
-      } else {
-        validGameIds.add(info.app_id);
-      }
-    }
-  }
-
-  const validGames = userGames.filter((g) => validGameIds.has(g.app_id));
+  // 플레이 시간이 5분 이상인 모든 게임을 포함
+  // (가중치 함수를 통해 짧은 플레이타임 게임의 영향력은 자동으로 감소)
+  const validGames = userGames.filter((g) => g.playtime_forever >= 5);
 
   // 3. 최근 플레이 게임과 누적 플레이 게임 분리
   const recentGames = validGames
@@ -126,7 +106,28 @@ const filterMeaningfulGames = async (
 };
 
 /**
- * 가중치 플레이타임 계산
+ * 플레이타임 기반 관심도 가중치 계산
+ *
+ * 로그 스케일 적용:
+ * - 0분: 0 (완전 제외)
+ * - 10분: ~0.14
+ * - 30분: ~0.26
+ * - 60분: ~0.36
+ * - 300분(5시간): ~0.60
+ * - 1000분(~16시간): ~0.78
+ * - 6000분(100시간): ~1.0
+ */
+const calculatePlaytimeWeight = (playtimeMinutes: number): number => {
+  if (playtimeMinutes <= 0) return 0;
+
+  // 로그 스케일: log10(playtime + 1) / log10(6000)
+  // 6000분(100시간) 이상이면 1.0
+  const weight = Math.log10(playtimeMinutes + 1) / Math.log10(6000);
+  return Math.min(1.0, weight);
+};
+
+/**
+ * 가중치 플레이타임 계산 (최근성 + 총 플레이타임 + 관심도 가중치)
  */
 const calculateWeightedPlaytime = (
   game: FilteredGame,
@@ -136,20 +137,24 @@ const calculateWeightedPlaytime = (
   const recent = game.playtimeRecent || 0;
   const total = game.playtimeForever || 0;
 
+  // 기본 가중치 플레이타임 계산
+  let basePlaytime: number;
   if (recent > 0) {
-    return recent * recentRatio + total * totalRatio;
+    basePlaytime = recent * recentRatio + total * totalRatio;
   } else {
-    return total;
+    basePlaytime = total;
   }
+
+  // 관심도 가중치 적용
+  const interestWeight = calculatePlaytimeWeight(total);
+
+  return basePlaytime * interestWeight;
 };
 
 /**
- * 활동 지표 계산
+ * 활동 지표 계산 (최근 2주 기준)
  */
-const calculateActivityMetrics = (
-  games: FilteredGame[],
-  accountCreatedAt?: Date
-): ActivityMetrics => {
+const calculateActivityMetrics = (games: FilteredGame[]): ActivityMetrics => {
   const totalPlaytimeMinutes = games.reduce(
     (sum, game) => sum + game.playtimeForever,
     0
@@ -163,21 +168,8 @@ const calculateActivityMetrics = (
 
   const hasRecentActivity = recentPlaytimeMinutes > 0;
 
-  let avgWeeklyPlaytimeHours: number | null = null;
-
-  if (hasRecentActivity) {
-    avgWeeklyPlaytimeHours = Math.round(recentPlaytimeMinutes / 60 / 2);
-  } else if (accountCreatedAt) {
-    const now = new Date();
-    const weeksSinceCreation =
-      (now.getTime() - accountCreatedAt.getTime()) /
-      (7 * 24 * 60 * 60 * 1000);
-    if (weeksSinceCreation > 0) {
-      avgWeeklyPlaytimeHours = Math.round(
-        totalPlaytimeMinutes / 60 / weeksSinceCreation
-      );
-    }
-  }
+  // 최근 2주 플레이 시간만 사용 (주당 평균)
+  const avgWeeklyPlaytimeHours = Math.round(recentPlaytimeMinutes / 60 / 2);
 
   return {
     totalPlaytimeHours,
@@ -258,31 +250,26 @@ const analyzeGenreProfile = async (
 };
 
 /**
- * Play Style 분류
+ * Play Style 분류 (최근 2주 활동 기준)
  */
 const classifyPlayStyle = (metrics: ActivityMetrics): PlayStyle => {
   const avgWeekly = metrics.avgWeeklyPlaytimeHours;
 
-  if (avgWeekly === null || avgWeekly === undefined) {
-    return 'casual';
-  }
-
-  if (avgWeekly < 10) {
-    return 'casual';
-  } else if (avgWeekly <= 30) {
-    return 'regular';
+  if (avgWeekly === null || avgWeekly === undefined || avgWeekly < 5) {
+    return 'casual'; // 주 5시간 미만
+  } else if (avgWeekly <= 20) {
+    return 'regular'; // 주 5~20시간
   } else {
-    return 'hardcore';
+    return 'hardcore'; // 주 20시간 이상
   }
 };
 
 /**
- * steam_user_stats 업데이트
+ * steam_user_stats 업데이트 (최근 2주 기준)
  */
 export const updateSteamUserStats = async (
   client: DbClient,
-  userId: string,
-  accountCreatedAt?: Date
+  userId: string
 ): Promise<void> => {
   console.log(`[UpdateStats] Starting for user ${userId}`);
 
@@ -295,8 +282,8 @@ export const updateSteamUserStats = async (
     return;
   }
 
-  // 2. 활동 지표 계산
-  const activityMetrics = calculateActivityMetrics(games, accountCreatedAt);
+  // 2. 활동 지표 계산 (최근 2주 기준)
+  const activityMetrics = calculateActivityMetrics(games);
   console.log(
     `[UpdateStats] Activity metrics:`,
     JSON.stringify(activityMetrics)
@@ -328,4 +315,3 @@ export const updateSteamUserStats = async (
 
   console.log(`[UpdateStats] Successfully updated steam_user_stats`);
 };
-

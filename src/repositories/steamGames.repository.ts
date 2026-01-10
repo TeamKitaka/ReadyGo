@@ -2,7 +2,7 @@
  * Steam Games Repository
  * 
  * 책임:
- * - steam_games 테이블 조회
+ * - steam_game_info 테이블 조회
  * - 게임 ID → 게임 이름 변환
  * 
  * 비책임:
@@ -35,7 +35,7 @@ export async function findByAppIds(
   for (let i = 0; i < appIds.length; i += CHUNK_SIZE) {
     const chunk = appIds.slice(i, i + CHUNK_SIZE);
     const { data, error } = await client
-      .from('steam_games')
+      .from('steam_game_info')
       .select('app_id, name')
       .in('app_id', chunk);
 
