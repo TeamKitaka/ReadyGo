@@ -35,7 +35,21 @@ Deno.serve(async (req) => {
   try {
     console.log('[Edge Function] Starting batch sync...');
 
-    // 1. Service Role Supabase Client 생성
+    // 1. Authorization 체크 (필수)
+    const authHeader = req.headers.get('authorization');
+    
+    if (!authHeader) {
+      console.error('[Edge Function] Unauthorized: No authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - API key required' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401,
+        }
+      );
+    }
+
+    // 2. Service Role Supabase Client 생성
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
@@ -50,10 +64,10 @@ Deno.serve(async (req) => {
       },
     });
 
-    // 2. 배치 동기화 실행 (Service에 위임)
+    // 3. 배치 동기화 실행 (Service에 위임)
     const result = await batchSyncSteamGames(supabase, { limit: 50 });
 
-    // 3. 결과 반환
+    // 4. 결과 반환
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
