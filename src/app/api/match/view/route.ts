@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const { error: insertError } = await supabase
       .from('match_recent_views')
       .insert({
-        viewer_id: user.id,
+        user_id: user.id,
         target_user_id: targetUserId,
         viewed_at: new Date().toISOString(),
       });
