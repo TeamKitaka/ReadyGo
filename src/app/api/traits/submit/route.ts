@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { AnimalType } from '@/commons/constants/animal/animal.enum';
 import { TraitKey } from '@/commons/constants/animal/trait.enum';
 import {
@@ -8,6 +9,7 @@ import {
   TIME_SLOTS,
 } from '@/components/traits/data/questionSchedule';
 import { submitTraits } from '@/services/traits/submitTraits.service';
+import * as matchCacheRepo from '@/repositories/matchResultsCache.repository';
 
 /**
  * POST /api/traits/submit
@@ -156,10 +158,18 @@ export const POST = async (request: NextRequest) => {
       timeSlots: payload.timeSlots,
     });
 
-    // 8. 성공 응답
+    // 8. 캐시 무효화 (성향 데이터 변경 시)
+    try {
+      await matchCacheRepo.deleteAllByViewer(supabaseAdmin, user.id);
+    } catch (cacheError) {
+      // 캐시 삭제 실패는 치명적이지 않으므로 로그만 남김
+      console.error('[POST /api/traits/submit] Cache invalidation failed:', cacheError);
+    }
+
+    // 9. 성공 응답
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (error) {
-    // 9. 에러 처리
+    // 10. 에러 처리
     console.error('[POST /api/traits/submit] Error:', error);
     return NextResponse.json(
       {

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { syncSteamGames } from '@/services/steam/syncSteamGames.service';
+import * as matchCacheRepo from '@/repositories/matchResultsCache.repository';
 
 /**
  * POST /api/steam/sync
@@ -61,7 +63,17 @@ export const POST = async (request: NextRequest) => {
     // 5. Service 호출 (viewerId는 auth에서만 획득)
     const result = await syncSteamGames(supabase, user.id);
 
-    // 6. 성공 응답 (Service는 throw하지 않으므로 항상 200 OK)
+    // 6. 캐시 무효화 (Steam 데이터 변경 시, 성공한 경우만)
+    if (result.status === 'success') {
+      try {
+        await matchCacheRepo.deleteAllByViewer(supabaseAdmin, user.id);
+      } catch (cacheError) {
+        // 캐시 삭제 실패는 치명적이지 않으므로 로그만 남김
+        console.error('[POST /api/steam/sync] Cache invalidation failed:', cacheError);
+      }
+    }
+
+    // 7. 성공 응답 (Service는 throw하지 않으므로 항상 200 OK)
     return NextResponse.json(
       {
         status: result.status,
@@ -70,7 +82,7 @@ export const POST = async (request: NextRequest) => {
       { status: 200 }
     );
   } catch (error) {
-    // 7. 예외 처리 (Repository 인프라 오류 등)
+    // 8. 예외 처리 (Repository 인프라 오류 등)
     console.error('[POST /api/steam/sync] Error:', error);
     return NextResponse.json(
       {

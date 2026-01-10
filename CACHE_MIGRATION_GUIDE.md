@@ -9,15 +9,25 @@
    - `getMatchList`: 매칭 화면용 캐시 (5분 TTL)
    - Repository: `matchResultsCache.repository.ts`
 
-2. **마이그레이션 파일 생성 완료**
-   - `20260109_step1_match_cache.sql`: 기본 테이블 생성
-   - `20260109120000_step2_cache_context.sql`: context 컬럼 추가
+2. **마이그레이션 실행 완료**
+   - `20260109_step1_match_cache.sql`: 기본 테이블 생성 ✅
+   - `20260109120000_step2_cache_context.sql`: context 컬럼 추가 ✅
+   - 타입 정의 업데이트 완료 ✅
 
-### ❌ 미완료 작업
+3. **캐시 무효화 로직 구현 완료**
+   - `POST /api/traits/submit`: 성향 테스트 완료 시 캐시 삭제 ✅
+   - `POST /api/steam/sync`: Steam 동기화 완료 시 캐시 삭제 ✅
 
-1. **마이그레이션 실행 필요**
-   - Supabase Dashboard에서 SQL 실행 필요
-   - `context` 컬럼이 DB에 없어서 캐시가 작동하지 않음
+### ⚡ 테스트 필요
+
+1. **캐시 동작 확인**
+   - 홈 화면 캐시 히트/미스 확인
+   - 매칭 화면 5분 TTL 확인
+   - 목록 갱신 버튼 동작 확인
+
+2. **캐시 무효화 확인**
+   - 성향 테스트 후 캐시 삭제 확인
+   - Steam 동기화 후 캐시 삭제 확인
 
 ---
 
@@ -249,13 +259,17 @@ await matchCacheRepo.deleteAllByViewer(client, userId);
 
 ## 📝 체크리스트
 
-- [ ] Supabase Dashboard에서 SQL 실행
-- [ ] 타입 재생성 (`npx supabase gen types...`)
+- [x] Supabase Dashboard에서 SQL 실행
+- [x] 타입 재생성 (`npx supabase gen types...`)
+- [x] 캐시 무효화 로직 구현
+  - [x] 성향 테스트 완료 시
+  - [x] Steam 동기화 완료 시
 - [ ] 개발 환경에서 테스트
   - [ ] 홈 화면 캐시 동작 확인
   - [ ] 매칭 화면 캐시 동작 확인
   - [ ] 5분 TTL 동작 확인
   - [ ] 목록 갱신 버튼 동작 확인
+  - [ ] 캐시 무효화 동작 확인
 - [ ] 프로덕션 배포
 - [ ] 성능 모니터링
 
