@@ -35,6 +35,7 @@ export const useMatchList = () => {
   const [error, setError] = useState<Error | null>(null);
   
   const fetchMatchList = useCallback(async (options: MatchListOptions) => {
+    console.log('[useMatchList] fetchMatchList started', options);
     setLoading(true);
     setError(null);
     
@@ -44,20 +45,31 @@ export const useMatchList = () => {
       if (options.statusFilter) params.set('status', options.statusFilter);
       if (options.refresh) params.set('refresh', 'true');
       
-      const response = await fetch(`/api/match/list?${params.toString()}`, {
+      const url = `/api/match/list?${params.toString()}`;
+      console.log('[useMatchList] fetching:', url);
+      
+      const response = await fetch(url, {
         credentials: 'include',
       });
+      
+      console.log('[useMatchList] response:', response.status, response.ok);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
       
       const data = await response.json();
+      console.log('[useMatchList] data received:', {
+        resultsCount: data.results?.length || 0,
+        data,
+      });
       setResults(data.results || []);
       setFilters(options); // 성공 시 filters 업데이트
     } catch (err) {
+      console.error('[useMatchList] error:', err);
       setError(err instanceof Error ? err : new Error('Unknown error'));
     } finally {
+      console.log('[useMatchList] fetchMatchList completed');
       setLoading(false);
     }
   }, []);

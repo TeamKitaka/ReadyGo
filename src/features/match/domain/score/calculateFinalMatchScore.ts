@@ -276,25 +276,9 @@ export const calculateFinalMatchScore = (
   const rawScore =
     baseScore * animalFactor * scheduleFactor * onlineFactor * steamFactor;
 
-  // 7. 반올림 및 범위 제한 (0~100)
-  const finalScore = Math.min(100, Math.max(0, Math.round(rawScore)));
-
-  // 디버깅: 100점인 경우 계산 과정 로깅 (개발 환경에서만)
-  if (process.env.NODE_ENV === 'development' && finalScore === 100) {
-    // eslint-disable-next-line no-console
-    console.log('[Match Score Debug] 100% detected:', {
-      targetUserId: context.target.userId,
-      baseScore,
-      animalFactor,
-      scheduleFactor,
-      onlineFactor,
-      steamFactor,
-      rawScore,
-      finalScore,
-      viewerTraits: context.viewer.traits?.traits,
-      targetTraits: context.target.traits?.traits,
-    });
-  }
+  // 7. 반올림 및 범위 제한 (0~95)
+  // 최대 95%로 제한하여 "완벽한 매칭"의 비현실성 방지
+  const finalScore = Math.min(95, Math.max(0, Math.round(rawScore)));
 
   // 7. 메타 정보 생성
   const targetOnline = context.target.activity?.isOnline;
