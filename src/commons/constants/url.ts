@@ -225,6 +225,18 @@ export const getUrlMetadata = (path: string): UrlMetadata | undefined => {
     };
   }
 
+  // 테스트 페이지 경로 처리 (/temp, /temp2 등)
+  if (path.startsWith('/temp')) {
+    return {
+      path,
+      accessStatus: 'public',
+      visibility: {
+        header: false,
+        sidebar: false,
+      },
+    };
+  }
+
   return undefined;
 };
 

@@ -1,75 +1,77 @@
-import * as tierHistoryRepository from '@/repositories/tierHistory.repository';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { calculateTierFromTemperature } from './calculateTierFromTemperature.service';
 import { TierType } from '@/commons/constants/tierType.enum';
+import { calculateTierFromTemperature } from './calculateTierFromTemperature.service';
+import * as userProfilesRepository from '@/repositories/userProfiles.repository';
+import * as tierHistoryRepository from '@/repositories/tierHistory.repository';
 
 /**
- * 온도 업데이트 후 티어 재계산 및 업데이트 서비스
+ * 온도 점수 업데이트 후 티어 재계산 및 업데이트
  *
  * 책임:
- * - 온도 점수 기반 티어 재계산
- * - 티어 변경 시 tier_history 테이블에 기록
- * - user_profiles.tier 업데이트
+ * - 온도 점수 업데이트 후 티어 재계산
+ * - 티어 변경 시에만 tier_history 기록
+ * - previous_tier: 업데이트 전 user_profiles.tier 값
+ * - current_tier: 티어가 변경되었을 때만 새 티어 값 저장
  */
-
-export interface UpdateTierParams {
-  userId: string;
-  newTemperature: number;
-}
 
 /**
- * 온도 기반 티어 업데이트
+ * 온도 점수 업데이트 후 티어 재계산 및 업데이트
  *
- * @param params - 티어 업데이트 파라미터
- * @returns 업데이트된 티어 타입 및 변경 여부
+ * @param userId - 사용자 ID
+ * @param newTemperatureScore - 업데이트된 온도 점수
+ * @returns 티어가 변경되었는지 여부와 새 티어
+ *
+ * @example
+ * ```typescript
+ * const result = await updateTierFromTemperature('user-id', 45);
+ * // { tierChanged: true, newTier: TierType.gold, previousTier: TierType.silver }
+ * ```
  */
 export const updateTierFromTemperature = async (
-  params: UpdateTierParams
-): Promise<{ newTier: TierType; tierChanged: boolean }> => {
-  const { userId, newTemperature } = params;
+  userId: string,
+  newTemperatureScore: number
+): Promise<{
+  tierChanged: boolean;
+  newTier: TierType;
+  previousTier: TierType | null;
+}> => {
+  // 현재 티어 조회
+  const currentTier = await userProfilesRepository.getTier(
+    supabaseAdmin,
+    userId
+  );
 
-  // 1. 현재 티어 및 온도 조회
-  const { data: profile, error: profileError } = await supabaseAdmin
-    .from('user_profiles')
-    .select('tier, temperature_score')
-    .eq('id', userId)
-    .single();
-
-  if (profileError) {
-    throw new Error(`Failed to fetch user profile: ${profileError.message}`);
+  if (!currentTier) {
+    throw new Error(`User profile not found for userId: ${userId}`);
   }
 
-  if (!profile) {
-    throw new Error('User profile not found');
+  // 새 티어 계산
+  const newTier = calculateTierFromTemperature(newTemperatureScore);
+
+  // 티어가 변경되지 않았으면 종료
+  if (currentTier === newTier) {
+    return {
+      tierChanged: false,
+      newTier,
+      previousTier: currentTier,
+    };
   }
 
-  // 2. 이전 티어는 user_profiles.tier에서 가져오기
-  const previousTier = (profile.tier as TierType) || TierType.bronze;
+  // 티어 업데이트
+  await userProfilesRepository.updateTier(supabaseAdmin, userId, newTier);
 
-  // 3. 새로운 온도로 티어 계산
-  const newTier = calculateTierFromTemperature(newTemperature);
-
-  // 4. 티어 변경 여부 확인
-  const tierChanged = previousTier !== newTier;
-
-  // 5. 항상 tier_history 테이블에 기록 (변경 여부와 관계없이)
+  // 티어 히스토리 기록
+  // previous_tier: 업데이트 전 user_profiles.tier 값
+  // current_tier: 변경된 새 티어 값
   await tierHistoryRepository.createTierHistory({
     user_id: userId,
-    previous_tier: previousTier,
+    previous_tier: currentTier,
     current_tier: newTier,
   });
 
-  // 6. 티어가 변경되었으면 user_profiles.tier 업데이트
-  if (tierChanged) {
-    const { error: updateError } = await supabaseAdmin
-      .from('user_profiles')
-      .update({ tier: newTier })
-      .eq('id', userId);
-
-    if (updateError) {
-      throw new Error(`Failed to update tier: ${updateError.message}`);
-    }
-  }
-
-  return { newTier, tierChanged };
+  return {
+    tierChanged: true,
+    newTier,
+    previousTier: currentTier,
+  };
 };
