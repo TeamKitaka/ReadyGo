@@ -39,9 +39,7 @@ export const updateTemperatureFromReview = async (
     .single();
 
   if (profileError) {
-    throw new Error(
-      `Failed to fetch user profile: ${profileError.message}`
-    );
+    throw new Error(`Failed to fetch user profile: ${profileError.message}`);
   }
 
   if (!profile) {
