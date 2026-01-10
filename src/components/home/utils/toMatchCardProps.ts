@@ -159,25 +159,29 @@ export function toMatchCardProps(apiResult: any): MatchCardProps {
     }
   }
 
-  // Fallback: preferences가 하나도 없으면 기본값 추가
-  if (preferences.length === 0) {
-    preferences.push(
-      {
-        icon: 'joystick-alt',
-        label: '게임 취향',
-        value: '다양한 게임',
-      },
-      {
-        icon: 'time',
-        label: '플레이 시간',
-        value: '유연한 시간',
-      },
-      {
-        icon: 'trophy',
-        label: '플레이 스타일',
-        value: '긍정적 플레이',
-      }
-    );
+  // Fallback: 최소 3개를 보장 (부족하면 기본값 추가)
+  const fallbackPreferences: MatchPreference[] = [
+    {
+      icon: 'joystick-alt',
+      label: '게임 취향',
+      value: '다양한 게임',
+    },
+    {
+      icon: 'time',
+      label: '플레이 시간',
+      value: '유연한 시간',
+    },
+    {
+      icon: 'trophy',
+      label: '플레이 스타일',
+      value: '긍정적 플레이',
+    },
+  ];
+
+  // 부족한 개수만큼 fallback 추가
+  const neededCount = 3 - preferences.length;
+  if (neededCount > 0) {
+    preferences.push(...fallbackPreferences.slice(0, neededCount));
   }
 
   return {
