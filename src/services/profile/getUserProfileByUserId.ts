@@ -1,9 +1,11 @@
 import * as userProfilesRepository from '@/repositories/userProfiles.repository';
 import * as userTraitsRepository from '@/repositories/userTraits.repository';
 import * as userPlaySchedulesRepository from '@/repositories/userPlaySchedules.repository';
+import * as steamUserStatsRepository from '@/repositories/steamUserStats.repository';
 import {
   ProfileCoreDTO,
   PlayScheduleItem,
+  SteamStatsDTO,
 } from '@/commons/types/profile/profileCore.dto';
 import { AnimalType } from '@/commons/constants/animal/animal.enum';
 import { TraitVector } from '@/commons/constants/animal/animal.vector';
@@ -74,6 +76,20 @@ export const getUserProfileByUserId = async (
     throw new ProfileFetchError('schedules', schedulesResult.error.message);
   }
 
+  // 4. steam_user_stats 조회
+  const steamStatsResult = await steamUserStatsRepository.findByUserId(
+    client,
+    targetUserId
+  );
+  const { data: steamStatsRow, error: steamStatsError } = steamStatsResult;
+
+  // 4-1. Repository 에러 처리 (에러는 무시하고 null로 처리)
+  if (steamStatsError) {
+    console.warn(
+      `[getUserProfileByUserId] Failed to fetch steam_user_stats: ${steamStatsError.message}`
+    );
+  }
+
   const traitsRow = traitsResult.data;
   const schedulesRows = schedulesResult.data || [];
 
@@ -94,6 +110,7 @@ export const getUserProfileByUserId = async (
   // 5. 정상 케이스 처리 및 ProfileCoreDTO 조립
   let traits: TraitVector | undefined = undefined;
   let schedule: PlayScheduleItem[] | undefined = undefined;
+  let steamStats: SteamStatsDTO | undefined = undefined;
 
   if (hasTraits && hasSchedules) {
     // 5-1. traits + schedule 모두 있는 경우 - 정상 케이스
@@ -112,6 +129,15 @@ export const getUserProfileByUserId = async (
   }
   // 5-2. traits + schedule 모두 없는 경우 - 정상 케이스 (undefined로 유지)
 
+  // 5-3. steam_user_stats 조립
+  if (steamStatsRow) {
+    steamStats = {
+      playStyle: steamStatsRow.play_style as 'casual' | 'regular' | 'hardcore',
+      avgWeeklyPlaytime: steamStatsRow.avg_weekly_playtime || 0,
+      mainGenres: steamStatsRow.main_genres || [],
+    };
+  }
+
   // 6. ProfileCoreDTO 반환
   // nickname, animalType 누락 허용 (기본값 자동 생성 ❌)
   // tier는 필수 필드이므로 기본값(silver) 제공
@@ -122,5 +148,6 @@ export const getUserProfileByUserId = async (
     animalType: profileRow.animal_type as AnimalType | null | undefined,
     traits,
     schedule,
+    steamStats,
   };
 };

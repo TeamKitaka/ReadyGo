@@ -35,6 +35,7 @@
 import type {
   MatchContextCoreDTO,
   UserMatchInput,
+  ReliabilityContextInput,
 } from '@/commons/types/match/matchContextCore.dto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
@@ -43,6 +44,9 @@ import type { TraitVector } from '@/commons/constants/animal/animal.vector';
 import * as userProfilesRepository from '@/repositories/userProfiles.repository';
 import * as userTraitsRepository from '@/repositories/userTraits.repository';
 import * as userPlaySchedulesRepository from '@/repositories/userPlaySchedules.repository';
+import * as steamUserStatsRepository from '@/repositories/steamUserStats.repository';
+import * as steamUserGamesRepository from '@/repositories/steamUserGames.repository';
+import { getPartyMemberCount } from '@/services/party/getPartyMemberCount.service';
 
 /**
  * MatchContext를 조립한다
@@ -83,16 +87,28 @@ export const buildMatchContext = async (
     viewerProfile,
     viewerTraits,
     viewerSchedules,
+    viewerSteamStats,
+    viewerSteamGames,
+    viewerPartyCount,
     targetProfile,
     targetTraits,
     targetSchedules,
+    targetSteamStats,
+    targetSteamGames,
+    targetPartyCount,
   ] = await Promise.all([
     userProfilesRepository.findByUserId(client, viewerId),
     userTraitsRepository.findByUserId(client, viewerId),
     userPlaySchedulesRepository.findByUserId(client, viewerId),
+    steamUserStatsRepository.findByUserId(client, viewerId),
+    steamUserGamesRepository.findAppIdsByUserId(client, viewerId),
+    getPartyMemberCount(viewerId),
     userProfilesRepository.findByUserId(client, targetUserId),
     userTraitsRepository.findByUserId(client, targetUserId),
     userPlaySchedulesRepository.findByUserId(client, targetUserId),
+    steamUserStatsRepository.findByUserId(client, targetUserId),
+    steamUserGamesRepository.findAppIdsByUserId(client, targetUserId),
+    getPartyMemberCount(targetUserId),
   ]);
 
   // 2. viewer의 하위 Context 조립
@@ -101,6 +117,11 @@ export const buildMatchContext = async (
     viewerProfile.data
   );
   const viewerActivityContext = assembleActivityContext(viewerSchedules.data);
+  const viewerSteamContext = assembleSteamContext(
+    viewerSteamStats.data,
+    viewerSteamGames.data
+  );
+  const viewerReliabilityContext = assembleReliabilityContext(viewerPartyCount);
 
   // 3. target의 하위 Context 조립
   const targetTraitsContext = assembleTraitsContext(
@@ -108,6 +129,11 @@ export const buildMatchContext = async (
     targetProfile.data
   );
   const targetActivityContext = assembleActivityContext(targetSchedules.data);
+  const targetSteamContext = assembleSteamContext(
+    targetSteamStats.data,
+    targetSteamGames.data
+  );
+  const targetReliabilityContext = assembleReliabilityContext(targetPartyCount);
 
   // 4. viewer UserMatchInput 조립
   // optional 필드는 값이 없으면 필드 자체를 포함하지 않음
@@ -117,7 +143,10 @@ export const buildMatchContext = async (
     ...(viewerActivityContext !== undefined && {
       activity: viewerActivityContext,
     }),
-    // steam, reliability는 미구현 상태이므로 필드 자체를 포함하지 않음
+    ...(viewerSteamContext !== undefined && { steam: viewerSteamContext }),
+    ...(viewerReliabilityContext !== undefined && {
+      reliability: viewerReliabilityContext,
+    }),
   };
 
   // 5. target UserMatchInput 조립
@@ -128,7 +157,10 @@ export const buildMatchContext = async (
     ...(targetActivityContext !== undefined && {
       activity: targetActivityContext,
     }),
-    // steam, reliability는 미구현 상태이므로 필드 자체를 포함하지 않음
+    ...(targetSteamContext !== undefined && { steam: targetSteamContext }),
+    ...(targetReliabilityContext !== undefined && {
+      reliability: targetReliabilityContext,
+    }),
   };
 
   // 6. MatchContext 반환 (불변 객체)
@@ -221,5 +253,74 @@ const assembleActivityContext = (
   // isOnline은 현재 미구현 상태로 필드 자체를 포함하지 않음
   return {
     schedule,
+  };
+};
+
+/**
+ * Steam Context 조립 (내부 헬퍼)
+ *
+ * @param steamStatsData - steam_user_stats 조회 결과의 data 필드
+ * @param steamGamesData - steam_user_games 조회 결과의 data 필드 (app_id 배열)
+ * @returns SteamContextInput 또는 undefined
+ *
+ * 📌 조립 규칙:
+ * - steam_user_stats와 steam_user_games 데이터가 모두 없으면 → undefined 반환
+ * - 데이터가 있으면 → SteamContextInput 구조로 변환
+ * - steamGames, mainGenres, playStyle 추출
+ * - 기본값 삽입 ❌
+ */
+const assembleSteamContext = (
+  steamStatsData: {
+    play_style: string;
+    avg_weekly_playtime: number;
+    main_genres: string[];
+  } | null,
+  steamGamesData: number[] | null
+) => {
+  // steam_user_stats와 steam_user_games 데이터가 모두 없으면 undefined 반환
+  if (!steamStatsData && (!steamGamesData || steamGamesData.length === 0)) {
+    return undefined;
+  }
+
+  // SteamContextInput 반환
+  const result = {
+    steamGames: steamGamesData || [],
+    mainGenres: steamStatsData?.main_genres || [],
+    playStyle: steamStatsData?.play_style as
+      | 'casual'
+      | 'regular'
+      | 'hardcore'
+      | undefined,
+  };
+
+  return result;
+};
+
+/**
+ * Reliability Context 조립 (내부 헬퍼)
+ *
+ * @param partyCount - 파티 참여 개수
+ * @returns ReliabilityContextInput 또는 undefined
+ *
+ * 📌 조립 규칙:
+ * - partyCount가 0 이상이면 → ReliabilityContextInput 반환
+ * - partyCount가 없으면 (undefined) → undefined 반환
+ * - reliabilityScore는 현재 미구현 (undefined)
+ * - 기본값 삽입 ❌
+ */
+const assembleReliabilityContext = (
+  partyCount: number
+): ReliabilityContextInput | undefined => {
+  // partyCount가 undefined이면 undefined 반환
+  // (getPartyMemberCount는 항상 number를 반환하므로 실제로는 항상 값이 있음)
+  if (partyCount === undefined) {
+    return undefined;
+  }
+
+  // ReliabilityContextInput 반환
+  return {
+    partyCount,
+    // reliabilityScore는 현재 미구현
+    // reliabilityScore: undefined,
   };
 };

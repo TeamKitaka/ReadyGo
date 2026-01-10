@@ -94,6 +94,10 @@ export type AnimalTypeMeta = {
     description: string;
   };
   checkSentences: string[];
+  unknownDescriptions?: {
+    my: string;
+    user: string;
+  };
   ui: {
     imageS: string;
     imageM: string;
@@ -122,6 +126,7 @@ export const animalTypeMeta: Record<AnimalType, AnimalTypeMeta> =
         mainRole: copy.mainRole,
         subRole: copy.subRole,
         checkSentences: copy.checkSentences,
+        unknownDescriptions: copy.unknownDescriptions,
         ui: assets,
       };
 

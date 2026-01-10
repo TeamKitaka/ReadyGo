@@ -8,6 +8,16 @@
   padding: 16px;
 }
 
+/* Cold Start: 중앙 정렬 */
+.containerCentered {
+  justify-content: center;
+}
+
+/* 일반: 상단 정렬 */
+.containerStart {
+  justify-content: flex-start;
+}
+
 /* 헤더 섹션 */
 .header {
   display: flex;
@@ -72,6 +82,40 @@
   color: var(--color-text-error);
 }
 
+/* 성향 분석 알림 컨테이너 */
+.traitsAlertContainer {
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 24px;
+}
+
+/* 스팀 알림 컨테이너 */
+.steamAlertContainer {
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 24px;
+}
+
+/* Empty State (성향 분석 미완료) */
+.emptyState {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  width: 100%;
+  padding: 40px;
+  text-align: center;
+}
+
+.emptyState p {
+  font-family: var(--typo-body-lg-font-family);
+  font-size: var(--typo-body-lg-font-size);
+  font-weight: var(--typo-body-lg-font-weight);
+  line-height: var(--typo-body-lg-line-height);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
 /* 반응형 레이아웃 */
 @media (max-width: 768px) {
   .header {
@@ -80,5 +124,10 @@
 
   .content {
     padding: 24px 32px;
+  }
+
+  .traitsAlertContainer,
+  .steamAlertContainer {
+    margin-bottom: 16px;
   }
 }

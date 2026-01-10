@@ -43,8 +43,14 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 import type { MatchResultDTO } from '@/commons/types/match/matchResult.dto';
+import type { MatchReasonCoreDTO } from '@/commons/types/match/matchReasonCore.dto';
+import type { MatchTagCoreDTO } from '@/commons/types/match/matchTagCore.dto';
 import { buildMatchContext } from './buildMatchContext.service';
 import { calculateFinalMatchScore } from '@/features/match/domain/score/calculateFinalMatchScore';
+import {
+  generateMatchReasons,
+  generateMatchTags,
+} from '@/features/match/domain/explanation';
 
 /**
  * 매칭 결과를 계산한다
@@ -77,13 +83,21 @@ export const calculateMatchResult = async (
   client: SupabaseClient<Database>,
   viewerId: string,
   targetUserId: string
-): Promise<MatchResultDTO> => {
+): Promise<
+  MatchResultDTO & { reasons: MatchReasonCoreDTO[]; tags: MatchTagCoreDTO[] }
+> => {
   // 1. Context 조립 (전용 Service에 위임)
   const context = await buildMatchContext(client, viewerId, targetUserId);
 
-  // 2. Domain 단일 진입점 호출 (점수 계산 로직은 Domain에 완전히 위임)
+  // 2. Domain 계산 (3개 함수 호출)
   const result = calculateFinalMatchScore(context);
+  const reasons = generateMatchReasons(context); // Domain이 만든 그대로
+  const tags = generateMatchTags(context); // Domain이 만든 그대로
 
-  // 3. Domain 반환값을 그대로 신뢰하여 반환 (재해석/가공 없음)
-  return result;
+  // 3. 통합 반환 (가공 ❌)
+  return {
+    ...result,
+    reasons,
+    tags,
+  };
 };

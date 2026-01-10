@@ -1,0 +1,164 @@
+아래의 조건을 모두 적용하여, 아래의 요구사항을 모두 구현할 것.
+구현 결과를 체크리스트로 반환할 것.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하여 작업하고, 이 작업이 끝나면 해당 rules 적용 결과를 체크리스트로 반환할 것.
+	- Hook은 데이터 fetch 및 상태 관리만 수행
+	- API 호출만 담당, 비즈니스 로직 금지
+	- 데이터 변환은 Utils에 위임
+	- useState, useEffect 사용하여 상태 관리
+	- loading, error 상태 포함
+	- 의존성 배열 명확히 관리
+
+==============================================
+
+조건-파일경로) 참고 및 기준 파일 경로는 다음과 같다.
+	- 구현 대상:
+		- src/components/home/hooks/useHomeMatches.ts
+	- 의존:
+		- src/components/home/hooks/useProfile.ts (userId 획득)
+		- src/components/home/utils/toMatchCardProps.ts (변환 유틸)
+		- /api/match/results (API 엔드포인트)
+	- 참고 패턴:
+		- src/components/home/hooks/useProfile.ts
+		- src/hooks/useMatchResults.ts
+
+==============================================
+
+조건-구현참고) 반드시 참고할 기존 구현 패턴은 다음과 같다.
+	- useProfile.ts는 현재 사용자 프로필 조회
+	- useMatchResults.ts는 매칭 결과 조회 및 상태 관리
+	- toMatchCardProps는 API 응답 → UI Props 변환
+	- API는 /api/match/results (GET)
+
+==============================================
+
+핵심요구사항) 다음 기능을 step-by-step으로 구현하고, 각 항목의 적용 여부를 체크리스트로 반환할 것.
+
+0) 파일/Export 규칙
+	- 파일 위치: src/components/home/hooks/useHomeMatches.ts
+	- named export로 Hook 함수 export
+	- 함수명: useHomeMatches
+
+1) 함수 시그니처
+	- 함수명: useHomeMatches
+	- 입력: 없음 (내부에서 useProfile로 userId 획득)
+	- 반환:
+		{
+			matchCards: MatchCardProps[]
+			loading: boolean
+			error: Error | null
+		}
+
+2) 상태 관리
+	- matchCards: MatchCardProps[] (초기값 [])
+	- loading: boolean (초기값 false)
+	- error: Error | null (초기값 null)
+	- useState로 각각 관리
+
+3) 데이터 fetch 흐름
+	- useProfile로 현재 사용자 정보 획득
+	- userId 없으면:
+		- matchCards = []
+		- 조기 return (API 호출 안 함)
+	- userId 있으면:
+		1. loading = true 설정
+		2. /api/match/results GET 요청 (credentials: 'include')
+		3. 응답 성공 시:
+			- data.results를 toMatchCardProps로 변환
+			- matchCards 설정
+		4. 응답 실패 시:
+			- error 설정
+			- matchCards = []
+		5. finally:
+			- loading = false
+
+4) useEffect 의존성
+	- 의존성 배열: [profileViewModel?.userId]
+	- userId 변경 시에만 재실행
+	- userId 없으면 조기 return
+
+5) 에러 처리
+	- try-catch로 API 에러 핸들링
+	- console.error로 로그 출력
+	- error 상태에 Error 객체 저장
+	- matchCards는 빈 배열로 초기화
+
+6) 금지 사항
+	- 비즈니스 로직 포함 ❌
+	- 점수 계산 ❌
+	- 필터링/정렬 ❌ (API에서 처리)
+	- Service/Repository 직접 호출 ❌ (API만 호출)
+	- 데이터 변환 직접 구현 ❌ (toMatchCardProps 사용)
+
+7) 의존성 규칙
+	- 허용:
+		- useProfile (userId 획득)
+		- toMatchCardProps (변환)
+		- fetch API
+	- 금지:
+		- Service/Repository 직접 호출 ❌
+		- Domain 로직 ❌
+		- Store 직접 접근 ❌
+
+==============================================
+
+조건-Service/Repository 책임)
+	- 해당 작업은 Hook 책임
+	- Service/Repository 수정 금지
+	- API를 통해서만 데이터 획득
+
+==============================================
+
+조건-UI 책임)
+	- 해당 작업은 Hook 책임
+	- UI 컴포넌트에서는 이 Hook을 호출만 함
+	- UI 파일 생성/수정은 별도 작업
+
+==============================================
+
+구현 완료 후 반환) 아래 체크리스트를 반드시 반환할 것.
+	1. Hook 정체성
+		- 데이터 fetch 및 상태 관리만
+		- 비즈니스 로직 없음
+		- API 호출만 담당
+
+	2. 파일 / 위치 / export
+		- 파일 위치: src/components/home/hooks/useHomeMatches.ts
+		- named export: useHomeMatches
+
+	3. 함수 시그니처
+		- 입력: 없음
+		- 반환: { matchCards, loading, error }
+
+	4. 상태 관리
+		- matchCards: MatchCardProps[]
+		- loading: boolean
+		- error: Error | null
+		- useState 사용
+
+	5. 데이터 fetch 흐름
+		- useProfile로 userId 획득
+		- userId 없으면 조기 return
+		- /api/match/results GET 요청
+		- toMatchCardProps로 변환
+
+	6. useEffect 의존성
+		- [profileViewModel?.userId]
+		- userId 변경 시 재실행
+
+	7. 에러 처리
+		- try-catch 사용
+		- console.error 로그
+		- error 상태 설정
+
+	8. 금지 사항
+		- 비즈니스 로직 없음
+		- Service/Repository 직접 호출 안 함
+		- 데이터 변환 직접 안 함
+
+	9. 의존성 규칙
+		- useProfile, toMatchCardProps만 의존
+		- API 호출만
+

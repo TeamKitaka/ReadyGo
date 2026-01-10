@@ -130,6 +130,7 @@ import { calculateBaseSimilarity } from './calculateBaseSimilarity';
 import { calculateAnimalCompatibilityFactor } from './applyAnimalCompatibility';
 import { calculateScheduleCompatibilityFactor } from './calculateScheduleCompatibilityFactor';
 import { calculateOnlineFactor } from './calculateAvailabilityFactor';
+import { calculateSteamCompatibilityFactor } from './applySteamBonus';
 
 /**
  * 최종 매칭 점수 계산 (단일 진입점)
@@ -264,27 +265,20 @@ export const calculateFinalMatchScore = (
   // 4. 온라인 팩터 (multiplicative)
   const onlineFactor = calculateOnlineFactor(context);
 
-  // 5. 최종 점수 계산 (모든 팩터를 곱셈으로 적용)
-  const rawScore = baseScore * animalFactor * scheduleFactor * onlineFactor;
+  // 5. Steam 호환성 팩터 (multiplicative) - 항상 마지막에 적용
+  const steamFactor = calculateSteamCompatibilityFactor(context);
 
-  // 6. 반올림 및 범위 제한 (0~100)
-  const finalScore = Math.min(100, Math.max(0, Math.round(rawScore)));
+  // 6. 최종 점수 계산 (모든 팩터를 곱셈으로 적용)
+  // ⚠️ 중요: Steam Factor는 항상 마지막에 곱함
+  // - Steam이 "좋은 관계를 더 좋게" 만드는 역할
+  // - Steam만 비슷한데 성향 안 맞는 케이스 방지
+  // - 성향(baseScore)이 가장 중요한 요소로 유지
+  const rawScore =
+    baseScore * animalFactor * scheduleFactor * onlineFactor * steamFactor;
 
-  // 디버깅: 100점인 경우 계산 과정 로깅 (개발 환경에서만)
-  if (process.env.NODE_ENV === 'development' && finalScore === 100) {
-    // eslint-disable-next-line no-console
-    console.log('[Match Score Debug] 100% detected:', {
-      targetUserId: context.target.userId,
-      baseScore,
-      animalFactor,
-      scheduleFactor,
-      onlineFactor,
-      rawScore,
-      finalScore,
-      viewerTraits: context.viewer.traits?.traits,
-      targetTraits: context.target.traits?.traits,
-    });
-  }
+  // 7. 반올림 및 범위 제한 (0~95)
+  // 최대 95%로 제한하여 "완벽한 매칭"의 비현실성 방지
+  const finalScore = Math.min(95, Math.max(0, Math.round(rawScore)));
 
   // 7. 메타 정보 생성
   const targetOnline = context.target.activity?.isOnline;

@@ -22,6 +22,10 @@ export type AnimalCopy = {
     description: string;
   };
   checkSentences: string[];
+  unknownDescriptions?: {
+    my: string;
+    user: string;
+  };
 };
 
 // ============================================
@@ -364,6 +368,10 @@ export const animalCopies: Record<AnimalType, AnimalCopy> = {
       '테스트를 통해 나에게 맞는 플레이 스타일을 찾아보세요.',
       '내 플레이 스타일 알아보기 버튼을 눌러 테스트를 시작하세요.',
     ],
+    unknownDescriptions: {
+      my: '아직 내 게임 타입이 없어요',
+      user: '아직 상대방의 게임 타입이 없어요',
+    },
   },
 } as const;
 

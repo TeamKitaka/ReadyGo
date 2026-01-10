@@ -34,10 +34,34 @@ export interface MatchReasonViewModel {
   type: string;
 
   /**
+   * 아이콘 이모지
+   *
+   * UI에서 reason 앞에 표시할 아이콘
+   * 예: '🎮', '🤝', '⏰'
+   */
+  icon: string;
+
+  /**
+   * 짧은 라벨
+   *
+   * 간결한 카테고리 표시용 (태그)
+   * 예: '동일게임', '리더형', '아침형'
+   */
+  label: string;
+
+  /**
+   * 중간 길이 설명
+   *
+   * 프로필 패널에서 사용하는 설명적 문구
+   * 예: '동일 게임 선호', '팀플레이 스타일 유사', '주로 오전 활동'
+   */
+  shortDescription: string;
+
+  /**
    * 메인 문구
    *
-   * UI에서 그대로 출력 가능한 자연어 문장
-   * 예: '공통 게임 5개 보유', '플레이 스타일 82% 유사'
+   * UI에서 그대로 출력 가능한 자연어 완전한 문장
+   * 예: '3개의 같은 게임을 플레이해요', '팀 플레이를 중요하게 여겨요'
    */
   primaryText: string;
 
@@ -45,7 +69,7 @@ export interface MatchReasonViewModel {
    * 보조 문구 (선택)
    *
    * 메인 문구를 보완하는 추가 정보
-   * 예: 'Dota 2, CS2', '협동 플레이 성향 일치'
+   * 예: 'Dota 2, CS2', '협동 성향이 높아요'
    */
   secondaryText?: string;
 
@@ -56,6 +80,14 @@ export interface MatchReasonViewModel {
    * 예: ONLINE_NOW는 항상 true
    */
   isHighlight: boolean;
+
+  /**
+   * Fallback 여부
+   *
+   * Domain에서 의미있는 데이터가 아닌 UI fallback인지 표시
+   * true면 연한 스타일로 표시
+   */
+  isFallback?: boolean;
 }
 
 /**

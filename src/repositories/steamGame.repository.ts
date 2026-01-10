@@ -27,6 +27,7 @@ export const upsertSteamGame = async (input: SteamGameUpsertInput) => {
  * 책임:
  * - 여러 app_id가 steam_game_info에 존재하는지 배치 조회
  * - 존재하는 app_id 배열 반환
+ * - URL 길이 제한 방지를 위해 청크 단위로 조회
  *
  * @param appIds - 확인할 app_id 배열
  * @returns 존재하는 app_id 배열
@@ -36,16 +37,30 @@ export const checkGameExists = async (appIds: number[]): Promise<number[]> => {
     return [];
   }
 
-  const { data, error } = await supabaseAdmin
-    .from('steam_game_info')
-    .select('app_id')
-    .in('app_id', appIds);
+  // URL 길이 제한 방지: 100개씩 배치 처리
+  const CHUNK_SIZE = 100;
+  const allExistingIds: number[] = [];
 
-  if (error) {
-    throw error;
+  const chunks = Array.from(
+    { length: Math.ceil(appIds.length / CHUNK_SIZE) },
+    (_, i) => appIds.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE)
+  );
+
+  // eslint-disable-next-line no-restricted-syntax
+  for (const chunk of chunks) {
+    const { data, error } = await supabaseAdmin
+      .from('steam_game_info')
+      .select('app_id')
+      .in('app_id', chunk);
+
+    if (error) {
+      throw error;
+    }
+
+    allExistingIds.push(...data.map((row) => row.app_id));
   }
 
-  return data.map((row) => row.app_id);
+  return allExistingIds;
 };
 
 /**

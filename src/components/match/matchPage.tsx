@@ -3,34 +3,23 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import styles from './styles.module.css';
 import { MatchList } from './ui';
+import MatchListSkeleton from './ui/match-list/matchListSkeleton';
 import { useMatchFilters } from './hooks/useMatchFilters';
 import { useSidePanelStore } from '@/stores/sidePanel.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { useMatchResults } from '@/hooks/useMatchResults';
+import { useMatchList } from '@/hooks/useMatchList';
 import { MatchData } from './types/match.types';
 import { getEffectiveStatus } from '@/stores/user-status.store';
 import { usePresenceStore } from '@/stores/presence.store';
 import { useProfileBinding } from '@/components/overlay/profile/hooks/index.binding.hook';
 import { useSteamOAuth } from '@/components/auth/hooks/useSteamOAuth.hook';
 import { SteamAlert } from '@/commons/layout/ui/steamAlert';
-
-interface MatchResultWithProfile {
-  targetUserId: string;
-  finalScore: number;
-  isOnlineMatched: boolean;
-  availabilityHint: 'online' | 'offline' | 'unknown';
-  profile?: {
-    nickname: string;
-    avatarUrl?: string;
-    animalType?: string;
-  };
-  status?: 'online' | 'offline';
-}
+import { TraitsAlert } from '@/commons/layout/ui/traitsAlert';
+import { AnimalType } from '@/commons/constants/animal/animal.enum';
 
 export default function Match() {
   // 현재 로그인한 사용자 정보
-  const { user } = useAuthStore();
-  const viewerId = user?.id;
+  useAuthStore();
 
   // 스팀 연동 상태 확인
   const { profileData: profileBindingData, isLoading: profileBindingLoading } =
@@ -54,33 +43,52 @@ export default function Match() {
     setIsSteamAlertDismissed(true);
   };
 
+  // 성향 분석 완료 여부 확인
+  const isTraitsCompleted =
+    !profileBindingLoading &&
+    profileBindingData.animalType !== null &&
+    profileBindingData.animalType !== 'unknown' &&
+    profileBindingData.animalType !== AnimalType.unknown;
+
   // 스팀 연동 여부 확인 (로딩 완료 후에만 확인)
   const isSteamNotConnected =
     !profileBindingLoading && profileBindingData.isSteamConnected === false;
+  const isSteamConnected =
+    !profileBindingLoading && profileBindingData.isSteamConnected === true;
 
-  // 스팀 알림 배너 표시 조건: 스팀 미연동 && 닫지 않음 && 로딩 완료
-  // 매칭 페이지에서는 테스트 완료 여부와 관계없이 스팀 미연동 회원에게 표시
+  // 안내 배너 표시 우선순위:
+  // 1순위: 성향 분석 미완료 → TraitsAlert
+  // 2순위: 성향 완료 + 스팀 미연동 + 닫지 않음 → SteamAlert
+  const shouldShowTraitsAlert = !profileBindingLoading && !isTraitsCompleted;
   const shouldShowSteamAlert =
-    !profileBindingLoading && isSteamNotConnected && !isSteamAlertDismissed;
+    !profileBindingLoading &&
+    isTraitsCompleted &&
+    isSteamNotConnected &&
+    !isSteamAlertDismissed;
 
   // 디버깅용 로그 (개발 환경에서만)
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       // eslint-disable-next-line no-console
-      console.log('Steam Alert Debug:', {
+      console.log('Match Alert Debug:', {
         profileBindingLoading,
+        isTraitsCompleted,
         isSteamNotConnected,
         isSteamAlertDismissed,
+        shouldShowTraitsAlert,
         shouldShowSteamAlert,
         profileBindingData: {
+          animalType: profileBindingData.animalType,
           isSteamConnected: profileBindingData.isSteamConnected,
         },
       });
     }
   }, [
     profileBindingLoading,
+    isTraitsCompleted,
     isSteamNotConnected,
     isSteamAlertDismissed,
+    shouldShowTraitsAlert,
     shouldShowSteamAlert,
     profileBindingData,
   ]);
@@ -100,10 +108,8 @@ export default function Match() {
   // side-panel 상태 관리
   const { isOpen, targetUserId, open, close } = useSidePanelStore();
 
-  // 매칭 결과 가져오기 (전체)
-  const { results, loading, error, refetch } = useMatchResults(viewerId || '', {
-    sortBy: 'score',
-  });
+  // 매칭 결과 가져오기 (초기 로드만, 필터는 버튼 클릭 시 적용)
+  const { results, loading, error, refetch } = useMatchList();
 
   // 매칭 결과를 MatchData 형식으로 변환 및 Presence 기반 정렬
   const matchData = useMemo(() => {
@@ -111,23 +117,28 @@ export default function Match() {
       return [];
     }
 
-    // API에서 이미 프로필과 상태 정보가 포함되어 있으므로 바로 변환
+    // useMatchList API 응답 형식에 맞게 변환
     const matchDataArray: MatchData[] = results.map((result, index) => {
-      const enrichedResult = result as MatchResultWithProfile;
+      // getMatchList 서비스에서 enrichAndSort를 거친 결과 구조
+      const targetUserId =
+        result.profile?.userId || result.target_id || result.targetUserId;
+      const score = result.score || result.finalScore || 0;
+
       return {
         id: index + 1,
-        userId: result.targetUserId,
-        nickname: enrichedResult.profile?.nickname || '알 수 없음',
-        matchRate: Math.round(result.finalScore),
-        status: enrichedResult.status || 'offline',
-        avatarUrl: enrichedResult.profile?.avatarUrl,
-        tags: [], // TODO: 나중에 user traits에서 가져오기
+        userId: targetUserId,
+        nickname: result.profile?.nickname || '알 수 없음',
+        matchRate: Math.round(score),
+        status: result.status || 'offline',
+        avatarUrl: result.profile?.avatarUrl,
+        tags: [], // 하위 호환용 (곧 제거 예정)
+        reasons: result.reasons || [], // CoreDTO 전달
+        tagsV2: result.tags || [], // CoreDTO 전달
       };
     });
 
-    // Presence 기반 실시간 정렬
-    // 1순위: 온라인 상태 (Presence 기반)
-    // 2순위: 매칭 점수 높은 순
+    // 서버에서 이미 Fisher-Yates shuffle로 랜덤 정렬됨
+    // 단, Presence 변경 시에만 온라인 우선 재정렬
     return matchDataArray.sort((a, b) => {
       const aStatus = getEffectiveStatus(a.userId);
       const bStatus = getEffectiveStatus(b.userId);
@@ -140,72 +151,118 @@ export default function Match() {
         return aOnline ? -1 : 1;
       }
 
-      // 온라인 상태가 같으면 점수 높은 순
-      return b.matchRate - a.matchRate;
+      // 온라인 상태가 같으면 서버의 랜덤 순서 유지 (정렬 안 함)
+      return 0;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results, presenceUserIds]); // Presence 변경 시 재정렬 (presenceUserIds는 getEffectiveStatus 내부에서 사용됨)
 
   // 프로필 클릭 핸들러
-  const handleProfileClick = (userId: string) => {
+  const handleProfileClick = async (userId: string) => {
     if (isOpen && targetUserId === userId) {
       close();
     } else {
-      open(userId);
+      // 프로필 조회 이력 기록 (비동기, 백그라운드)
+      fetch('/api/match/view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUserId: userId }),
+        credentials: 'include',
+      }).catch((err) => {
+        console.error('[Match] Failed to log profile view:', err);
+      });
+
+      // 해당 userId의 matchData 찾기
+      const targetMatch = matchData.find((m) => m.userId === userId);
+
+      // matchData와 함께 전달 (즉시 표시, 재계산 불필요)
+      open(
+        userId,
+        targetMatch
+          ? {
+              finalScore: targetMatch.matchRate,
+              reasons: targetMatch.reasons,
+              tags: targetMatch.tagsV2,
+            }
+          : undefined
+      );
     }
   };
 
-  // 갱신 핸들러 (useMatchFilters의 handleRefresh + useMatchResults의 refetch 결합)
+  // 갱신 핸들러 (셀렉트박스 선택 후 버튼 클릭 시 서버에 재요청)
   const handleRefreshWithData = () => {
-    handleRefresh();
-    refetch();
+    handleRefresh(); // useMatchFilters의 내부 로직 (현재는 TODO)
+
+    // 최신 필터 옵션으로 서버에 재요청 (캐시 스킵 + 실시간 계산)
+    refetch({
+      minScore: selectedMatchRate ? Number(selectedMatchRate) : undefined,
+      statusFilter: (selectedStatus as 'all' | 'online' | 'offline') || 'all',
+      refresh: true, // 🔥 캐시 스킵, 강제 실시간 계산
+    });
   };
 
+  // Cold Start 상태에 따라 컨테이너 클래스 변경
+  const containerClasses = [
+    styles.container,
+    shouldShowTraitsAlert ? styles.containerCentered : styles.containerStart,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className={styles.container}>
-      {/* 스팀 연동 알림 배너 (레이아웃 헤더 아래, 매칭 찾기 타이틀 위) */}
-      {shouldShowSteamAlert && (
-        <SteamAlert
-          onConnect={handleSteamLink}
-          onClose={handleSteamAlertClose}
-          className={styles.steamAlertContainer}
-        />
+    <div className={containerClasses}>
+      {/* 성향 분석 안내 배너 (1순위) */}
+      {shouldShowTraitsAlert && (
+        <TraitsAlert className={styles.traitsAlertContainer} />
       )}
 
-      <div className={styles.content}>
-        {/* 헤더 섹션 */}
-        <div className={styles.header}>
-          <h1 className={styles.title}>매칭 찾기</h1>
-          <p className={styles.subtitle}>너랑 딱 맞는 게임 친구를 찾아봐</p>
-        </div>
+      {/* Cold Start가 아닐 때만 나머지 UI 표시 */}
+      {!shouldShowTraitsAlert && (
+        <>
+          {/* 스팀 연동 알림 배너 (2순위) */}
+          {shouldShowSteamAlert && (
+            <SteamAlert
+              onConnect={handleSteamLink}
+              onClose={handleSteamAlertClose}
+              className={styles.steamAlertContainer}
+            />
+          )}
 
-        {/* 로딩 상태 */}
-        {loading && (
-          <div className={styles.loading}>매칭 결과를 불러오는 중...</div>
-        )}
+          <div className={styles.content}>
+            {/* 헤더 섹션 */}
+            <div className={styles.header}>
+              <h1 className={styles.title}>매칭 찾기</h1>
+              <p className={styles.subtitle}>너랑 딱 맞는 게임 친구를 찾아봐</p>
+            </div>
 
-        {/* 에러 상태 */}
-        {error && (
-          <div className={styles.error}>
-            매칭 결과를 불러오는 데 실패했습니다: {error.message}
+            {/* 로딩 상태 */}
+            {loading && <MatchListSkeleton isSidePanelOpen={isOpen} />}
+
+            {/* 에러 상태 */}
+            {error && (
+              <div className={styles.error}>
+                매칭 결과를 불러오는 데 실패했습니다: {error.message}
+              </div>
+            )}
+
+            {/* 매치 리스트 섹션 */}
+            {!loading && !error && (
+              <MatchList
+                matches={matchData}
+                selectedMatchRate={selectedMatchRate}
+                selectedStatus={selectedStatus}
+                isSidePanelOpen={isOpen}
+                activeProfileUserId={targetUserId}
+                isSteamConnected={isSteamConnected}
+                onMatchRateChange={handleMatchRateChange}
+                onStatusChange={handleStatusChange}
+                onRefresh={handleRefreshWithData}
+                onProfileClick={handleProfileClick}
+              />
+            )}
           </div>
-        )}
-
-        {/* 매치 리스트 섹션 */}
-        {!loading && !error && (
-          <MatchList
-            matches={matchData}
-            selectedMatchRate={selectedMatchRate}
-            selectedStatus={selectedStatus}
-            isSidePanelOpen={isOpen}
-            activeProfileUserId={targetUserId}
-            onMatchRateChange={handleMatchRateChange}
-            onStatusChange={handleStatusChange}
-            onRefresh={handleRefreshWithData}
-            onProfileClick={handleProfileClick}
-          />
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }
