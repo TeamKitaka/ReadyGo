@@ -20,6 +20,7 @@ describe('steamUserStats.repository', () => {
       };
 
       const result = await steamUserStatsRepository.findByUserId(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mockClient as any,
         'user-123'
       );
@@ -45,6 +46,7 @@ describe('steamUserStats.repository', () => {
       };
 
       const result = await steamUserStatsRepository.findByUserId(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mockClient as any,
         'user-without-steam'
       );
@@ -72,6 +74,7 @@ describe('steamUserStats.repository', () => {
         active_time_slots: [],
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await steamUserStatsRepository.upsert(mockClient as any, input);
 
       expect(mockClient.from).toHaveBeenCalledWith('steam_user_stats');

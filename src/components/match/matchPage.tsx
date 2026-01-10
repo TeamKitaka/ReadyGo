@@ -120,9 +120,10 @@ export default function Match() {
     // useMatchList API 응답 형식에 맞게 변환
     const matchDataArray: MatchData[] = results.map((result, index) => {
       // getMatchList 서비스에서 enrichAndSort를 거친 결과 구조
-      const targetUserId = result.profile?.userId || result.target_id || result.targetUserId;
+      const targetUserId =
+        result.profile?.userId || result.target_id || result.targetUserId;
       const score = result.score || result.finalScore || 0;
-      
+
       return {
         id: index + 1,
         userId: targetUserId,
@@ -191,11 +192,11 @@ export default function Match() {
   // 갱신 핸들러 (셀렉트박스 선택 후 버튼 클릭 시 서버에 재요청)
   const handleRefreshWithData = () => {
     handleRefresh(); // useMatchFilters의 내부 로직 (현재는 TODO)
-    
+
     // 최신 필터 옵션으로 서버에 재요청 (캐시 스킵 + 실시간 계산)
     refetch({
       minScore: selectedMatchRate ? Number(selectedMatchRate) : undefined,
-      statusFilter: selectedStatus as 'all' | 'online' | 'offline' || 'all',
+      statusFilter: (selectedStatus as 'all' | 'online' | 'offline') || 'all',
       refresh: true, // 🔥 캐시 스킵, 강제 실시간 계산
     });
   };
