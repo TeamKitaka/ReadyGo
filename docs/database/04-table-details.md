@@ -37,7 +37,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | animal_type       | text        | ❌       | 성향 동물 타입                   |
 | steam_id          | text        | ⭕       | Steam 계정 ID                    |
 | tier              | text        | ❌       | 현재 티어                        |
-| temperature_score | int         | ❌       | 온도 점수                        |
+| temperature_score | numeric     | ❌       | 온도 점수                        |
 | status_message    | text        | ⭕       | 상태 메시지                      |
 | created_at        | timestamptz | ⭕       | 생성 시각                        |
 | updated_at        | timestamptz | ⭕       | 수정 시각                        |
@@ -545,7 +545,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | ---------- | ----------- | -------- | ----------- |
 | id         | bigint      | ❌       | PK          |
 | user_id    | uuid        | ⭕       | 유저        |
-| change     | int         | ⭕       | 점수 변화   |
+| change     | numeric     | ⭕       | 점수 변화   |
 | reason     | text        | ⭕       | 변경 사유   |
 | created_at | timestamptz | ⭕       | 발생 시각   |
 
@@ -600,7 +600,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
 - **Last Updated At**: 2026-01-09
-- **Document Version**: v1.0.12
+- **Document Version**: v1.0.13
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
@@ -621,5 +621,6 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 |  v1.0.8 | 2025-01-13 | chat_blocks 테이블명을 user_blocks로 변경, User/Profile Domain으로 이동                                      |
 |  v1.0.9 | 2025-01-15 | chat_message_reads 테이블: message_id, user_id를 NOT NULL로 변경, (message_id, user_id) UNIQUE 제약조건 추가 |
 | v1.0.10 | 2025-01-07 | Steam Domain에 steam_user_stats 테이블 추가, 테이블 번호 재정렬 (27~37번)                                    |
-| v1.0.11 | 2026-01-09 | Match Domain에 match_results_cache 테이블 추가 (Step 1 캐싱 시스템)                                          |
-| v1.0.12 | 2026-01-09 | match_results_cache에 context 컬럼 추가, match_exposure_log 테이블 추가 (Step 2 중복 방지 + 5분 TTL)         |
+| v1.0.11 | 2025-01-15 | user_profiles.temperature_score, temperature_logs.change 컬럼 타입을 int → numeric으로 변경                  |
+| v1.0.12 | 2026-01-09 | Match Domain에 match_results_cache 테이블 추가 (Step 1 캐싱 시스템)                                          |
+| v1.0.13 | 2026-01-09 | match_results_cache에 context 컬럼 추가, match_exposure_log 테이블 추가 (Step 2 중복 방지 + 5분 TTL)         |

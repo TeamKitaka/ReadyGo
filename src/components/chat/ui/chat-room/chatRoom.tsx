@@ -12,6 +12,8 @@ import { AnimalType } from '@/commons/constants/animal';
 import { useSideProfilePanel } from '@/hooks/useSideProfilePanel';
 import { useChatRoom, useChatRoomInput } from '@/components/chat/hooks';
 import { formatDateDivider } from '@/lib/chat/messageFormatter';
+import { useModal } from '@/commons/providers/modal/modal.provider';
+import ReviewSubmit from '@/components/review-submit/ReviewSubmit';
 
 interface ChatRoomProps {
   roomId?: string;
@@ -21,6 +23,9 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
   // 사이드 프로필 패널 제어
   const { toggleProfile, openProfile, isOpen, targetUserId } =
     useSideProfilePanel();
+
+  // 모달 제어
+  const { openModal } = useModal();
 
   // roomId를 number로 변환 (NaN 처리 포함)
   const roomIdNumber = isNaN(parseInt(roomId || '', 10))
@@ -61,11 +66,46 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
     handleSendMessage,
     handleKeyDown,
     handleGameStart,
+    timerCount,
+    isTimerActive,
+    setTimerEndCallback,
   } = useChatRoomInput({
     sendMessage,
     isBlocked,
     otherMemberNickname: otherMemberInfo?.nickname,
+    roomId: roomIdNumber,
+    otherMemberId: otherMemberInfo?.id,
   });
+
+  // 타이머 종료 시 후기 모달 표시
+  useEffect(() => {
+    if (!otherMemberInfo?.id || !otherMemberInfo?.nickname) {
+      return;
+    }
+
+    const handleTimerEnd = () => {
+      // 후기 작성 모달 열기
+      openModal({
+        component: ReviewSubmit,
+        componentProps: {
+          targetUserId: otherMemberInfo.id,
+          targetNickname: otherMemberInfo.nickname,
+          onClose: () => {
+            // 모달 닫기 (기본 동작)
+          },
+          onSuccess: () => {
+            // 후기 제출 성공 시 모달 닫기
+          },
+        },
+      });
+    };
+
+    setTimerEndCallback(handleTimerEnd);
+
+    return () => {
+      setTimerEndCallback(() => {});
+    };
+  }, [otherMemberInfo, openModal, setTimerEndCallback]);
 
   // 채팅방이 변경될 때 사이드 패널이 열려있다면 새로운 상대방의 프로필로 자동 업데이트
   useEffect(() => {
@@ -409,13 +449,22 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
           variant="primary"
           size="m"
           shape="rectangle"
-          disabled={isBlocked || !otherMemberInfo}
-          aria-label="게임시작"
+          disabled={isBlocked || !otherMemberInfo || isTimerActive}
+          aria-label={isTimerActive ? '타이머 진행 중' : '게임시작'}
           className={styles.gameStartButton}
           onClick={handleGameStart}
         >
-          <Icon name="gamepad" size={20} />
-          <span className={styles.gameStartButtonText}>게임시작</span>
+          {isTimerActive && timerCount !== null ? (
+            <>
+              <Icon name="time" size={20} />
+              <span className={styles.gameStartButtonText}>{timerCount}초</span>
+            </>
+          ) : (
+            <>
+              <Icon name="gamepad" size={20} />
+              <span className={styles.gameStartButtonText}>게임시작</span>
+            </>
+          )}
         </Button>
       </div>
     </div>

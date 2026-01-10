@@ -1,0 +1,121 @@
+아래의 조건을 모두 적용하여, 아래의 요구사항을 모두 구현할 것.
+구현 결과를 체크리스트로 반환할 것.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하여 작업하고, 이 작업이 끝나면 해당 rules 적용 결과를 체크리스트로 반환할 것.
+            - @01-common.mdc
+            - @04-func.mdc
+
+==============================================
+
+조건-파일경로) 참고 및 기준 파일 경로는 다음과 같다.
+            - 수정할 TSX 파일경로: src/app/temp/page.tsx
+            - 사용할 Hook 파일경로:
+                - src/hooks/useGameLinkPreview.ts
+                - src/hooks/useGameSelectModal.ts
+            - 사용할 컴포넌트 파일경로:
+                - src/commons/components/game-link-preview/index.tsx
+                - src/commons/components/game-select-modal/index.tsx
+
+==============================================
+
+조건-구현참고) 반드시 참고할 기존 구현 패턴은 다음과 같다.
+            - 기존 테스트 페이지의 구조를 유지할 것
+            - 기존 게임 정보 조회 로직을 제거하고 새 Hook으로 교체할 것
+            - 채팅 기능은 그대로 유지할 것
+
+==============================================
+
+핵심요구사항) 다음 기능을 step-by-step으로 구현하고, 각 항목의 적용 여부를 체크리스트로 반환할 것.
+
+1. 기존 코드 제거
+    - 기존 게임 정보 조회 로직 제거
+    - 기존 게임 링크 감지 로직 제거 (있는 경우)
+    - 기존 상태 관리 코드 제거 (게임 정보 관련)
+
+2. Hook 통합
+    - useGameLinkPreview Hook import 및 사용
+        - messageContent를 message로 전달
+        - 반환된 detectedAppId, gameInfo, loading, error 사용
+    - useGameSelectModal Hook import 및 사용
+        - 반환된 모든 값과 함수 사용
+
+3. 컴포넌트 통합
+    - GameLinkPreview 컴포넌트 import 및 사용
+        - gameInfo, appId (detectedAppId), loading, onGameStart 전달
+        - onGameStart는 게임 선택 모달을 여는 함수
+    - GameSelectModal 컴포넌트 import 및 사용
+        - isOpen, onClose, onConfirm, games, selectedGame, onSelectGame, searchQuery, onSearchChange, loading 전달
+
+4. 게임 시작 버튼 동작
+    - GameLinkPreview의 "게임 바로 시작" 버튼 클릭 시
+        - useGameSelectModal의 openModal 호출하여 모달 열기
+        - 또는 직접 모달 상태 관리 (Hook에서 제공하는 방식에 따라)
+
+5. 모달에서 게임 선택 및 확인
+    - 모달에서 게임 선택 시
+        - useGameSelectModal의 selectGame 호출
+    - 모달에서 확인 버튼 클릭 시
+        - useGameSelectModal의 confirmSelection 호출 (또는 onConfirm 직접 호출)
+        - 선택된 게임의 appId로 `steam://run/{appId}` 링크 생성
+        - 해당 링크를 messageContent에 설정하여 전송 준비
+        - 실제 전송은 기존 sendMessage 함수 사용
+
+6. 메시지 전송 통합
+    - 게임 선택 후 확인 버튼 클릭 시
+        - `steam://run/{appId}` 형식의 메시지 생성
+        - messageContent 상태에 설정
+        - sendMessage 함수 호출하여 전송
+        - 전송 후 모달 닫기
+
+7. UI 통합
+    - GameLinkPreview 컴포넌트를 채팅 메시지 영역에 표시
+        - detectedAppId가 있고 gameInfo가 있을 때만 표시
+        - 로딩 상태일 때도 표시
+    - GameSelectModal은 모달로 표시
+        - isOpen 상태에 따라 표시/숨김
+
+8. 기존 기능 유지
+    - 채팅 목록 기능 유지
+    - 채팅방 선택 기능 유지
+    - 메시지 전송 기능 유지
+    - 프로필 표시 기능 유지
+    - 기존 테스트 기능들은 그대로 유지
+
+9. 에러 처리
+    - Hook의 error 상태를 확인하여 필요시 에러 메시지 표시
+    - 게임 정보 조회 실패 시 적절한 처리
+
+10. 주의사항
+    - 실제 채팅/파티상세 페이지에는 바인딩하지 않음 (테스트 페이지에만 연결)
+    - 기존 코드 구조를 최대한 유지하면서 필요한 부분만 수정
+
+==============================================
+
+조건-Hook 책임)
+            - useGameLinkPreview: 메시지에서 게임 링크 감지 및 게임 정보 조회
+            - useGameSelectModal: 모달 상태 관리 및 게임 선택
+
+==============================================
+
+조건-UI 책임)
+            - GameLinkPreview: 게임 정보 미리보기 표시
+            - GameSelectModal: 게임 선택 모달 표시
+            - 테스트 페이지: Hook과 컴포넌트 통합
+
+==============================================
+
+구현 완료 후 반환) 아래 체크리스트를 반드시 반환할 것.
+            - 기존 게임 정보 조회 로직이 제거되었는가
+            - useGameLinkPreview Hook이 올바르게 사용되고 있는가
+            - useGameSelectModal Hook이 올바르게 사용되고 있는가
+            - GameLinkPreview 컴포넌트가 통합되었는가
+            - GameSelectModal 컴포넌트가 통합되었는가
+            - 게임 시작 버튼 클릭 시 모달이 열리는가
+            - 모달에서 게임 선택 후 확인 버튼 클릭 시 메시지가 전송되는가
+            - `steam://run/{appId}` 형식의 메시지가 올바르게 생성되는가
+            - 기존 채팅 기능이 정상적으로 동작하는가
+            - 에러 처리가 구현되었는가
+            - 기존 테스트 페이지 기능들이 유지되는가
+

@@ -8,6 +8,7 @@
   background-color: var(--color-bg-secondary);
   border-radius: 8px;
   box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .cardTitleMemberWrapper {
@@ -15,6 +16,7 @@
   flex-direction: column;
   gap: 24px;
   box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 /* Title Section */
@@ -151,12 +153,14 @@
   flex-direction: column;
   gap: 40px;
   box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .categoryGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .categoryItem {
@@ -168,6 +172,7 @@
   box-sizing: border-box;
   height: 32px;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .categoryIconLabelWrapper {
@@ -195,6 +200,7 @@
   font-weight: var(--typo-body-md-medium-font-weight);
   color: var(--color-text-primary);
   width: 80px;
+  flex-shrink: 0;
 }
 
 .categoryValue {
@@ -209,4 +215,35 @@
 /* Button Section */
 .joinButton {
   width: 100%;
+}
+
+/* 지난 시간 표시 스타일 */
+.startTimeExpired {
+  color: var(--color-text-danger) !important;
+}
+
+/* 반응형 디자인 - 웹 (1448px 이하) */
+@media (max-width: 1448px) {
+  .card {
+    width: 100%;
+    max-width: 624px;
+    height: 358px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+}
+
+/* 반응형 디자인 - 모바일 (768px 이하) */
+@media (max-width: 768px) {
+  .card {
+    width: 100%;
+    height: auto;
+    padding: 20px;
+    gap: 24px;
+  }
+
+  .categoryGrid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
 }

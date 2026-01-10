@@ -10,6 +10,8 @@ export interface PartyDetailData {
   description: string;
   start_date: string; // mm/dd 형식
   start_time: string; // "오전 hh:mm" 또는 "오후 hh:mm" 형식
+  start_date_raw: string; // YYYY-MM-DD 형식 (원본)
+  start_time_raw: string; // HH:mm:ss 형식 (원본)
   max_members: number;
   control_level: string; // 한글 값
   difficulty: string; // 한글 값
@@ -172,6 +174,8 @@ export const usePartyBinding = (): UsePartyBindingReturn => {
         description: partyData.description,
         start_date: formatDate(partyData.start_date),
         start_time: formatTime(partyData.start_time),
+        start_date_raw: partyData.start_date, // 원본 데이터 저장
+        start_time_raw: partyData.start_time, // 원본 데이터 저장
         max_members: partyData.max_members,
         control_level: getControlLevelLabel(partyData.control_level),
         difficulty: getDifficultyLabel(partyData.difficulty),

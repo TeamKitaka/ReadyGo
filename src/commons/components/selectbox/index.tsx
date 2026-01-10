@@ -26,6 +26,7 @@ export interface SelectboxProps {
   items: SelectboxItem[];
   selectedId?: string;
   onSelect?: (item: SelectboxItem) => void;
+  onOpen?: (isOpen: boolean) => void;
   placeholder?: string;
   required?: boolean;
   className?: string;
@@ -41,6 +42,7 @@ export default function Selectbox({
   items,
   selectedId,
   onSelect,
+  onOpen,
   placeholder = 'Placeholder',
   required = false,
   className = '',
@@ -61,6 +63,9 @@ export default function Selectbox({
         !selectboxRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
+        if (onOpen) {
+          onOpen(false);
+        }
         if (state === 'default') {
           setInternalState('default');
         }
@@ -74,7 +79,7 @@ export default function Selectbox({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, state]);
+  }, [isOpen, state, onOpen]);
 
   // hover 상태 관리
   const handleMouseEnter = () => {
@@ -91,7 +96,11 @@ export default function Selectbox({
 
   const handleClick = () => {
     if (!isDisabled) {
-      setIsOpen(!isOpen);
+      const newIsOpen = !isOpen;
+      setIsOpen(newIsOpen);
+      if (onOpen) {
+        onOpen(newIsOpen);
+      }
       if (!isOpen && state === 'default') {
         setInternalState('active');
       } else if (isOpen && state === 'default') {
@@ -105,6 +114,9 @@ export default function Selectbox({
       onSelect(item);
     }
     setIsOpen(false);
+    if (onOpen) {
+      onOpen(false);
+    }
     if (state === 'default') {
       setInternalState('default');
     }
