@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import OverlayContainer from '@/commons/components/overlay';
+import ModalContainer from '@/commons/components/modal-container';
 import Button from '@/commons/components/button';
 import Input from '@/commons/components/input';
 import Avatar from '@/commons/components/avatar';
@@ -136,7 +136,7 @@ export default function ReviewModal({
   }
 
   return (
-    <OverlayContainer onClose={onClose}>
+    <ModalContainer onClose={onClose}>
       <div className={styles.container}>
         <div className={styles.headerArea}>
           <div className={styles.headerContent}>
@@ -247,6 +247,6 @@ export default function ReviewModal({
           </div>
         </div>
       </div>
-    </OverlayContainer>
+    </ModalContainer>
   );
 }
