@@ -41,16 +41,19 @@ export const insert = async (
 ) => {
   return await client
     .from('notifications')
-    .insert({
-      user_id: params.user_id,
-      type: params.type,
-      actor_id: params.actor_id ?? null,
-      entity_type: params.entity_type ?? null,
-      entity_id: params.entity_id ?? null,
-      is_read: false,
-    })
+    .insert(
+      {
+        user_id: params.user_id,
+        type: params.type,
+        actor_id: params.actor_id ?? null,
+        entity_type: params.entity_type ?? null,
+        entity_id: params.entity_id ?? null,
+        is_read: false,
+      },
+      { ignoreDuplicates: true } // UNIQUE constraint 위반 시 무시
+    )
     .select()
-    .single();
+    .maybeSingle(); // single() 대신 maybeSingle() 사용 (중복 시 null 반환)
 };
 
 /**

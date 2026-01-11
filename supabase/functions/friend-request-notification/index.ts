@@ -122,32 +122,36 @@ Deno.serve(async (req) => {
 
     // 결과 확인
     if (result.error) {
-      // UNIQUE constraint violation은 정상 처리로 간주 (이미 생성된 알림)
-      if (result.error.code === '23505') {
-        console.log(
-          `[Friend Request Notification] Already exists (UNIQUE constraint): requestId=${requestId}`
-        );
-        return new Response(
-          JSON.stringify({ success: true, duplicate: true }),
-          {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
-
-      // 그 외 에러는 throw
+      // 에러 발생 시 로그 및 throw
+      console.error(
+        `[Friend Request Notification] Error: requestId=${requestId}`,
+        result.error
+      );
       throw result.error;
     }
 
+    // data가 null이면 중복으로 무시된 경우 (ignoreDuplicates)
+    if (!result.data) {
+      console.log(
+        `[Friend Request Notification] Duplicate ignored: requestId=${requestId}`
+      );
+      return new Response(
+        JSON.stringify({ success: true, duplicate: true }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     console.log(
-      `[Friend Request Notification] Completed: requestId=${requestId}, notificationId=${result.data?.id}`
+      `[Friend Request Notification] Completed: requestId=${requestId}, notificationId=${result.data.id}`
     );
 
     return new Response(
       JSON.stringify({
         success: true,
-        notificationId: result.data?.id,
+        notificationId: result.data.id,
       }),
       {
         status: 200,
