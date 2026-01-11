@@ -36,41 +36,30 @@ COMMENT ON CONSTRAINT unique_notification_per_entity ON notifications IS
 CREATE OR REPLACE FUNCTION notify_friend_request()
 RETURNS TRIGGER AS $$
 DECLARE
-  function_url TEXT;
-  service_key TEXT;
   request_id INT;
 BEGIN
-  -- Supabase 프로젝트 URL (하드코딩 필요)
-  -- 프로젝트별로 수정 필요: https://YOUR_PROJECT_REF.supabase.co
-  function_url := 'https://wwyavdsmukthfioqlldn.supabase.co/functions/v1/friend-request-notification';
-  
-  -- Service Role Key는 Supabase Vault에서 가져오기 (보안)
-  -- 또는 Database Settings에서 설정한 custom setting 사용
-  service_key := current_setting('app.settings.service_role_key', true);
-  
-  -- Service Key가 없으면 경고만 하고 계속 진행
-  IF service_key IS NULL THEN
-    RAISE WARNING 'Service role key not configured';
-    service_key := '';
-  END IF;
-
   request_id := NEW.id;
 
   -- Edge Function 호출 (비동기)
+  -- Vault에서 SERVICE_ROLE_KEY 가져오기 (기존 cron 패턴과 동일)
   PERFORM
     net.http_post(
-      url := function_url,
+      url := 'https://wwyavdsmukthfioqlldn.supabase.co/functions/v1/friend-request-notification',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' || COALESCE(service_key, '')
+        'Authorization', 'Bearer ' || (
+          SELECT decrypted_secret 
+          FROM vault.decrypted_secrets 
+          WHERE name = 'SERVICE_ROLE_KEY'
+        )
       ),
       body := jsonb_build_object(
         'type', 'INSERT',
         'table', 'friend_requests',
         'record', row_to_json(NEW),
-        'timestamp', EXTRACT(EPOCH FROM NOW()) * 1000  -- milliseconds
+        'timestamp', EXTRACT(EPOCH FROM NOW()) * 1000
       ),
-      timeout_milliseconds := 5000  -- 5초 타임아웃
+      timeout_milliseconds := 5000
     );
 
   RAISE LOG 'Friend request notification triggered: request_id=%', request_id;
@@ -83,7 +72,7 @@ EXCEPTION
     RAISE WARNING 'Failed to trigger friend request notification for request_id=%: %', request_id, SQLERRM;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMENT ON FUNCTION notify_friend_request() IS
 '친구 요청 발생 시 Edge Function을 호출하여 알림 생성';
