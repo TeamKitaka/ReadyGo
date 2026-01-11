@@ -356,6 +356,14 @@
   width: 100%;
 }
 
+.moreButtonWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .primaryButton {
   display: flex;
   flex-grow: 1;

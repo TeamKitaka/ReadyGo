@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import OverlayContainer from '@/commons/components/overlay';
+import ModalContainer from '@/commons/components/modal-container';
 import Searchbar from '@/commons/components/searchbar';
 import Button from '@/commons/components/button';
 import Icon from '@/commons/components/icon';
@@ -95,7 +95,7 @@ export default function GameSelectModal({
   };
 
   return (
-    <OverlayContainer onClose={onClose}>
+    <ModalContainer onClose={onClose}>
       <div
         className={styles.modalContainer}
         onClick={(e) => e.stopPropagation()}
@@ -200,6 +200,6 @@ export default function GameSelectModal({
           </Button>
         </div>
       </div>
-    </OverlayContainer>
+    </ModalContainer>
   );
 }

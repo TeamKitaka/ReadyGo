@@ -8,6 +8,7 @@ export type IconName =
   | 'arrow-left'
   | 'arrow-right'
   | 'bar-chart-square'
+  | 'block'
   | 'calendar'
   | 'check'
   | 'chevron-down'
@@ -49,6 +50,7 @@ export type IconName =
   | 'search'
   | 'send'
   | 'settings'
+  | 'siren'
   | 'stair'
   | 'steam'
   | 'sun'
@@ -170,6 +172,21 @@ const icons: Record<IconName, React.FC<{ className?: string }>> = {
     >
       <path
         d="M5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21ZM15 12H17V17H15V12ZM11 7H13V17H11V7ZM7 10H9V17H7V10Z"
+        fill="currentColor"
+      />
+    </svg>
+  ),
+  block: ({ className }) => (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M12 3C7.041 3 3 7.041 3 12C3 16.959 7.041 21 12 21C16.959 21 21 16.959 21 12C21 7.041 16.959 3 12 3ZM4.8 12C4.8 10.335 5.367 8.814 6.321 7.59L16.41 17.679C15.1495 18.6614 13.5981 19.1965 12 19.2C8.031 19.2 4.8 15.969 4.8 12ZM17.679 16.41L7.59 6.321C8.85047 5.33864 10.4019 4.80354 12 4.8C15.969 4.8 19.2 8.031 19.2 12C19.2 13.665 18.633 15.186 17.679 16.41Z"
         fill="currentColor"
       />
     </svg>
@@ -908,6 +925,21 @@ const icons: Record<IconName, React.FC<{ className?: string }>> = {
           <rect width="24" height="24" fill="white" />
         </clipPath>
       </defs>
+    </svg>
+  ),
+  siren: ({ className }) => (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M4.00001 20V14C4.00001 9.58172 7.58173 6 12 6C16.4183 6 20 9.58172 20 14V20H21V22H3.00001V20H4.00001ZM6.00001 20H18V14C18 10.6863 15.3137 8 12 8C8.6863 8 6.00001 10.6863 6.00001 14V20ZM11 2H13V5H11V2ZM19.7782 4.80761L21.1924 6.22183L19.0711 8.34315L17.6569 6.92893L19.7782 4.80761ZM2.80762 6.22183L4.22183 4.80761L6.34315 6.92893L4.92894 8.34315L2.80762 6.22183ZM7.00001 14C7.00001 11.2386 9.23858 9 12 9V11C10.3432 11 9.00001 12.3431 9.00001 14H7.00001Z"
+        fill="currentColor"
+      />
     </svg>
   ),
   stair: ({ className }) => (
