@@ -566,15 +566,18 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 - 유저에게 전달되는 시스템 알림 테이블
 
-| Column     | Type        | Nullable | Description    |
-| ---------- | ----------- | -------- | -------------- |
-| id         | bigint      | ❌       | PK             |
-| user_id    | uuid        | ⭕       | 알림 수신 유저 |
-| type       | text        | ⭕       | 알림 타입      |
-| title      | text        | ⭕       | 알림 제목      |
-| message    | text        | ⭕       | 알림 본문      |
-| is_read    | boolean     | ⭕       | 읽음 여부      |
-| created_at | timestamptz | ⭕       | 생성 시각      |
+| Column      | Type        | Nullable | Description              |
+| ----------- | ----------- | -------- | ------------------------ |
+| id          | bigint      | ❌       | PK                       |
+| user_id     | uuid        | ⭕       | 알림 수신 유저           |
+| type        | text        | ⭕       | 알림 타입                |
+| title       | text        | ⭕       | 알림 제목                |
+| message     | text        | ⭕       | 알림 본문                |
+| is_read     | boolean     | ⭕       | 읽음 여부                |
+| actor_id    | uuid        | ⭕       | 알림 발생 주체 유저      |
+| entity_id   | text        | ⭕       | 관련 엔티티 ID           |
+| entity_type | text        | ⭕       | 관련 엔티티 타입         |
+| created_at  | timestamptz | ⭕       | 생성 시각                |
 
 #### 37. push_tokens
 
@@ -599,8 +602,8 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
-- **Last Updated At**: 2026-01-09
-- **Document Version**: v1.0.13
+- **Last Updated At**: 2026-01-11
+- **Document Version**: v1.0.14
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
@@ -624,3 +627,4 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | v1.0.11 | 2025-01-15 | user_profiles.temperature_score, temperature_logs.change 컬럼 타입을 int → numeric으로 변경                  |
 | v1.0.12 | 2026-01-09 | Match Domain에 match_results_cache 테이블 추가 (Step 1 캐싱 시스템)                                          |
 | v1.0.13 | 2026-01-09 | match_results_cache에 context 컬럼 추가, match_exposure_log 테이블 추가 (Step 2 중복 방지 + 5분 TTL)         |
+| v1.0.14 | 2026-01-11 | notifications 테이블에 actor_id, entity_id, entity_type 컬럼 추가                                            |
