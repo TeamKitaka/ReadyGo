@@ -56,6 +56,13 @@ DECLARE
 BEGIN
   request_id := NEW.id;
 
+  -- status가 'pending'일 때만 알림 전송
+  -- (친구 요청 수락/거절 시에는 알림 보내지 않음)
+  IF NEW.status != 'pending' THEN
+    RAISE LOG 'Friend request notification skipped: request_id=%, status=%', request_id, NEW.status;
+    RETURN NEW;
+  END IF;
+
   -- Edge Function 호출 (비동기)
   -- Vault에서 SERVICE_ROLE_KEY 가져오기 (기존 cron 패턴과 동일)
   PERFORM
