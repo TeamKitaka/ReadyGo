@@ -1,12 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import styles from './styles.module.css';
 import { HTMLAttributes } from 'react';
 import TierTag from '../tier-tag';
 import Icon from '../icon';
+import Dropdown from '../dropdown';
 import { TierType } from '../../constants/tierType.enum';
 import { AnimalType, getAnimalTypeMeta } from '../../constants/animal';
 import { URL_PATHS } from '../../constants/url';
@@ -31,6 +32,8 @@ export interface AnimalCardProps extends Omit<
   onMessageClick?: () => void;
   onProfileClick?: () => void;
   onMoreClick?: () => void;
+  onBlockClick?: () => void;
+  onReportClick?: () => void;
   className?: string;
 }
 
@@ -49,6 +52,8 @@ export default function AnimalCard({
   onMessageClick,
   onProfileClick,
   onMoreClick,
+  onBlockClick,
+  onReportClick,
   className = '',
   ...props
 }: AnimalCardProps) {
@@ -56,11 +61,48 @@ export default function AnimalCard({
   const animalMeta = getAnimalTypeMeta(animal);
   const isUnknown = animal === AnimalType.unknown;
 
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
+
   const cardClasses = [styles.animalCard, className].filter(Boolean).join(' ');
 
   const handleTraitsTestClick = () => {
     router.push(URL_PATHS.TRAITS);
   };
+
+  const handleMoreClick = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+    if (onMoreClick) {
+      onMoreClick();
+    }
+  };
+
+  const handleBlockClick = () => {
+    if (onBlockClick) {
+      onBlockClick();
+    }
+  };
+
+  const handleReportClick = () => {
+    if (onReportClick) {
+      onReportClick();
+    }
+  };
+
+  const dropdownItems = [
+    {
+      id: 'block',
+      icon: 'block',
+      label: '차단하기',
+      onClick: handleBlockClick,
+    },
+    {
+      id: 'report',
+      icon: 'siren',
+      label: '신고하기',
+      onClick: handleReportClick,
+    },
+  ];
 
   return (
     <div className={cardClasses} {...props}>
@@ -274,9 +316,21 @@ export default function AnimalCard({
           <button className={styles.iconButton} onClick={onProfileClick}>
             <Icon name="add-user" size={20} className={styles.icon} />
           </button>
-          <button className={styles.iconButton} onClick={onMoreClick}>
-            <Icon name="more-horizontal" size={20} className={styles.icon} />
-          </button>
+          <div className={styles.moreButtonWrapper}>
+            <button
+              ref={moreButtonRef}
+              className={styles.iconButton}
+              onClick={handleMoreClick}
+            >
+              <Icon name="more-horizontal" size={20} className={styles.icon} />
+            </button>
+            <Dropdown
+              items={dropdownItems}
+              isOpen={isDropdownOpen}
+              onClose={() => setIsDropdownOpen(false)}
+              anchorRef={moreButtonRef}
+            />
+          </div>
         </div>
       )}
     </div>
