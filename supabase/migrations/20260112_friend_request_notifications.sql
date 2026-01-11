@@ -38,19 +38,23 @@ RETURNS TRIGGER AS $$
 DECLARE
   function_url TEXT;
   service_key TEXT;
+  request_id INT;
 BEGIN
-  -- Supabase URL과 Service Role Key 가져오기
-  -- 환경변수에서 직접 가져오기 (Supabase 내부에서는 자동으로 사용 가능)
-  function_url := current_setting('env.SUPABASE_URL', true);
-  service_key := current_setting('env.SUPABASE_SERVICE_ROLE_KEY', true);
-
-  -- URL 구성
-  IF function_url IS NOT NULL THEN
-    function_url := function_url || '/functions/v1/friend-request-notification';
-  ELSE
-    -- fallback: 로컬 개발 환경
-    function_url := 'http://host.docker.internal:54321/functions/v1/friend-request-notification';
+  -- Supabase 프로젝트 URL (하드코딩 필요)
+  -- 프로젝트별로 수정 필요: https://YOUR_PROJECT_REF.supabase.co
+  function_url := 'https://wwyavdsmukthfioqlldn.supabase.co/functions/v1/friend-request-notification';
+  
+  -- Service Role Key는 Supabase Vault에서 가져오기 (보안)
+  -- 또는 Database Settings에서 설정한 custom setting 사용
+  service_key := current_setting('app.settings.service_role_key', true);
+  
+  -- Service Key가 없으면 경고만 하고 계속 진행
+  IF service_key IS NULL THEN
+    RAISE WARNING 'Service role key not configured';
+    service_key := '';
   END IF;
+
+  request_id := NEW.id;
 
   -- Edge Function 호출 (비동기)
   PERFORM
@@ -65,15 +69,18 @@ BEGIN
         'table', 'friend_requests',
         'record', row_to_json(NEW),
         'timestamp', EXTRACT(EPOCH FROM NOW()) * 1000  -- milliseconds
-      )
+      ),
+      timeout_milliseconds := 5000  -- 5초 타임아웃
     );
+
+  RAISE LOG 'Friend request notification triggered: request_id=%', request_id;
 
   -- INSERT는 항상 성공 (알림 실패가 트랜잭션을 막지 않음)
   RETURN NEW;
 EXCEPTION
   WHEN OTHERS THEN
     -- 에러가 발생해도 INSERT는 성공
-    RAISE WARNING 'Failed to trigger friend request notification: %', SQLERRM;
+    RAISE WARNING 'Failed to trigger friend request notification for request_id=%: %', request_id, SQLERRM;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
