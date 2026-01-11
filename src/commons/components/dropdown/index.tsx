@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import Icon from '../icon';
+import Icon, { IconName } from '../icon';
 import styles from './styles.module.css';
 
 export interface DropdownItem {
   id: string;
-  icon: string;
+  icon: IconName;
   label: string;
   onClick: () => void;
 }
@@ -27,7 +27,9 @@ export default function Dropdown({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return;
+    }
 
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -55,7 +57,9 @@ export default function Dropdown({
     };
   }, [isOpen, onClose, anchorRef]);
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div className={styles.dropdown} ref={dropdownRef}>
@@ -77,4 +81,3 @@ export default function Dropdown({
     </div>
   );
 }
-
