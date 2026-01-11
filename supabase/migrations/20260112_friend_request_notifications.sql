@@ -7,8 +7,24 @@
 -- 3. DB Trigger 등록
 
 -- ===========================
--- 1. UNIQUE Constraint 추가
+-- 1. entity_id 타입 수정 및 UNIQUE Constraint 추가
 -- ===========================
+
+-- entity_id를 TEXT 타입으로 변경 (다양한 entity ID 타입 지원)
+-- friend_requests.id (bigint), chat_room (uuid) 등 다양한 타입 저장 가능
+DO $$
+BEGIN
+  -- entity_id가 UUID 타입이면 TEXT로 변경
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'notifications'
+    AND column_name = 'entity_id'
+    AND data_type = 'uuid'
+  ) THEN
+    ALTER TABLE notifications 
+    ALTER COLUMN entity_id TYPE TEXT;
+  END IF;
+END$$;
 
 -- 논리적 중복 방지: 같은 유저에게 같은 엔티티에 대한 같은 타입의 알림은 1개만
 -- - 같은 friend_request에 대한 재요청 방지
