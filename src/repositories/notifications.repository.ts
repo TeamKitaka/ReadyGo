@@ -36,6 +36,7 @@ export type BulkInsertNotificationParams = {
  * 단일 알림을 생성한다
  * - Edge Functions에서만 호출
  * - supabaseAdmin 사용 (RLS 우회)
+ * - onConflict: 중복 시 무시 (UNIQUE constraint 대응)
  * - DB 접근만 수행, 에러 처리는 상위 레이어에서 담당
  * - Supabase 응답 구조를 그대로 반환
  */
