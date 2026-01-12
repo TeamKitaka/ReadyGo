@@ -12,6 +12,9 @@ import { AnimalType } from '@/commons/constants/animal';
 import { useSideProfilePanel } from '@/hooks/useSideProfilePanel';
 import { useChatRoom, useChatRoomInput } from '@/components/chat/hooks';
 import { formatDateDivider } from '@/lib/chat/messageFormatter';
+import GameSelectModal from '@/commons/components/game-select-modal';
+import { useGameLinkPreview } from '@/hooks/useGameLinkPreview';
+import GameLinkPreview from '@/commons/components/game-link-preview';
 
 interface ChatRoomProps {
   roomId?: string;
@@ -32,6 +35,7 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
 
   // useChatRoom Hook 호출
   const {
+    messages,
     formattedMessages,
     otherMemberInfo,
     isOtherMemberInfoLoading,
@@ -50,6 +54,10 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
     roomCreatedAt,
   } = useChatRoom({ roomId: roomIdNumber });
 
+  // 게임 링크 미리보기 Hook 사용
+  const { isGameLink, extractGameAppId, getGameInfo } =
+    useGameLinkPreview(messages);
+
   // 플로팅 버튼 표시 여부
   const [showScrollToBottomButton, setShowScrollToBottomButton] =
     useState(false);
@@ -61,6 +69,7 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
     handleSendMessage,
     handleKeyDown,
     handleGameStart,
+    gameSelectModal,
   } = useChatRoomInput({
     sendMessage,
     isBlocked,
@@ -300,23 +309,55 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
               );
             }
 
+            // 게임 링크인지 확인
+            const isGameLinkMessage = message.content_type === 'game_link';
+            const gameAppId = isGameLinkMessage
+              ? extractGameAppId(message.content)
+              : null;
+            const gameInfo = gameAppId ? getGameInfo(gameAppId) : null;
+
             if (isOwnMessage) {
               return (
                 <div
                   key={message.id}
                   data-message-id={message.id}
                   className={styles.messageRow}
-                  aria-label={`내 메시지: ${formattedContent}`}
+                  aria-label={
+                    isGameLinkMessage
+                      ? `내 게임 링크 메시지`
+                      : `내 메시지: ${formattedContent}`
+                  }
                 >
                   <div className={styles.ownMessageContainer}>
-                    {isGroupEnd && (
-                      <div className={styles.messageTime}>{formattedTime}</div>
+                    {isGameLinkMessage && gameAppId ? (
+                      <>
+                        {isGroupEnd && (
+                          <div className={styles.messageTime}>
+                            {formattedTime}
+                          </div>
+                        )}
+                        <GameLinkPreview
+                          gameInfo={gameInfo}
+                          appId={gameAppId}
+                          onGameStart={() => {
+                            window.location.href = `steam://run/${gameAppId}`;
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        {isGroupEnd && (
+                          <div className={styles.messageTime}>
+                            {formattedTime}
+                          </div>
+                        )}
+                        <div className={styles.ownMessageBubble}>
+                          <span className={styles.messageContent}>
+                            {formattedContent}
+                          </span>
+                        </div>
+                      </>
                     )}
-                    <div className={styles.ownMessageBubble}>
-                      <span className={styles.messageContent}>
-                        {formattedContent}
-                      </span>
-                    </div>
                   </div>
                 </div>
               );
@@ -327,7 +368,11 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
                 key={message.id}
                 data-message-id={message.id}
                 className={styles.messageRow}
-                aria-label={`${displayNickname}의 메시지: ${formattedContent}`}
+                aria-label={
+                  isGameLinkMessage
+                    ? `${displayNickname}의 게임 링크 메시지`
+                    : `${displayNickname}의 메시지: ${formattedContent}`
+                }
               >
                 <div
                   className={`${styles.otherMessageContainer} ${
@@ -347,13 +392,34 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
                   )}
                   {!isGroupStart && <div className={styles.avatarSpacer} />}
                   <div className={styles.otherMessageContent}>
-                    <div className={styles.otherMessageBubble}>
-                      <span className={styles.messageContent}>
-                        {formattedContent}
-                      </span>
-                    </div>
-                    {isGroupEnd && (
-                      <div className={styles.messageTime}>{formattedTime}</div>
+                    {isGameLinkMessage && gameAppId ? (
+                      <>
+                        <GameLinkPreview
+                          gameInfo={gameInfo}
+                          appId={gameAppId}
+                          onGameStart={() => {
+                            window.location.href = `steam://run/${gameAppId}`;
+                          }}
+                        />
+                        {isGroupEnd && (
+                          <div className={styles.messageTime}>
+                            {formattedTime}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className={styles.otherMessageBubble}>
+                          <span className={styles.messageContent}>
+                            {formattedContent}
+                          </span>
+                        </div>
+                        {isGroupEnd && (
+                          <div className={styles.messageTime}>
+                            {formattedTime}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -418,6 +484,21 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
           <span className={styles.gameStartButtonText}>게임시작</span>
         </Button>
       </div>
+
+      {/* 게임 선택 모달 */}
+      <GameSelectModal
+        isOpen={gameSelectModal.isOpen}
+        onClose={gameSelectModal.closeModal}
+        onConfirm={gameSelectModal.onConfirm}
+        games={gameSelectModal.games}
+        filteredGames={gameSelectModal.filteredGames}
+        isLoading={gameSelectModal.isLoading}
+        searchQuery={gameSelectModal.searchQuery}
+        onSearchChange={gameSelectModal.onSearchChange}
+        selectedGame={gameSelectModal.selectedGame}
+        onSelectGame={gameSelectModal.onSelectGame}
+        error={gameSelectModal.error}
+      />
     </div>
   );
 }
