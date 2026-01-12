@@ -9,8 +9,8 @@ export const dynamic = 'force-dynamic';
  * 책임:
  * - 인증 확인
  * - 쿼리 파라미터에서 game_title 받기
- * - steam_game_info 테이블에서 game_title로 app_id 검색 (부분 일치)
- * - 검색 결과 반환
+ * - steam_game_info 테이블에서 game_title로 app_id 검색 (DB 레벨 필터링으로 6200개 전체 검색)
+ * - 정확한 일치 우선, 그 다음 부분 일치로 검색 결과 반환
  *
  * 비책임:
  * - 게임 정보 상세 조회
@@ -48,12 +48,20 @@ export const GET = async (request: NextRequest) => {
       );
     }
 
-    // 3. steam_game_info에서 게임 검색
-    // 부분 일치 검색을 위해 모든 게임 정보를 조회하고 메모리에서 매칭
-    const { data: allGameInfos, error: gameError } = await supabase
+    // 3. 쿼리 파라미터 정규화
+    const gameTitleTrimmed = gameTitle.trim();
+    const gameTitleLower = gameTitleTrimmed.toLowerCase();
+
+    // 4. steam_game_info에서 게임 검색
+    // DB 레벨에서 필터링하여 6200개 전체를 효율적으로 검색
+    // ilike를 사용하여 부분 일치 검색 (대소문자 무시)
+    const { data: matchedGames, error: gameError } = await supabase
       .from('steam_game_info')
       .select('app_id, name')
-      .not('name', 'is', null);
+      .not('name', 'is', null)
+      .ilike('name', `%${gameTitleTrimmed}%`) // 부분 일치로 검색
+      .order('name', { ascending: true })
+      .limit(100); // 충분한 후보군 확보 (정확한 일치를 찾기 위해)
 
     if (gameError) {
       console.error('steam_game_info 조회 실패:', gameError);
@@ -66,38 +74,23 @@ export const GET = async (request: NextRequest) => {
       );
     }
 
-    // 4. 게임 검색: 정확한 일치 우선, 그 다음 부분 일치
-    const gameTitleTrimmed = gameTitle.trim();
-    const gameTitleLower = gameTitleTrimmed.toLowerCase();
-
-    // 4-1. 정확한 일치 검색 (대소문자 무시)
-    let matchedGame = allGameInfos?.find((gameInfo) => {
-      if (!gameInfo.name) {
+    // 5. 정확한 일치 우선, 그 다음 부분 일치로 정렬
+    // DB에서 가져온 결과 중에서 정확한 일치를 우선적으로 선택
+    let matchedGame = matchedGames?.find((game) => {
+      if (!game.name) {
         return false;
       }
-      return gameInfo.name.toLowerCase() === gameTitleLower;
+      return game.name.toLowerCase() === gameTitleLower;
     });
 
-    // 4-2. 정확한 일치가 없으면 부분 일치 검색
-    if (!matchedGame) {
-      matchedGame = allGameInfos?.find((gameInfo) => {
-        if (!gameInfo.name) {
-          return false;
-        }
-        const gameNameLower = gameInfo.name.toLowerCase();
-        // 부분 일치: 양방향 검사
-        return (
-          gameNameLower.includes(gameTitleLower) ||
-          gameTitleLower.includes(gameNameLower)
-        );
-      });
+    // 정확한 일치가 없으면 첫 번째 부분 일치 사용
+    if (!matchedGame && matchedGames && matchedGames.length > 0) {
+      [matchedGame] = matchedGames;
     }
 
-    // 5. 검색 결과 반환
+    // 6. 검색 결과 반환
     if (!matchedGame) {
-      console.log(
-        `[게임 검색] 게임을 찾을 수 없음: "${gameTitleTrimmed}" (총 ${allGameInfos?.length || 0}개 게임 검색됨)`
-      );
+      console.log(`[게임 검색] 게임을 찾을 수 없음: "${gameTitleTrimmed}"`);
       return NextResponse.json(
         {
           data: null,
