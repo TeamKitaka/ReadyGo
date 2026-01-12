@@ -1,9 +1,10 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { Database } from '@/types/supabase';
 
 /**
  * steam_user_stats Repository
  * 책임: steam_user_stats 테이블 접근 전담
+ * - RLS 우회를 위해 supabaseAdmin 사용 (상대방 프로필 조회 필요)
  */
 
 export type SteamUserStatsRow = {
@@ -19,14 +20,17 @@ export type SteamUserStatsRow = {
  * steam_user_stats를 user_id로 조회
  * - DB 접근만 수행, 에러 처리는 상위 레이어에서 담당
  * - Supabase 응답 구조를 그대로 반환
+ * - RLS 우회를 위해 supabaseAdmin 사용 (상대방 프로필 조회 필요)
+ * @param _client - 사용하지 않음 (supabaseAdmin 사용)
+ * @param userId - 조회할 사용자 ID
  */
 export const findByUserId = async (
-  client: SupabaseClient<Database>,
+  _client: unknown,
   userId: string
 ) => {
-  return await client
+  return await supabaseAdmin
     .from('steam_user_stats')
-    .select('play_style, avg_weekly_playtime, main_genres')
+    .select('play_style, avg_weekly_playtime, main_genres, active_time_slots')
     .eq('user_id', userId)
     .maybeSingle();
 };

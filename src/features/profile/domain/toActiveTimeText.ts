@@ -10,20 +10,85 @@
 import type { ProfileCoreDTO } from '@/commons/types/profile/profileCore.dto';
 
 /**
- * 시간대 → 한글 시간 표시 매핑
+ * timeSlot 문자열을 인덱스로 변환
+ * dawn → 0, morning → 1, afternoon → 2, evening → 3
  */
-const TIME_SLOT_LABEL_MAP: Record<string, string> = {
-  dawn: '00 - 06시',
-  morning: '06 - 12시',
-  afternoon: '12 - 18시',
-  evening: '18 - 24시',
+const timeSlotToIndex = (timeSlot: string): number | null => {
+  const indexMap: Record<string, number> = {
+    dawn: 0,
+    morning: 1,
+    afternoon: 2,
+    evening: 3,
+  };
+  return indexMap[timeSlot.toLowerCase()] ?? null;
 };
 
 /**
- * ProfileCoreDTO의 schedule을 요약 텍스트로 변환
+ * 시간대 인덱스 배열을 패턴 분석하여 라벨로 변환
+ * - {0,1,2,3} → 종일형
+ * - {0,1} → 새벽·오전형
+ * - {2,3} → 오후·야간형
+ * - {1,2} → 주간형
+ * - 비연속 (예: {0,2}, {1,3}) → 유동형
+ */
+const analyzeTimePattern = (indices: number[]): string => {
+  if (indices.length === 0) {
+    return '';
+  }
+
+  // 정렬된 인덱스 집합
+  const sortedIndices = [...new Set(indices)].sort((a, b) => a - b);
+  const indexSet = new Set(sortedIndices);
+
+  // 종일형: 모든 시간대 포함
+  if (indexSet.size === 4 && indexSet.has(0) && indexSet.has(1) && indexSet.has(2) && indexSet.has(3)) {
+    return '종일형';
+  }
+
+  // 새벽·오전형: {0,1}
+  if (indexSet.size === 2 && indexSet.has(0) && indexSet.has(1)) {
+    return '새벽·오전형';
+  }
+
+  // 오후·야간형: {2,3}
+  if (indexSet.size === 2 && indexSet.has(2) && indexSet.has(3)) {
+    return '오후·야간형';
+  }
+
+  // 주간형: {1,2}
+  if (indexSet.size === 2 && indexSet.has(1) && indexSet.has(2)) {
+    return '주간형';
+  }
+
+  // 비연속 패턴 (유동형)
+  // 연속된 인덱스가 아닌 경우
+  let isConsecutive = true;
+  for (let i = 0; i < sortedIndices.length - 1; i++) {
+    if (sortedIndices[i + 1] - sortedIndices[i] !== 1) {
+      isConsecutive = false;
+      break;
+    }
+  }
+
+  // 단일 시간대도 연속으로 간주 (예: {0}, {1}, {2}, {3})
+  if (sortedIndices.length === 1) {
+    isConsecutive = true;
+  }
+
+  // 연속되지 않으면 유동형
+  if (!isConsecutive) {
+    return '유동형';
+  }
+
+  // 그 외의 연속 패턴 (예: {0,1,2}, {1,2,3})도 유동형으로 처리
+  return '유동형';
+};
+
+/**
+ * ProfileCoreDTO의 schedule을 패턴 분석 기반 라벨로 변환
  *
  * @param schedule - ProfileCoreDTO['schedule'] (PlayScheduleItem[] | undefined)
- * @returns string | undefined - "18시 - 24시" 형식의 시간대 텍스트
+ * @returns string | undefined - "종일형", "새벽·오전형", "오후·야간형", "주간형", "유동형" 중 하나
  *
  * @example
  * ```typescript
@@ -31,12 +96,12 @@ const TIME_SLOT_LABEL_MAP: Record<string, string> = {
  *   userId: 'uuid-1234',
  *   schedule: [
  *     { dayType: 'weekday', timeSlot: 'evening' },
- *     { dayType: 'weekend', timeSlot: 'evening' }
+ *     { dayType: 'weekend', timeSlot: 'dawn' }
  *   ]
  * };
  *
  * const text = toActiveTimeText(profile.schedule);
- * // "18시 - 24시"
+ * // "유동형" (evening=3, dawn=0, 비연속)
  * ```
  *
  * @example
@@ -64,7 +129,7 @@ export const toActiveTimeText = (
     return undefined;
   }
 
-  // timeSlots 추출 (입력 순서 유지, 중복 제거)
+  // timeSlots 추출 (중복 제거)
   const timeSlots: string[] = [];
   for (const item of schedule) {
     if (!timeSlots.includes(item.timeSlot)) {
@@ -72,11 +137,15 @@ export const toActiveTimeText = (
     }
   }
 
-  // timeSlots를 한글 시간 표시로 변환
-  const timeSlotsLabels = timeSlots
-    .map((timeSlot) => TIME_SLOT_LABEL_MAP[timeSlot.toLowerCase()] || timeSlot)
-    .join(', ');
+  // timeSlot을 인덱스로 변환
+  const indices = timeSlots
+    .map(timeSlotToIndex)
+    .filter((idx): idx is number => idx !== null);
 
-  // 시간대만 반환
-  return timeSlotsLabels;
+  if (indices.length === 0) {
+    return undefined;
+  }
+
+  // 패턴 분석하여 라벨 반환
+  return analyzeTimePattern(indices);
 };

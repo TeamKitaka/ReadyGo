@@ -76,12 +76,19 @@ export const getUserProfileByUserId = async (
     throw new ProfileFetchError('schedules', schedulesResult.error.message);
   }
 
-  // 4. steam_user_stats 조회
+  // 4. steam_user_stats 조회 (admin 권한 사용 - RLS 우회, 상대방 프로필 조회 필요)
   const steamStatsResult = await steamUserStatsRepository.findByUserId(
-    client,
+    client, // client는 사용하지 않지만 호환성을 위해 전달
     targetUserId
   );
   const { data: steamStatsRow, error: steamStatsError } = steamStatsResult;
+
+  // 4-1. Repository 에러 처리 (에러는 무시하고 null로 처리)
+  if (steamStatsError) {
+    console.warn(
+      `[getUserProfileByUserId] Failed to fetch steam_user_stats: ${steamStatsError.message}`
+    );
+  }
 
   // 4-1. Repository 에러 처리 (에러는 무시하고 null로 처리)
   if (steamStatsError) {
@@ -135,12 +142,25 @@ export const getUserProfileByUserId = async (
       playStyle: steamStatsRow.play_style as 'casual' | 'regular' | 'hardcore',
       avgWeeklyPlaytime: steamStatsRow.avg_weekly_playtime || 0,
       mainGenres: steamStatsRow.main_genres || [],
+      activeTimeSlots: steamStatsRow.active_time_slots || [],
     };
   }
 
   // 6. ProfileCoreDTO 반환
   // nickname, animalType 누락 허용 (기본값 자동 생성 ❌)
   // tier는 필수 필드이므로 기본값(silver) 제공
+  
+  // steamId 결정: 
+  // 1. user_profiles의 steam_id가 있으면 사용
+  // 2. 없어도 steam_user_stats에 row가 있으면 스팀 연동된 것으로 간주
+  //    (steam_user_stats에 row가 있다는 것은 스팀 연동이 되어있다는 의미)
+  let steamId: string | null | undefined = profileRow.steam_id ?? null;
+  if (!steamId && steamStatsRow) {
+    // steamStats가 있으면 스팀 연동된 것으로 간주
+    // steamId를 truthy 값으로 설정 (실제 steam_id는 모르지만 연동은 되어있음)
+    steamId = 'linked'; // 스팀 연동은 되어있지만 steam_id는 없는 경우를 표시
+  }
+  
   return {
     userId: profileRow.id,
     nickname: profileRow.nickname ?? undefined,
@@ -149,5 +169,6 @@ export const getUserProfileByUserId = async (
     traits,
     schedule,
     steamStats,
+    steamId,
   };
 };
