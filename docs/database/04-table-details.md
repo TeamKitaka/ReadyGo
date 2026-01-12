@@ -226,8 +226,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | difficulty    | text        | ❌       | 난이도                                           |
 | voice_chat    | text        | ⭕       | 보이스챗 사용 여부(required \| optional \| null) |
 | tags          | jsonb       | ⭕       | 태그 배열(string[] 권장)                         |
-| status        | text        | ❌       | 모집 상태(default: recruiting)                   |
-| created_at    | timestamptz | ❌       | 생성 시각(default: now())                        |
+| created_at    | timestamptz | ❌       | 생성 시각                                        |
 
 #### 16. party_members
 
@@ -245,13 +244,14 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 - 파티 채팅
 
-| Column     | Type        | Nullable | Description |
-| ---------- | ----------- | -------- | ----------- |
-| id         | bigint      | ❌       | PK          |
-| post_id    | bigint      | ⭕       | 파티 ID     |
-| sender_id  | uuid        | ⭕       | 발신자      |
-| content    | text        | ⭕       | 메시지      |
-| created_at | timestamptz | ⭕       | 전송 시각   |
+| Column       | Type        | Nullable | Description |
+| ------------ | ----------- | -------- | ----------- |
+| id           | bigint      | ❌       | PK          |
+| post_id      | bigint      | ⭕       | 파티 ID     |
+| sender_id    | uuid        | ⭕       | 발신자      |
+| content      | text        | ⭕       | 메시지      |
+| content_type | text        | ⭕       | 메시지 타입 |
+| created_at   | timestamptz | ⭕       | 전송 시각   |
 
 #### 18. party_activity_logs
 
@@ -485,7 +485,21 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 ### 7️⃣ System / Logs Domain
 
-#### 30. analytics_user_actions
+#### 30. game_start_logs
+
+- 게임 시작 로그
+
+| Column       | Type        | Nullable | Description   |
+| ------------ | ----------- | -------- | ------------- |
+| id           | bigint      | ❌       | PK            |
+| actor_id     | uuid        | ❌       | 행동 주체     |
+| context_type | text        | ❌       | 컨텍스트 타입 |
+| context_id   | uuid        | ❌       | 컨텍스트 ID   |
+| game_id      | text        | ⭕       | 게임 ID       |
+| game_name    | text        | ⭕       | 게임명        |
+| created_at   | timestamptz | ❌       | 생성 시각     |
+
+#### 31. analytics_user_actions
 
 - 행동 로그
 
@@ -497,7 +511,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | target_id  | text        | ⭕       | 행동 대상 식별자   |
 | created_at | timestamptz | ⭕       | 행동 발생 시각     |
 
-#### 31. event_logs
+#### 32. event_logs
 
 - 서비스 이벤트 기록 테이블
 - 유저 행동 또는 시스템 이벤트를 구조적으로 기록
@@ -602,7 +616,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | ---------- | ----------- | -------- | ----------- |
 | id         | bigint      | ❌       | PK          |
 | user_id    | uuid        | ⭕       | 유저        |
-| token      | text        | ❌       | 푸시 토큰   |
+| token      | text        | ⭕       | 푸시 토큰   |
 | platform   | text        | ⭕       | 플랫폼      |
 | created_at | timestamptz | ⭕       | 생성 시각   |
 

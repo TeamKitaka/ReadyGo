@@ -52,8 +52,9 @@ export interface UseChatRoomProps {
  */
 export interface UseChatRoomReturn {
   formattedMessages: FormattedMessageItem[]; // UI에서 바로 사용 가능한 포맷된 메시지 배열
+  messages: PartyMessage[]; // 원본 메시지 배열 (게임 링크 미리보기용)
   isBlocked: boolean; // 차단 상태, 기본값 false
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, contentType?: string) => Promise<void>;
   isLoading: boolean;
   error: string | null;
   scrollToBottom: (containerRef: React.RefObject<HTMLDivElement>) => void;
@@ -138,7 +139,7 @@ const isConsecutiveMessage = (
   if (!previousMessage) {
     return false;
   }
-  // party_messages에는 content_type 필드가 없으므로 sender_id만 비교
+  // sender_id만 비교 (content_type은 연속 메시지 판단에 사용하지 않음)
   return currentMessage.sender_id === previousMessage.sender_id;
 };
 
@@ -156,7 +157,7 @@ const formatMessageContent = (message: PartyMessage | null): string => {
     return '메시지가 없습니다';
   }
 
-  // party_messages에는 content_type 필드가 없으므로 content 그대로 반환
+  // content 그대로 반환 (content_type은 UI에서 별도로 처리)
   return content;
 };
 
@@ -693,7 +694,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
    * 메시지 전송
    */
   const sendMessage = useCallback(
-    async (content: string): Promise<void> => {
+    async (content: string, contentType: string = 'text'): Promise<void> => {
       // 중복 전송 방지
       if (isSendingRef.current) {
         console.warn(
@@ -723,6 +724,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
           credentials: 'include',
           body: JSON.stringify({
             content,
+            contentType,
           }),
         });
 
@@ -855,12 +857,16 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       }
 
       // 메시지 아이템 추가
-      const isConsecutive = isConsecutiveMessage(message, previousMessage);
+      // 시스템 메시지는 항상 연속 메시지가 아님
+      const isSystemMessage = message.content_type === 'system';
+      const isConsecutive = isSystemMessage
+        ? false
+        : isConsecutiveMessage(message, previousMessage);
       const isOwnMessage = message.sender_id === user.id;
       const formattedTime = formatMessageTime(message.created_at);
       const formattedContent = formatMessageContent(message);
 
-      // 발신자 정보 조회
+      // 발신자 정보 조회 (시스템 메시지는 sender_id가 null이므로 undefined)
       const senderProfile = message.sender_id
         ? partyMemberProfiles.get(message.sender_id)
         : undefined;
@@ -898,6 +904,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
 
   return {
     formattedMessages,
+    messages: sortedMessages,
     isBlocked,
     sendMessage,
     isLoading,

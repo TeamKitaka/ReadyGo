@@ -9,6 +9,10 @@ import Input from '@/commons/components/input';
 import Icon from '@/commons/components/icon';
 import { AnimalType } from '@/commons/constants/animal';
 import { useChatRoom } from '../../hooks/index.binding.chatRoom.hook';
+import { useGameLinkPreview } from '@/hooks/useGameLinkPreview';
+import { useGameStartLog } from '@/hooks/useGameStartLog';
+import { useModal } from '@/commons/providers/modal/modal.provider';
+import GameLinkPreview from '@/commons/components/game-link-preview';
 
 interface ChatRoomProps {
   isExpired?: boolean;
@@ -29,6 +33,7 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
   // useChatRoom Hook 호출
   const {
     formattedMessages,
+    messages,
     sendMessage,
     isLoading,
     error,
@@ -39,6 +44,15 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
     clearScrollTriggers,
     setMessageListContainerRef,
   } = useChatRoom({ postId: postIdNumber });
+
+  // 게임 링크 미리보기 Hook 사용
+  const { extractGameAppId, getGameInfo } = useGameLinkPreview(messages);
+
+  // 게임 시작 로그 Hook 사용
+  const { createGameStartLog } = useGameStartLog();
+
+  // 모달 Hook 사용
+  const { openModal } = useModal();
 
   // 플로팅 버튼 표시 여부
   const [showScrollToBottomButton, setShowScrollToBottomButton] =
@@ -176,10 +190,15 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
             }
             return null;
           })}
-          {/* 메시지 렌더링 */}
+          {/* 일반 메시지 렌더링 */}
           <div className={styles.messagesWrapper}>
             {formattedMessages.map((item, index) => {
               if (item.type !== 'message' || !item.message) {
+                return null;
+              }
+
+              // 시스템 메시지는 나중에 별도로 렌더링
+              if (item.message.content_type === 'system') {
                 return null;
               }
 
@@ -194,6 +213,13 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                 senderAnimalType,
               } = item;
 
+              // 게임 링크인지 확인
+              const isGameLinkMessage = message.content_type === 'game_link';
+              const gameAppId = isGameLinkMessage
+                ? extractGameAppId(message.content)
+                : null;
+              const gameInfo = gameAppId ? getGameInfo(gameAppId) : null;
+
               // 내 메시지 렌더링
               if (isOwnMessage) {
                 return (
@@ -203,17 +229,56 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                   >
                     <div
                       className={styles.messageRow}
-                      aria-label={`내 메시지: ${formattedContent || ''}`}
+                      aria-label={
+                        isGameLinkMessage
+                          ? `내 게임 링크 메시지`
+                          : `내 메시지: ${formattedContent || ''}`
+                      }
                     >
                       <div className={styles.ownMessageContainer}>
-                        <div className={styles.messageTime}>
-                          {formattedTime}
-                        </div>
-                        <div className={styles.ownMessageBubble}>
-                          <span className={styles.messageContent}>
-                            {formattedContent}
-                          </span>
-                        </div>
+                        {isGameLinkMessage && gameAppId ? (
+                          <>
+                            <div className={styles.messageTime}>
+                              {formattedTime}
+                            </div>
+                            <GameLinkPreview
+                              gameInfo={gameInfo}
+                              appId={gameAppId}
+                              onGameStart={() => {
+                                // 확인 모달 표시
+                                openModal({
+                                  variant: 'dual',
+                                  title: '게임 시작',
+                                  description: '게임을 시작하시겠습니까?',
+                                  confirmText: '확인',
+                                  cancelText: '취소',
+                                  onConfirm: async () => {
+                                    // 게임 시작 로그 생성
+                                    await createGameStartLog({
+                                      contextType: 'party',
+                                      contextId: postIdNumber.toString(),
+                                      gameId: gameAppId.toString(),
+                                      gameName: gameInfo?.name ?? undefined,
+                                    });
+                                    // Steam 실행
+                                    window.location.href = `steam://run/${gameAppId}`;
+                                  },
+                                });
+                              }}
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <div className={styles.messageTime}>
+                              {formattedTime}
+                            </div>
+                            <div className={styles.ownMessageBubble}>
+                              <span className={styles.messageContent}>
+                                {formattedContent}
+                              </span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -252,14 +317,31 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                         )}
                         <div className={styles.messageBubbles}>
                           <div className={styles.otherMessageWrapper}>
-                            <div className={styles.otherMessageBubble}>
-                              <span className={styles.messageContent}>
-                                {formattedContent}
-                              </span>
-                            </div>
-                            <div className={styles.messageTime}>
-                              {formattedTime}
-                            </div>
+                            {isGameLinkMessage && gameAppId ? (
+                              <>
+                                <GameLinkPreview
+                                  gameInfo={gameInfo}
+                                  appId={gameAppId}
+                                  onGameStart={() => {
+                                    window.location.href = `steam://run/${gameAppId}`;
+                                  }}
+                                />
+                                <div className={styles.messageTime}>
+                                  {formattedTime}
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className={styles.otherMessageBubble}>
+                                  <span className={styles.messageContent}>
+                                    {formattedContent}
+                                  </span>
+                                </div>
+                                <div className={styles.messageTime}>
+                                  {formattedTime}
+                                </div>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -267,6 +349,24 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                   </div>
                 </div>
               );
+            })}
+            {/* 시스템 메시지 렌더링 (일반 메시지 뒤에 표시) */}
+            {formattedMessages.map((item, index) => {
+              if (
+                item.type === 'message' &&
+                item.message?.content_type === 'system'
+              ) {
+                return (
+                  <div
+                    key={`system-message-${item.message.id}-${index}`}
+                    className={styles.dateDivider}
+                    aria-label={`시스템 메시지: ${item.formattedContent || ''}`}
+                  >
+                    {item.formattedContent || ''}
+                  </div>
+                );
+              }
+              return null;
             })}
           </div>
         </div>
