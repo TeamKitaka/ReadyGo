@@ -77,10 +77,12 @@ export const getMatchList = async (
     matchExposureLogRepo.findRecentByViewer(client, viewerId, 1), // 1시간 (노출 이력)
   ]);
 
-  const recentlyViewedIds = new Set([
-    ...(recentViews?.map((v) => v.target_user_id) || []),
-    ...(recentExposures?.map((e) => e.target_id) || []),
-  ]);
+  const recentlyViewedIds = new Set(
+    [
+      ...(recentViews?.map((v) => v.target_user_id) || []),
+      ...(recentExposures?.map((e) => e.target_id) || []),
+    ].filter((id): id is string => id !== null)
+  );
 
   // 완전히 제외하지 않고, 모든 후보를 대상으로 계산
   const filtered = candidates;
@@ -340,7 +342,7 @@ const enrichAndSort = async (
         ),
       },
       status,
-      isOnline: status === 'online' || status === 'in_game',
+      isOnline: status === 'online',
     };
   });
 

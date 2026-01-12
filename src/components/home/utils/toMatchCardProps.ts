@@ -136,7 +136,7 @@ export const toMatchCardProps = (apiResult: any): MatchCardProps => {
       });
     } else if (type === 'ONLINE_NOW') {
       preferences.push({
-        icon: 'circle-dot',
+        icon: 'notification',
         label: '지금',
         value: '온라인 중',
       });
@@ -158,13 +158,13 @@ export const toMatchCardProps = (apiResult: any): MatchCardProps => {
       }
     } else if (type === 'PARTY_EXPERIENCE') {
       preferences.push({
-        icon: 'users',
+        icon: 'group',
         label: '파티 경험',
         value: '경험 풍부',
       });
     } else if (type === 'ANIMAL_COMPATIBILITY') {
       preferences.push({
-        icon: 'heart',
+        icon: 'clover',
         label: '성향 궁합',
         value: '궁합 좋음',
       });

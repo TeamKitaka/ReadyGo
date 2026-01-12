@@ -163,6 +163,7 @@ export default function ProfilePanel({
       userId: myUserId || '',
       targetUserId: userId,
       similarityScore: matchData.finalScore,
+      isOnlineMatched: false,
       reasons: matchData.reasons,
       tags: matchData.tags,
     };

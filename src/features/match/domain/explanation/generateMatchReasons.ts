@@ -265,9 +265,8 @@ export const generateMatchReasons = (
       },
       {
         detail: {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          type: 'BASELINE' as any, // 4번째 후보 (새로운조합)
-          score: 50,
+          type: 'RELIABILITY',
+          reliabilityScore: 50,
         },
         priority: 'LOW',
         isBaseline: true,
