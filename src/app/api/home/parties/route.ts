@@ -11,7 +11,7 @@ import { getHomePartiesService } from '@/services/party/getHomePartiesService';
  * - 현재 사용자가 참여하지 않은 파티만 필터링
  * - 시작 시간이 가장 빠른 순으로 정렬
  */
-export async function GET(request: NextRequest) {
+export const GET = async (_request: NextRequest) => {
   try {
     // 1. 서버 사이드 Supabase 클라이언트 생성 (RLS 적용)
     const supabase = createClient();
@@ -50,4 +50,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+};

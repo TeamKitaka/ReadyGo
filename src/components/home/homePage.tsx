@@ -43,8 +43,7 @@ export default function Home() {
   const { matchCards } = useHomeMatches();
 
   // 파티 데이터 fetch (시작 시간 임박, 인원 미달, 미참여 파티)
-  const { parties, loading: partiesLoading, error: partiesError } =
-    useHomeParties();
+  const { parties } = useHomeParties();
 
   // Presence 상태 구독 (실시간 온라인 상태 반영)
   usePresenceStore();
