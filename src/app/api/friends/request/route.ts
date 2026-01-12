@@ -27,9 +27,9 @@ export const POST = async (request: NextRequest) => {
 
     // Body 파싱
     const body = await request.json();
-    const { receiver_id } = body;
+    const receiverId = body.receiver_id;
 
-    if (!receiver_id || typeof receiver_id !== 'string') {
+    if (!receiverId || typeof receiverId !== 'string') {
       return NextResponse.json(
         { error: 'receiver_id는 문자열이어야 합니다.' },
         { status: 400 }
@@ -39,7 +39,7 @@ export const POST = async (request: NextRequest) => {
     // Service 호출
     const friendRequest = await sendFriendRequest(supabase, {
       senderId: user.id,
-      receiverId: receiver_id,
+      receiverId,
     });
 
     return NextResponse.json(
@@ -54,7 +54,9 @@ export const POST = async (request: NextRequest) => {
     console.error('[API /api/friends/request] Error:', error);
 
     const errorMessage =
-      error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+      error instanceof Error
+        ? error.message
+        : '알 수 없는 오류가 발생했습니다.';
 
     // 에러 타입에 따라 상태 코드 결정
     if (errorMessage.includes('yourself')) {
@@ -69,17 +71,16 @@ export const POST = async (request: NextRequest) => {
         { status: 400 }
       );
     }
-    if (errorMessage.includes('already sent') || errorMessage.includes('already received')) {
+    if (
+      errorMessage.includes('already sent') ||
+      errorMessage.includes('already received')
+    ) {
       return NextResponse.json(
         { error: '이미 친구 요청이 전송되었습니다.' },
         { status: 400 }
       );
     }
 
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 };
-

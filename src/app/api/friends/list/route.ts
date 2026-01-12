@@ -17,7 +17,7 @@ interface FriendWithProfile {
  * GET /api/friends/list
  * friendships 기준으로 친구 목록 반환 (profile, status 포함)
  */
-export const GET = async (request: NextRequest) => {
+export const GET = async (_request: NextRequest) => {
   try {
     // Supabase SSR 클라이언트 생성
     const supabase = createClient();
@@ -52,7 +52,10 @@ export const GET = async (request: NextRequest) => {
       .in('id', friendUserIds);
 
     if (profilesError) {
-      console.error('[API /api/friends/list] Error fetching profiles:', profilesError);
+      console.error(
+        '[API /api/friends/list] Error fetching profiles:',
+        profilesError
+      );
     }
 
     // 친구들의 status 조회
@@ -62,7 +65,10 @@ export const GET = async (request: NextRequest) => {
       .in('user_id', friendUserIds);
 
     if (statusesError) {
-      console.error('[API /api/friends/list] Error fetching statuses:', statusesError);
+      console.error(
+        '[API /api/friends/list] Error fetching statuses:',
+        statusesError
+      );
     }
 
     // profile과 status를 user_id로 매핑
@@ -98,12 +104,10 @@ export const GET = async (request: NextRequest) => {
     console.error('[API /api/friends/list] Error:', error);
 
     const errorMessage =
-      error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+      error instanceof Error
+        ? error.message
+        : '알 수 없는 오류가 발생했습니다.';
 
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 };
-

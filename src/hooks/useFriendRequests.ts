@@ -18,7 +18,7 @@ export interface FriendRequestWithSender extends FriendRequestRow {
  * 내가 받은 pending 친구 요청 목록을 조회하고 관리
  * Realtime을 통해 실시간으로 업데이트됨
  */
-export function useFriendRequests() {
+export const useFriendRequests = () => {
   const { user } = useAuth();
   const [requests, setRequests] = useState<FriendRequestWithSender[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,6 +95,7 @@ export function useFriendRequests() {
             filter: `receiver_id=eq.${user.id}`,
           },
           (payload) => {
+            // eslint-disable-next-line no-console
             console.log('[useFriendRequests] Realtime event:', payload);
 
             // INSERT: 새로운 친구 요청 추가
@@ -130,8 +131,10 @@ export function useFriendRequests() {
         )
         .subscribe((status, err) => {
           if (status === 'SUBSCRIBED') {
+            // eslint-disable-next-line no-console
             console.log('[useFriendRequests] Realtime subscribed');
           } else if (status === 'CHANNEL_ERROR') {
+            // eslint-disable-next-line no-console
             console.error('[useFriendRequests] Realtime error:', err);
             // 에러 발생 시 채널 정리
             if (channelRef.current === channel) {
@@ -139,6 +142,7 @@ export function useFriendRequests() {
               subscribedUserIdRef.current = null;
             }
           } else if (status === 'CLOSED') {
+            // eslint-disable-next-line no-console
             console.log('[useFriendRequests] Realtime channel closed');
             if (channelRef.current === channel) {
               channelRef.current = null;
@@ -150,7 +154,10 @@ export function useFriendRequests() {
       channelRef.current = channel;
       subscribedUserIdRef.current = user.id;
     } catch (err) {
-      console.error('[useFriendRequests] Failed to setup Realtime subscription:', err);
+      console.error(
+        '[useFriendRequests] Failed to setup Realtime subscription:',
+        err
+      );
       cleanupChannel();
     }
   }, [user?.id, fetchRequests, cleanupChannel]);
@@ -171,5 +178,4 @@ export function useFriendRequests() {
     error,
     refetch: fetchRequests,
   };
-}
-
+};

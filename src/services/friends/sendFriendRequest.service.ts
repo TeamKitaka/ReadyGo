@@ -42,27 +42,33 @@ export const sendFriendRequest = async (
   }
 
   // 2. 이미 친구인지 확인
-  const isFriend = await friendshipRepository.exists(client, senderId, receiverId);
+  const isFriend = await friendshipRepository.exists(
+    client,
+    senderId,
+    receiverId
+  );
   if (isFriend) {
     throw new Error('Already friends');
   }
 
   // 3. 이미 pending 요청이 있는지 확인 (양방향 체크)
-  const existingRequest1 = await friendRequestsRepository.findPendingBetweenUsers(
-    client,
-    senderId,
-    receiverId
-  );
+  const existingRequest1 =
+    await friendRequestsRepository.findPendingBetweenUsers(
+      client,
+      senderId,
+      receiverId
+    );
   if (existingRequest1) {
     throw new Error('Friend request already sent');
   }
 
   // 반대 방향도 체크 (상대방이 나에게 보낸 요청이 있는지)
-  const existingRequest2 = await friendRequestsRepository.findPendingBetweenUsers(
-    client,
-    receiverId,
-    senderId
-  );
+  const existingRequest2 =
+    await friendRequestsRepository.findPendingBetweenUsers(
+      client,
+      receiverId,
+      senderId
+    );
   if (existingRequest2) {
     throw new Error('Friend request already received from this user');
   }
@@ -88,4 +94,3 @@ export const sendFriendRequest = async (
 
   return data;
 };
-

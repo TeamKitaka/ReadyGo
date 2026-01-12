@@ -78,14 +78,16 @@ export const acceptFriendRequest = async (
     );
   } catch (error) {
     // UNIQUE constraint 위반 등 DB 에러 처리
+    // eslint-disable-next-line no-console
     console.error('[acceptFriendRequest] Failed to create friendship:', error);
+    // eslint-disable-next-line no-console
     console.error('[acceptFriendRequest] Error details:', {
       message: error instanceof Error ? error.message : String(error),
-      code: (error as any)?.code,
-      details: (error as any)?.details,
-      hint: (error as any)?.hint,
+      code: (error as { code?: string })?.code,
+      details: (error as { details?: string })?.details,
+      hint: (error as { hint?: string })?.hint,
     });
-    
+
     // 원본 에러 메시지를 포함하여 throw
     if (error instanceof Error) {
       throw error;
@@ -94,8 +96,17 @@ export const acceptFriendRequest = async (
   }
 
   // 5. 요청 상태 업데이트
-  console.log('[acceptFriendRequest] Updating request status to accepted:', requestId);
-  const updatedRequest = await friendRequestsRepository.updateStatus(client, requestId, 'accepted');
+  // eslint-disable-next-line no-console
+  console.log(
+    '[acceptFriendRequest] Updating request status to accepted:',
+    requestId
+  );
+  const updatedRequest = await friendRequestsRepository.updateStatus(
+    client,
+    requestId,
+    'accepted'
+  );
+  // eslint-disable-next-line no-console
   console.log('[acceptFriendRequest] Request status updated:', updatedRequest);
 
   // 6. 알림 생성 (sender에게)
@@ -114,4 +125,3 @@ export const acceptFriendRequest = async (
     );
   }
 };
-

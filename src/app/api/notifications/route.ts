@@ -6,7 +6,7 @@ import * as notificationsRepository from '@/repositories/notifications.repositor
  * GET /api/notifications
  * 현재 사용자의 알림 목록 조회
  */
-export async function GET(request: NextRequest) {
+export const GET = async (_request: NextRequest) => {
   try {
     const supabase = await createClient();
     const {
@@ -64,5 +64,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
+};

@@ -7,8 +7,6 @@ import { convertToNotificationItem } from '@/components/overlay/notifications/ui
 import { FriendsContainer } from '@/components/overlay/friends';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useOverlayStore } from '@/stores/overlay.store';
-import { useRouter } from 'next/navigation';
-import { URL_PATHS } from '@/commons/constants/url';
 
 interface LayoutOverlaysProps {
   currentOverlay: string | null;
@@ -19,10 +17,11 @@ export const LayoutOverlays = ({
   currentOverlay,
   onClose,
 }: LayoutOverlaysProps) => {
-  const router = useRouter();
   const { openFriends } = useOverlayStore();
   const { notifications, loading, markAsRead } = useNotifications();
-  const [friendsInitialTab, setFriendsInitialTab] = useState<'list' | 'request'>('list');
+  const [friendsInitialTab, setFriendsInitialTab] = useState<
+    'list' | 'request'
+  >('list');
   const [shouldResetFriendsTab, setShouldResetFriendsTab] = useState(false);
 
   // friends overlay가 닫혔다가 다시 열릴 때 초기 탭 리셋
@@ -32,7 +31,10 @@ export const LayoutOverlays = ({
         setFriendsInitialTab('list');
         setShouldResetFriendsTab(false);
       }
-    } else if (currentOverlay !== 'friends' && friendsInitialTab === 'request') {
+    } else if (
+      currentOverlay !== 'friends' &&
+      friendsInitialTab === 'request'
+    ) {
       // friends overlay가 닫히면 다음에 열릴 때 리셋하도록 플래그 설정
       setShouldResetFriendsTab(true);
     }
@@ -76,7 +78,9 @@ export const LayoutOverlays = ({
   };
 
   if (currentOverlay === 'notifications') {
-    const notificationItems = (notifications || []).map(convertToNotificationItem);
+    const notificationItems = (notifications || []).map(
+      convertToNotificationItem
+    );
 
     return (
       <OverlayContainer onClose={onClose}>

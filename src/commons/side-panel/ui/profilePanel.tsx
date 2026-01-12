@@ -314,39 +314,41 @@ export default function ProfilePanel({
           activeTime={activeTimeText || '알 수 없음'}
           gameStyle="알 수 없음"
           weeklyAverage="알 수 없음"
-          matchPercentage={isMyProfile ? undefined : (matchData?.finalScore ?? 0)}
+          matchPercentage={
+            isMyProfile ? undefined : (matchData?.finalScore ?? 0)
+          }
           matchReasons={isMyProfile ? undefined : matchReasons}
           onMessageClick={handleStartChat}
           onProfileClick={isMyProfile ? undefined : handleAddFriend}
         />
 
-      {/* 플레이스타일과 최근 플레이 패턴을 포함하는 통합 섹션 */}
-      <div className={styles.statsContainer}>
-        {/* 플레이스타일 섹션 */}
-        <div className={styles.playStyleSection}>
-          <div className={styles.sectionHeader}>
-            <h4 className={styles.sectionTitle}>플레이스타일</h4>
+        {/* 플레이스타일과 최근 플레이 패턴을 포함하는 통합 섹션 */}
+        <div className={styles.statsContainer}>
+          {/* 플레이스타일 섹션 */}
+          <div className={styles.playStyleSection}>
+            <div className={styles.sectionHeader}>
+              <h4 className={styles.sectionTitle}>플레이스타일</h4>
+            </div>
+            {radarData && radarData.length > 0 ? (
+              <div className={styles.radarChartWrapper}>
+                <RadarChart
+                  myData={myProfile?.radarData || []}
+                  userData={radarData}
+                  size="m"
+                  showLabels={true}
+                />
+              </div>
+            ) : (
+              <div
+                style={{ padding: '20px', textAlign: 'center', color: '#999' }}
+              >
+                특성 검사를 완료하지 않은 사용자입니다.
+              </div>
+            )}
           </div>
-          {radarData && radarData.length > 0 ? (
-            <div className={styles.radarChartWrapper}>
-              <RadarChart
-                myData={myProfile?.radarData || []}
-                userData={radarData}
-                size="m"
-                showLabels={true}
-              />
-            </div>
-          ) : (
-            <div
-              style={{ padding: '20px', textAlign: 'center', color: '#999' }}
-            >
-              특성 검사를 완료하지 않은 사용자입니다.
-            </div>
-          )}
-        </div>
 
-        {/* 최근 플레이 패턴 섹션 - 현재 ViewModel에 없으므로 숨김 */}
-        {/* <div className={styles.playPatternSection}>
+          {/* 최근 플레이 패턴 섹션 - 현재 ViewModel에 없으므로 숨김 */}
+          {/* <div className={styles.playPatternSection}>
           <div className={styles.sectionHeader}>
             <h4 className={styles.sectionTitle}>최근 플레이 패턴</h4>
           </div>
@@ -354,7 +356,7 @@ export default function ProfilePanel({
             <BarChart data={[]} size="s" showValues={true} />
           </div>
         </div> */}
-      </div>
+        </div>
       </div>
 
       {/* 친구 추가 확인 모달 */}

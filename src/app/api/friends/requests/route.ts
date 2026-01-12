@@ -15,7 +15,7 @@ interface FriendRequestWithSender extends FriendRequestRow {
  * GET /api/friends/requests
  * 내가 받은 pending 요청 목록 반환 (sender profile 포함)
  */
-export const GET = async (request: NextRequest) => {
+export const GET = async (_request: NextRequest) => {
   try {
     // Supabase SSR 클라이언트 생성
     const supabase = createClient();
@@ -54,7 +54,10 @@ export const GET = async (request: NextRequest) => {
         .in('id', senderIds);
 
       if (profilesError) {
-        console.error('[API /api/friends/requests] Error fetching profiles:', profilesError);
+        console.error(
+          '[API /api/friends/requests] Error fetching profiles:',
+          profilesError
+        );
       } else {
         senderProfiles = (profiles || []).reduce(
           (acc, profile) => {
@@ -72,24 +75,21 @@ export const GET = async (request: NextRequest) => {
     const requestsWithSender: FriendRequestWithSender[] = requests.map(
       (req) => ({
         ...req,
-        sender_profile: req.sender_id ? senderProfiles[req.sender_id] || null : null,
+        sender_profile: req.sender_id
+          ? senderProfiles[req.sender_id] || null
+          : null,
       })
     );
 
-    return NextResponse.json(
-      { data: requestsWithSender },
-      { status: 200 }
-    );
+    return NextResponse.json({ data: requestsWithSender }, { status: 200 });
   } catch (error) {
     console.error('[API /api/friends/requests] Error:', error);
 
     const errorMessage =
-      error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+      error instanceof Error
+        ? error.message
+        : '알 수 없는 오류가 발생했습니다.';
 
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 };
-

@@ -5,7 +5,6 @@ import type { Database } from '@/types/supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase as baseSupabase } from '@/lib/supabase/client';
 import { useAuth } from '@/commons/providers/auth/auth.provider';
-import type { NotificationType } from '@/types/notification';
 
 type NotificationRow = Database['public']['Tables']['notifications']['Row'];
 type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
@@ -19,7 +18,7 @@ export interface NotificationWithActor extends NotificationRow {
  * 내 알림 목록을 조회하고 관리
  * Realtime을 통해 실시간으로 업데이트됨
  */
-export function useNotifications() {
+export const useNotifications = () => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<NotificationWithActor[]>(
     []
@@ -102,11 +101,13 @@ export function useNotifications() {
             filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
+            // eslint-disable-next-line no-console
             console.log('[useNotifications] Realtime event:', payload);
 
             // INSERT: 새로운 알림 추가
             if (payload.eventType === 'INSERT') {
-              const newNotification = payload.new as NotificationRow;
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              const _newNotification = payload.new as NotificationRow;
               // actor_profile을 가져오기 위해 refetch
               fetchNotifications();
             }
@@ -132,8 +133,10 @@ export function useNotifications() {
         )
         .subscribe((status, err) => {
           if (status === 'SUBSCRIBED') {
+            // eslint-disable-next-line no-console
             console.log('[useNotifications] Realtime subscribed');
           } else if (status === 'CHANNEL_ERROR') {
+            // eslint-disable-next-line no-console
             console.error('[useNotifications] Realtime error:', err);
             // 에러 발생 시 채널 정리
             if (channelRef.current === channel) {
@@ -141,6 +144,7 @@ export function useNotifications() {
               subscribedUserIdRef.current = null;
             }
           } else if (status === 'CLOSED') {
+            // eslint-disable-next-line no-console
             console.log('[useNotifications] Realtime channel closed');
             if (channelRef.current === channel) {
               channelRef.current = null;
@@ -152,7 +156,10 @@ export function useNotifications() {
       channelRef.current = channel;
       subscribedUserIdRef.current = user.id;
     } catch (err) {
-      console.error('[useNotifications] Failed to setup Realtime subscription:', err);
+      console.error(
+        '[useNotifications] Failed to setup Realtime subscription:',
+        err
+      );
       cleanupChannel();
     }
   }, [user?.id, fetchNotifications, cleanupChannel]);
@@ -216,5 +223,4 @@ export function useNotifications() {
     refetch: fetchNotifications,
     markAsRead,
   };
-}
-
+};

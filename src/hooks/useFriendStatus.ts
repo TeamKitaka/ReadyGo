@@ -10,7 +10,7 @@ export type FriendStatus = 'friend' | 'pending' | 'none' | null;
  * 친구 상태 확인 훅
  * 특정 사용자와의 친구 관계 상태를 확인
  */
-export function useFriendStatus(targetUserId: string | null) {
+export const useFriendStatus = (targetUserId: string | null) => {
   const [status, setStatus] = useState<FriendStatus>(null);
   const [loading, setLoading] = useState(false);
   const { friends } = useFriendList();
@@ -26,7 +26,9 @@ export function useFriendStatus(targetUserId: string | null) {
 
     try {
       // 1. 친구 목록에서 확인
-      const isFriend = friends.some((friend) => friend.user_id === targetUserId);
+      const isFriend = friends.some(
+        (friend) => friend.user_id === targetUserId
+      );
 
       if (isFriend) {
         setStatus('friend');
@@ -56,5 +58,4 @@ export function useFriendStatus(targetUserId: string | null) {
   }, [targetUserId, friends, requests]);
 
   return { status, loading };
-}
-
+};

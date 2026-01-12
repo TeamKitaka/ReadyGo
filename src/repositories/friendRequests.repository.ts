@@ -48,6 +48,7 @@ export const updateStatus = async (
   requestId: number,
   status: FriendRequestStatus
 ): Promise<FriendRequestRow | null> => {
+  // eslint-disable-next-line no-console
   console.log('[friendRequestsRepository.updateStatus] Updating status:', {
     requestId,
     status,
@@ -61,6 +62,7 @@ export const updateStatus = async (
     .maybeSingle();
 
   if (error) {
+    // eslint-disable-next-line no-console
     console.error('[friendRequestsRepository.updateStatus] Error:', {
       code: error.code,
       message: error.message,
@@ -70,6 +72,7 @@ export const updateStatus = async (
     throw error;
   }
 
+  // eslint-disable-next-line no-console
   console.log('[friendRequestsRepository.updateStatus] Success:', data);
   return data;
 };
@@ -131,4 +134,3 @@ export const findByReceiver = async (
 
   return data || [];
 };
-

@@ -7,7 +7,7 @@ import * as notificationsRepository from '@/repositories/notifications.repositor
  * 알림 읽음 처리
  * Body: { notificationId?: number } - notificationId가 없으면 모두 읽음 처리
  */
-export async function POST(request: NextRequest) {
+export const POST = async (request: NextRequest) => {
   try {
     const supabase = await createClient();
     const {
@@ -56,11 +56,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
   } catch (error) {
-    console.error('[POST /api/notifications/mark-read] Unexpected error:', error);
+    console.error(
+      '[POST /api/notifications/mark-read] Unexpected error:',
+      error
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
-}
-
+};

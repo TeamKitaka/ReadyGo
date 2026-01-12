@@ -16,7 +16,7 @@ export interface FriendWithProfile {
  * 친구 목록 훅
  * 친구 목록을 조회하고 관리 (profile, status 포함)
  */
-export function useFriendList() {
+export const useFriendList = () => {
   const [friends, setFriends] = useState<FriendWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -55,5 +55,4 @@ export function useFriendList() {
     error,
     refetch: fetchFriends,
   };
-}
-
+};

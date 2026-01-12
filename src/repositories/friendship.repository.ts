@@ -79,8 +79,12 @@ export const createPair = async (
   userA: string,
   userB: string
 ): Promise<FriendshipRow[]> => {
-  console.log('[friendshipRepository.createPair] Creating pair:', { userA, userB });
-  
+  // eslint-disable-next-line no-console
+  console.log('[friendshipRepository.createPair] Creating pair:', {
+    userA,
+    userB,
+  });
+
   // RLS 우회를 위해 supabaseAdmin 사용
   // 첫 번째 row 생성 (userA → userB)
   const { data: firstRow, error: firstError } = await supabaseAdmin
@@ -100,7 +104,7 @@ export const createPair = async (
       details: firstError.details,
       hint: firstError.hint,
     });
-    
+
     // UNIQUE constraint 위반인 경우 더 명확한 에러 메시지
     if (firstError.code === '23505' || firstError.message?.includes('unique')) {
       throw new Error('Friendship already exists');
@@ -126,10 +130,13 @@ export const createPair = async (
       details: secondError.details,
       hint: secondError.hint,
     });
-    
+
     // 두 번째 insert 실패 시 첫 번째 row는 이미 생성됨
     // 하지만 UNIQUE constraint로 인해 중복 생성은 방지됨
-    if (secondError.code === '23505' || secondError.message?.includes('unique')) {
+    if (
+      secondError.code === '23505' ||
+      secondError.message?.includes('unique')
+    ) {
       throw new Error('Friendship already exists');
     }
     throw secondError;

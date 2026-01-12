@@ -39,4 +39,3 @@ export const createFriendAcceptedNotification = async (
     entity_id: String(input.requestId), // number → string 변환
   });
 };
-

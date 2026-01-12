@@ -27,9 +27,9 @@ export const POST = async (request: NextRequest) => {
 
     // Body 파싱
     const body = await request.json();
-    const { request_id } = body;
+    const requestId = body.request_id;
 
-    if (!request_id || typeof request_id !== 'number') {
+    if (!requestId || typeof requestId !== 'number') {
       return NextResponse.json(
         { error: 'request_id는 숫자여야 합니다.' },
         { status: 400 }
@@ -38,7 +38,7 @@ export const POST = async (request: NextRequest) => {
 
     // Service 호출
     await acceptFriendRequest(supabase, {
-      requestId: request_id,
+      requestId,
       currentUserId: user.id,
     });
 
@@ -54,7 +54,9 @@ export const POST = async (request: NextRequest) => {
     });
 
     const errorMessage =
-      error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+      error instanceof Error
+        ? error.message
+        : '알 수 없는 오류가 발생했습니다.';
 
     // 에러 타입에 따라 상태 코드 결정
     if (errorMessage.includes('not found')) {
@@ -80,10 +82,6 @@ export const POST = async (request: NextRequest) => {
       );
     }
 
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 };
-

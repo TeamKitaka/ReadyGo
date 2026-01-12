@@ -6,7 +6,7 @@ import { useState } from 'react';
  * 친구 액션 훅
  * 친구 요청 수락/거절 기능 제공
  */
-export function useFriendActions() {
+export const useFriendActions = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,5 +74,4 @@ export function useFriendActions() {
     isLoading,
     error,
   };
-}
-
+};

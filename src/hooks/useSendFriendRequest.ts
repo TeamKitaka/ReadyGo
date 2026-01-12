@@ -6,7 +6,7 @@ import { useState } from 'react';
  * 친구 요청 보내기 훅
  * 친구 요청 전송 기능 제공
  */
-export function useSendFriendRequest() {
+export const useSendFriendRequest = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,5 +44,4 @@ export function useSendFriendRequest() {
     isLoading,
     error,
   };
-}
-
+};

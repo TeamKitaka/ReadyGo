@@ -53,4 +53,3 @@ export const rejectFriendRequest = async (
   // 4. 상태만 업데이트 (friendships 생성하지 않음)
   await friendRequestsRepository.updateStatus(client, requestId, 'rejected');
 };
-
