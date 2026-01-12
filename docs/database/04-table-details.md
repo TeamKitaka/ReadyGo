@@ -1,6 +1,6 @@
 # Table Details(ReadyGo)
 
-본 문서는 ReadyGo 서비스의 public schema 전체 테이블(36개)에 대한 상세 정의 문서이다.
+본 문서는 ReadyGo 서비스의 public schema 전체 테이블(38개)에 대한 상세 정의 문서이다.
 
 ### Source of Truth (SSOT)
 
@@ -510,7 +510,22 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | metadata   | jsonb       | ⭕       | 이벤트 데이터 |
 | created_at | timestamptz | ⭕       | 발생 시각     |
 
-#### 32. error_logs
+#### 32. game_start_logs
+
+- 게임 시작 로그 테이블
+- 매칭/파티 등에서 실제 게임 시작 시점의 행동을 기록
+
+| Column       | Type        | Nullable | Description                        |
+| ------------ | ----------- | -------- | ---------------------------------- |
+| id           | bigint      | ❌       | PK                                 |
+| actor_id     | uuid        | ❌       | 게임 시작을 요청한 유저            |
+| context_type | text        | ❌       | 게임 시작 컨텍스트 (match, party)  |
+| context_id   | text        | ❌       | 컨텍스트 식별자 (매칭 ID, 파티 ID) |
+| game_id      | text        | ⭕       | Steam 게임 ID                      |
+| game_name    | text        | ⭕       | 게임 이름                          |
+| created_at   | timestamptz | ❌       | 게임 시작 기록 시각                |
+
+#### 33. error_logs
 
 - 시스템 에러 기록 테이블
 - 서버/클라이언트/배치 작업 등에서 발생한 오류를 기록
@@ -523,7 +538,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | stacktrace | text        | ⭕       | 스택 트레이스  |
 | created_at | timestamptz | ⭕       | 발생 시각      |
 
-#### 33. bans
+#### 34. bans
 
 - 유저 제재 정보 테이블
 - 일시적 또는 영구 제재 상태 관리
@@ -536,7 +551,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | expires_at | timestamptz | ⭕       | 제재 만료 시각 |
 | created_at | timestamptz | ⭕       | 제재 생성 시각 |
 
-#### 34. temperature_logs
+#### 35. temperature_logs
 
 - 유저 온도 점수 변경 로그
 - 후기, 신고, 시스템 판단에 따른 점수 변화 기록
@@ -549,7 +564,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | reason     | text        | ⭕       | 변경 사유   |
 | created_at | timestamptz | ⭕       | 발생 시각   |
 
-#### 35. tier_history
+#### 36. tier_history
 
 - 유저 티어 변경 이력 테이블
 - 티어 상승/하락 이력 보존
@@ -562,24 +577,24 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | current_tier  | text        | ⭕       | 변경 후 티어 |
 | changed_at    | timestamptz | ⭕       | 변경 시각    |
 
-#### 36. notifications
+#### 37. notifications
 
 - 유저에게 전달되는 시스템 알림 테이블
 
-| Column      | Type        | Nullable | Description              |
-| ----------- | ----------- | -------- | ------------------------ |
-| id          | bigint      | ❌       | PK                       |
-| user_id     | uuid        | ⭕       | 알림 수신 유저           |
-| type        | text        | ⭕       | 알림 타입                |
-| title       | text        | ⭕       | 알림 제목                |
-| message     | text        | ⭕       | 알림 본문                |
-| is_read     | boolean     | ⭕       | 읽음 여부                |
-| actor_id    | uuid        | ⭕       | 알림 발생 주체 유저      |
-| entity_id   | text        | ⭕       | 관련 엔티티 ID           |
-| entity_type | text        | ⭕       | 관련 엔티티 타입         |
-| created_at  | timestamptz | ⭕       | 생성 시각                |
+| Column      | Type        | Nullable | Description         |
+| ----------- | ----------- | -------- | ------------------- |
+| id          | bigint      | ❌       | PK                  |
+| user_id     | uuid        | ⭕       | 알림 수신 유저      |
+| type        | text        | ⭕       | 알림 타입           |
+| title       | text        | ⭕       | 알림 제목           |
+| message     | text        | ⭕       | 알림 본문           |
+| is_read     | boolean     | ⭕       | 읽음 여부           |
+| actor_id    | uuid        | ⭕       | 알림 발생 주체 유저 |
+| entity_id   | text        | ⭕       | 관련 엔티티 ID      |
+| entity_type | text        | ⭕       | 관련 엔티티 타입    |
+| created_at  | timestamptz | ⭕       | 생성 시각           |
 
-#### 37. push_tokens
+#### 38. push_tokens
 
 - 푸시 알림 전송을 위한 디바이스 토큰 관리 테이블
 
@@ -602,8 +617,8 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
-- **Last Updated At**: 2026-01-11
-- **Document Version**: v1.0.14
+- **Last Updated At**: 2026-01-12
+- **Document Version**: v1.0.15
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
@@ -628,3 +643,4 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | v1.0.12 | 2026-01-09 | Match Domain에 match_results_cache 테이블 추가 (Step 1 캐싱 시스템)                                          |
 | v1.0.13 | 2026-01-09 | match_results_cache에 context 컬럼 추가, match_exposure_log 테이블 추가 (Step 2 중복 방지 + 5분 TTL)         |
 | v1.0.14 | 2026-01-11 | notifications 테이블에 actor_id, entity_id, entity_type 컬럼 추가                                            |
+| v1.0.15 | 2026-01-12 | System/Logs Domain에 game_start_logs 테이블 추가 (게임 시작 로그), 테이블 번호 재정렬 (32~38번)              |

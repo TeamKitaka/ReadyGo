@@ -100,6 +100,7 @@ erDiagram
   %% =========================
   user_profiles ||--o{ analytics_user_actions : logs
   user_profiles ||--o{ event_logs : triggers
+  user_profiles ||--o{ game_start_logs : starts_game
   user_profiles ||--o{ error_logs : causes
   user_profiles ||--o{ bans : restricted_by
   user_profiles ||--o{ temperature_logs : affects
@@ -181,7 +182,7 @@ erDiagram
 
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
-- **Last Updated At**: 2026-01-09
+- **Last Updated At**: 2026-01-12
 - **Document Version**: v1.0.6
 - **Status**: Active
 - **Source of Truth**:

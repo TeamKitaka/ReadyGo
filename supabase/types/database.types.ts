@@ -272,6 +272,36 @@ export type Database = {
         }
         Relationships: []
       }
+      game_start_logs: {
+        Row: {
+          actor_id: string
+          context_id: string
+          context_type: string
+          created_at: string
+          game_id: string | null
+          game_name: string | null
+          id: number
+        }
+        Insert: {
+          actor_id: string
+          context_id: string
+          context_type: string
+          created_at?: string
+          game_id?: string | null
+          game_name?: string | null
+          id?: number
+        }
+        Update: {
+          actor_id?: string
+          context_id?: string
+          context_type?: string
+          created_at?: string
+          game_id?: string | null
+          game_name?: string | null
+          id?: number
+        }
+        Relationships: []
+      }
       match_exposure_log: {
         Row: {
           context: string | null
