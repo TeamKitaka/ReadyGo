@@ -33,8 +33,24 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
 
-    // 요청 본문 파싱
-    const { userId, mode = 'single' } = await req.json();
+    // 요청 본문 파싱 (빈 본문 처리)
+    let body: { userId?: string; mode?: string } = {};
+    try {
+      const text = await req.text();
+      if (text) {
+        body = JSON.parse(text);
+      }
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON in request body' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const { userId, mode = 'single' } = body;
 
     if (mode === 'single') {
       // 단일 유저 업데이트 (동기화 직후 호출)
