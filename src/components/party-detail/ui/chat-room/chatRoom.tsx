@@ -181,10 +181,15 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
             }
             return null;
           })}
-          {/* 메시지 렌더링 */}
+          {/* 일반 메시지 렌더링 */}
           <div className={styles.messagesWrapper}>
             {formattedMessages.map((item, index) => {
               if (item.type !== 'message' || !item.message) {
+                return null;
+              }
+
+              // 시스템 메시지는 나중에 별도로 렌더링
+              if (item.message.content_type === 'system') {
                 return null;
               }
 
@@ -317,6 +322,21 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                   </div>
                 </div>
               );
+            })}
+            {/* 시스템 메시지 렌더링 (일반 메시지 뒤에 표시) */}
+            {formattedMessages.map((item, index) => {
+              if (item.type === 'message' && item.message?.content_type === 'system') {
+                return (
+                  <div
+                    key={`system-message-${item.message.id}-${index}`}
+                    className={styles.dateDivider}
+                    aria-label={`시스템 메시지: ${item.formattedContent || ''}`}
+                  >
+                    {item.formattedContent || ''}
+                  </div>
+                );
+              }
+              return null;
             })}
           </div>
         </div>

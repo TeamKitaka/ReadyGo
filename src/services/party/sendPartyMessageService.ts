@@ -20,7 +20,7 @@ type PartyMessage = Database['public']['Tables']['party_messages']['Row'];
  */
 export const sendPartyMessageService = async (
   postId: number,
-  senderId: string,
+  senderId: string | null,
   content: string,
   contentType: string = 'text'
 ): Promise<PartyMessage> => {
@@ -29,14 +29,18 @@ export const sendPartyMessageService = async (
     throw new ChatValidationError('postId는 양수여야 합니다.');
   }
 
-  if (
-    !senderId ||
-    typeof senderId !== 'string' ||
-    senderId.trim().length === 0
-  ) {
-    throw new ChatValidationError(
-      'senderId는 비어있지 않은 문자열이어야 합니다.'
-    );
+  // senderId는 null일 수 있음 (시스템 메시지의 경우)
+  // null이 아닌 경우에만 문자열 검증
+  if (senderId !== null) {
+    if (
+      !senderId ||
+      typeof senderId !== 'string' ||
+      senderId.trim().length === 0
+    ) {
+      throw new ChatValidationError(
+        'senderId는 null이거나 비어있지 않은 문자열이어야 합니다.'
+      );
+    }
   }
 
   if (!content || typeof content !== 'string' || content.trim().length === 0) {

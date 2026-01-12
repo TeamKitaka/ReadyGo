@@ -63,10 +63,11 @@ export const getPartyMessages = async (
  * - DB 접근만 수행, 에러 처리 및 데이터 가공 없음
  * - Supabase 응답 구조를 그대로 반환
  * - senderId는 해당 postId의 party_members에 포함된 사용자여야 함 (검증은 호출부에서 수행)
+ * - 시스템 메시지의 경우 senderId는 null일 수 있음
  */
 export const sendPartyMessage = async (
   postId: number,
-  senderId: string,
+  senderId: string | null,
   content: string,
   contentType: string = 'text'
 ): Promise<PartyMessage> => {

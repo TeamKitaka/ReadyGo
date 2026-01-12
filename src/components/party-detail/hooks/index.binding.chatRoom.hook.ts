@@ -857,12 +857,16 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       }
 
       // 메시지 아이템 추가
-      const isConsecutive = isConsecutiveMessage(message, previousMessage);
+      // 시스템 메시지는 항상 연속 메시지가 아님
+      const isSystemMessage = message.content_type === 'system';
+      const isConsecutive = isSystemMessage
+        ? false
+        : isConsecutiveMessage(message, previousMessage);
       const isOwnMessage = message.sender_id === user.id;
       const formattedTime = formatMessageTime(message.created_at);
       const formattedContent = formatMessageContent(message);
 
-      // 발신자 정보 조회
+      // 발신자 정보 조회 (시스템 메시지는 sender_id가 null이므로 undefined)
       const senderProfile = message.sender_id
         ? partyMemberProfiles.get(message.sender_id)
         : undefined;
