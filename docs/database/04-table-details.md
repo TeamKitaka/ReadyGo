@@ -1,6 +1,6 @@
 # Table Details(ReadyGo)
 
-본 문서는 ReadyGo 서비스의 public schema 전체 테이블(36개)에 대한 상세 정의 문서이다.
+본 문서는 ReadyGo 서비스의 public schema 전체 테이블(37개)에 대한 상세 정의 문서이다.
 
 ### Source of Truth (SSOT)
 
@@ -226,8 +226,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | difficulty    | text        | ❌       | 난이도                                           |
 | voice_chat    | text        | ⭕       | 보이스챗 사용 여부(required \| optional \| null) |
 | tags          | jsonb       | ⭕       | 태그 배열(string[] 권장)                         |
-| status        | text        | ❌       | 모집 상태(default: recruiting)                   |
-| created_at    | timestamptz | ❌       | 생성 시각(default: now())                        |
+| created_at    | timestamptz | ❌       | 생성 시각                                        |
 
 #### 16. party_members
 
@@ -245,13 +244,14 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 - 파티 채팅
 
-| Column     | Type        | Nullable | Description |
-| ---------- | ----------- | -------- | ----------- |
-| id         | bigint      | ❌       | PK          |
-| post_id    | bigint      | ⭕       | 파티 ID     |
-| sender_id  | uuid        | ⭕       | 발신자      |
-| content    | text        | ⭕       | 메시지      |
-| created_at | timestamptz | ⭕       | 전송 시각   |
+| Column       | Type        | Nullable | Description |
+| ------------ | ----------- | -------- | ----------- |
+| id           | bigint      | ❌       | PK          |
+| post_id      | bigint      | ⭕       | 파티 ID     |
+| sender_id    | uuid        | ⭕       | 발신자      |
+| content      | text        | ⭕       | 메시지      |
+| content_type | text        | ⭕       | 메시지 타입 |
+| created_at   | timestamptz | ⭕       | 전송 시각   |
 
 #### 18. party_activity_logs
 
@@ -485,7 +485,21 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 ### 7️⃣ System / Logs Domain
 
-#### 30. analytics_user_actions
+#### 30. game_start_logs
+
+- 게임 시작 로그
+
+| Column       | Type        | Nullable | Description   |
+| ------------ | ----------- | -------- | ------------- |
+| id           | bigint      | ❌       | PK            |
+| actor_id     | uuid        | ❌       | 행동 주체     |
+| context_type | text        | ❌       | 컨텍스트 타입 |
+| context_id   | uuid        | ❌       | 컨텍스트 ID   |
+| game_id      | text        | ⭕       | 게임 ID       |
+| game_name    | text        | ⭕       | 게임명        |
+| created_at   | timestamptz | ❌       | 생성 시각     |
+
+#### 31. analytics_user_actions
 
 - 행동 로그
 
@@ -497,7 +511,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | target_id  | text        | ⭕       | 행동 대상 식별자   |
 | created_at | timestamptz | ⭕       | 행동 발생 시각     |
 
-#### 31. event_logs
+#### 32. event_logs
 
 - 서비스 이벤트 기록 테이블
 - 유저 행동 또는 시스템 이벤트를 구조적으로 기록
@@ -510,7 +524,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | metadata   | jsonb       | ⭕       | 이벤트 데이터 |
 | created_at | timestamptz | ⭕       | 발생 시각     |
 
-#### 32. error_logs
+#### 33. error_logs
 
 - 시스템 에러 기록 테이블
 - 서버/클라이언트/배치 작업 등에서 발생한 오류를 기록
@@ -523,7 +537,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | stacktrace | text        | ⭕       | 스택 트레이스  |
 | created_at | timestamptz | ⭕       | 발생 시각      |
 
-#### 33. bans
+#### 34. bans
 
 - 유저 제재 정보 테이블
 - 일시적 또는 영구 제재 상태 관리
@@ -536,7 +550,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | expires_at | timestamptz | ⭕       | 제재 만료 시각 |
 | created_at | timestamptz | ⭕       | 제재 생성 시각 |
 
-#### 34. temperature_logs
+#### 35. temperature_logs
 
 - 유저 온도 점수 변경 로그
 - 후기, 신고, 시스템 판단에 따른 점수 변화 기록
@@ -549,7 +563,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | reason     | text        | ⭕       | 변경 사유   |
 | created_at | timestamptz | ⭕       | 발생 시각   |
 
-#### 35. tier_history
+#### 36. tier_history
 
 - 유저 티어 변경 이력 테이블
 - 티어 상승/하락 이력 보존
@@ -562,21 +576,23 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | current_tier  | text        | ⭕       | 변경 후 티어 |
 | changed_at    | timestamptz | ⭕       | 변경 시각    |
 
-#### 36. notifications
+#### 37. notifications
 
 - 유저에게 전달되는 시스템 알림 테이블
 
-| Column     | Type        | Nullable | Description    |
-| ---------- | ----------- | -------- | -------------- |
-| id         | bigint      | ❌       | PK             |
-| user_id    | uuid        | ⭕       | 알림 수신 유저 |
-| type       | text        | ⭕       | 알림 타입      |
-| title      | text        | ⭕       | 알림 제목      |
-| message    | text        | ⭕       | 알림 본문      |
-| is_read    | boolean     | ⭕       | 읽음 여부      |
-| created_at | timestamptz | ⭕       | 생성 시각      |
+| Column      | Type        | Nullable | Description    |
+| ----------- | ----------- | -------- | -------------- |
+| id          | bigint      | ❌       | PK             |
+| user_id     | uuid        | ⭕       | 알림 수신 유저 |
+| type        | text        | ⭕       | 알림 타입      |
+| actor_id    | uuid        | ⭕       | 행동 주체 ID   |
+| entity_type | text        | ⭕       | 엔티티 타입    |
+| entity_id   | uuid        | ⭕       | 엔티티 ID      |
+| message     | text        | ⭕       | 알림 본문      |
+| is_read     | boolean     | ⭕       | 읽음 여부      |
+| created_at  | timestamptz | ⭕       | 생성 시각      |
 
-#### 37. push_tokens
+#### 38. push_tokens
 
 - 푸시 알림 전송을 위한 디바이스 토큰 관리 테이블
 
@@ -584,7 +600,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | ---------- | ----------- | -------- | ----------- |
 | id         | bigint      | ❌       | PK          |
 | user_id    | uuid        | ⭕       | 유저        |
-| token      | text        | ❌       | 푸시 토큰   |
+| token      | text        | ⭕       | 푸시 토큰   |
 | platform   | text        | ⭕       | 플랫폼      |
 | created_at | timestamptz | ⭕       | 생성 시각   |
 
@@ -600,7 +616,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
 - **Last Updated At**: 2026-01-09
-- **Document Version**: v1.0.13
+- **Document Version**: v1.0.14
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
@@ -608,19 +624,20 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 ## Version History
 
-| Version | Date       | Description                                                                                                  |
-| ------: | ---------- | ------------------------------------------------------------------------------------------------------------ |
-|  v1.0.0 | 2025-12-24 | Detailed table & column documentation (33 tables)                                                            |
-|  v1.0.1 | 2025-12-26 | steam_game_info 테이블 컬럼 추가 및 수정                                                                     |
-|  v1.0.2 | 2025-12-26 | steam_game_info categories, genres 컬럼 수정(jsonb[], text[])                                                |
-|  v1.0.3 | 2025-12-26 | 게임 단위 Steam 메타 동기화 상세 로그 확인을 위한 steam_game_sync_logs 테이블 추가                           |
-|  v1.0.4 | 2025-12-27 | party_posts 컬럼 NOT NULL 정리 및 RLS 정책 적용(생성자만 수정 가능, 인증 유저 조회 허용)                     |
-|  v1.0.5 | 2025-12-27 | title => game_title 컬럼 명 변경                                                                             |
-|  v1.0.6 | 2025-12-29 | User/Profile Domain에 user_status 테이블 추가                                                                |
-|  v1.0.7 | 2025-12-29 | user_play_schedules 테이블 추가, 테이블 번호 순서 정리 (5번 중복 해결, 6~36번으로 재정렬)                    |
-|  v1.0.8 | 2025-01-13 | chat_blocks 테이블명을 user_blocks로 변경, User/Profile Domain으로 이동                                      |
-|  v1.0.9 | 2025-01-15 | chat_message_reads 테이블: message_id, user_id를 NOT NULL로 변경, (message_id, user_id) UNIQUE 제약조건 추가 |
-| v1.0.10 | 2025-01-07 | Steam Domain에 steam_user_stats 테이블 추가, 테이블 번호 재정렬 (27~37번)                                    |
-| v1.0.11 | 2025-01-15 | user_profiles.temperature_score, temperature_logs.change 컬럼 타입을 int → numeric으로 변경                  |
-| v1.0.12 | 2026-01-09 | Match Domain에 match_results_cache 테이블 추가 (Step 1 캐싱 시스템)                                          |
-| v1.0.13 | 2026-01-09 | match_results_cache에 context 컬럼 추가, match_exposure_log 테이블 추가 (Step 2 중복 방지 + 5분 TTL)         |
+| Version | Date       | Description                                                                                                                                                                       |
+| ------: | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|  v1.0.0 | 2025-12-24 | Detailed table & column documentation (33 tables)                                                                                                                                 |
+|  v1.0.1 | 2025-12-26 | steam_game_info 테이블 컬럼 추가 및 수정                                                                                                                                          |
+|  v1.0.2 | 2025-12-26 | steam_game_info categories, genres 컬럼 수정(jsonb[], text[])                                                                                                                     |
+|  v1.0.3 | 2025-12-26 | 게임 단위 Steam 메타 동기화 상세 로그 확인을 위한 steam_game_sync_logs 테이블 추가                                                                                                |
+|  v1.0.4 | 2025-12-27 | party_posts 컬럼 NOT NULL 정리 및 RLS 정책 적용(생성자만 수정 가능, 인증 유저 조회 허용)                                                                                          |
+|  v1.0.5 | 2025-12-27 | title => game_title 컬럼 명 변경                                                                                                                                                  |
+|  v1.0.6 | 2025-12-29 | User/Profile Domain에 user_status 테이블 추가                                                                                                                                     |
+|  v1.0.7 | 2025-12-29 | user_play_schedules 테이블 추가, 테이블 번호 순서 정리 (5번 중복 해결, 6~36번으로 재정렬)                                                                                         |
+|  v1.0.8 | 2025-01-13 | chat_blocks 테이블명을 user_blocks로 변경, User/Profile Domain으로 이동                                                                                                           |
+|  v1.0.9 | 2025-01-15 | chat_message_reads 테이블: message_id, user_id를 NOT NULL로 변경, (message_id, user_id) UNIQUE 제약조건 추가                                                                      |
+| v1.0.10 | 2025-01-07 | Steam Domain에 steam_user_stats 테이블 추가, 테이블 번호 재정렬 (27~37번)                                                                                                         |
+| v1.0.11 | 2025-01-15 | user_profiles.temperature_score, temperature_logs.change 컬럼 타입을 int → numeric으로 변경                                                                                       |
+| v1.0.12 | 2026-01-09 | Match Domain에 match_results_cache 테이블 추가 (Step 1 캐싱 시스템)                                                                                                               |
+| v1.0.13 | 2026-01-09 | match_results_cache에 context 컬럼 추가, match_exposure_log 테이블 추가 (Step 2 중복 방지 + 5분 TTL)                                                                              |
+| v1.0.14 | 2026-01-09 | database.types.ts 기준으로 문서 동기화: party_posts.status 제거, party_messages.content_type 추가, notifications 구조 변경, game_start_logs 추가, push_tokens.token nullable 변경 |
