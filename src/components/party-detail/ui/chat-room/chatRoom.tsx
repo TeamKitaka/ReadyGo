@@ -7,12 +7,15 @@ import parentStyles from '../../styles.module.css';
 import Avatar from '@/commons/components/avatar';
 import Input from '@/commons/components/input';
 import Icon from '@/commons/components/icon';
+import Button from '@/commons/components/button';
 import { AnimalType } from '@/commons/constants/animal';
 import { useChatRoom } from '../../hooks/index.binding.chatRoom.hook';
 import { useGameLinkPreview } from '@/hooks/useGameLinkPreview';
 import { useGameStartLog } from '@/hooks/useGameStartLog';
 import { useModal } from '@/commons/providers/modal/modal.provider';
 import GameLinkPreview from '@/commons/components/game-link-preview';
+import { useSteamProfileShare } from '@/hooks/useSteamProfileShare';
+import SteamProfileLinkPreview from '@/commons/components/steam-profile-link-preview';
 
 interface ChatRoomProps {
   isExpired?: boolean;
@@ -54,12 +57,39 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
   // 모달 Hook 사용
   const { openModal } = useModal();
 
+  // 스팀 프로필 공유 Hook 사용
+  const { handleShareSteamProfile } = useSteamProfileShare({
+    sendMessage,
+    isBlocked,
+  });
+
   // 플로팅 버튼 표시 여부
   const [showScrollToBottomButton, setShowScrollToBottomButton] =
     useState(false);
 
   // 메시지 입력 상태 관리
   const [messageInput, setMessageInput] = useState('');
+
+  /**
+   * Steam 프로필 URL에서 steam_id 추출
+   */
+  const extractSteamId = useCallback((url: string | null): string | null => {
+    if (!url) {
+      return null;
+    }
+    const match = url.match(/steamcommunity\.com\/profiles\/(\d+)/);
+    return match ? match[1] : null;
+  }, []);
+
+  /**
+   * 메시지가 Steam 프로필 링크인지 확인
+   */
+  const isSteamProfileLink = useCallback(
+    (content: string | null): boolean => {
+      return extractSteamId(content) !== null;
+    },
+    [extractSteamId]
+  );
 
   // 메시지 전송 핸들러
   const handleSendMessage = async () => {
@@ -168,6 +198,23 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
 
   return (
     <div className={parentStyles.chatArea}>
+      {/* 스팀 프로필 공유 버튼 */}
+      {!isBlocked && !isExpired && (
+        <div className={styles.steamProfileShareSection}>
+          <Button
+            variant="ghost"
+            size="s"
+            shape="rectangle"
+            onClick={handleShareSteamProfile}
+            className={styles.steamProfileShareButton}
+            aria-label="스팀 프로필 공유"
+          >
+            <Icon name="steam" size={20} />
+            <span>스팀 프로필 공유</span>
+          </Button>
+        </div>
+      )}
+
       {/* 메시지 리스트 영역 */}
       <div
         ref={messageListRef}
@@ -220,6 +267,12 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                 : null;
               const gameInfo = gameAppId ? getGameInfo(gameAppId) : null;
 
+              // Steam 프로필 링크인지 확인
+              const isProfileLink = isSteamProfileLink(message.content);
+              const steamId = isProfileLink
+                ? extractSteamId(message.content)
+                : null;
+
               // 내 메시지 렌더링
               if (isOwnMessage) {
                 return (
@@ -232,7 +285,9 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                       aria-label={
                         isGameLinkMessage
                           ? `내 게임 링크 메시지`
-                          : `내 메시지: ${formattedContent || ''}`
+                          : isProfileLink
+                            ? `내 스팀 프로필 링크 메시지`
+                            : `내 메시지: ${formattedContent || ''}`
                       }
                     >
                       <div className={styles.ownMessageContainer}>
@@ -264,6 +319,22 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                                     window.location.href = `steam://run/${gameAppId}`;
                                   },
                                 });
+                              }}
+                            />
+                          </>
+                        ) : isProfileLink && steamId ? (
+                          <>
+                            <div className={styles.messageTime}>
+                              {formattedTime}
+                            </div>
+                            <SteamProfileLinkPreview
+                              steamId={steamId}
+                              nickname={senderNickname}
+                              onProfileView={() => {
+                                window.open(
+                                  `https://steamcommunity.com/profiles/${steamId}/`,
+                                  '_blank'
+                                );
                               }}
                             />
                           </>
@@ -323,7 +394,41 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                                   gameInfo={gameInfo}
                                   appId={gameAppId}
                                   onGameStart={() => {
-                                    window.location.href = `steam://run/${gameAppId}`;
+                                    // 확인 모달 표시
+                                    openModal({
+                                      variant: 'dual',
+                                      title: '게임 시작',
+                                      description: '게임을 시작하시겠습니까?',
+                                      confirmText: '확인',
+                                      cancelText: '취소',
+                                      onConfirm: async () => {
+                                        // 게임 시작 로그 생성
+                                        await createGameStartLog({
+                                          contextType: 'party',
+                                          contextId: postIdNumber.toString(),
+                                          gameId: gameAppId.toString(),
+                                          gameName: gameInfo?.name ?? undefined,
+                                        });
+                                        // Steam 실행
+                                        window.location.href = `steam://run/${gameAppId}`;
+                                      },
+                                    });
+                                  }}
+                                />
+                                <div className={styles.messageTime}>
+                                  {formattedTime}
+                                </div>
+                              </>
+                            ) : isProfileLink && steamId ? (
+                              <>
+                                <SteamProfileLinkPreview
+                                  steamId={steamId}
+                                  nickname={senderNickname}
+                                  onProfileView={() => {
+                                    window.open(
+                                      `https://steamcommunity.com/profiles/${steamId}/`,
+                                      '_blank'
+                                    );
                                   }}
                                 />
                                 <div className={styles.messageTime}>

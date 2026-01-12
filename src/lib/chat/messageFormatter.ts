@@ -137,5 +137,9 @@ export const formatMessageContent = (message: ChatMessage | null): string => {
     return content;
   }
 
+  if (contentType === 'profile_link') {
+    return 'Steam 프로필';
+  }
+
   return content;
 };

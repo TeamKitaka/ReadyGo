@@ -12,17 +12,24 @@ import { AnimalType } from '@/commons/constants/animal';
 import { useSideProfilePanel } from '@/hooks/useSideProfilePanel';
 import { useChatRoom, useChatRoomInput } from '@/components/chat/hooks';
 import { formatDateDivider } from '@/lib/chat/messageFormatter';
+import { useAuth } from '@/commons/providers/auth/auth.provider';
 import GameSelectModal from '@/commons/components/game-select-modal';
 import { useGameLinkPreview } from '@/hooks/useGameLinkPreview';
 import { useGameStartLog } from '@/hooks/useGameStartLog';
 import { useModal } from '@/commons/providers/modal/modal.provider';
 import GameLinkPreview from '@/commons/components/game-link-preview';
+import { useSteamProfileShare } from '@/hooks/useSteamProfileShare';
+import SteamProfileLinkPreview from '@/commons/components/steam-profile-link-preview';
 
 interface ChatRoomProps {
   roomId?: string;
 }
 
 export default function ChatRoom({ roomId }: ChatRoomProps) {
+  // 현재 사용자 정보
+  const { user } = useAuth();
+  const [currentUserNickname, setCurrentUserNickname] = useState<string>('');
+
   // 사이드 프로필 패널 제어
   const { toggleProfile, openProfile, isOpen, targetUserId } =
     useSideProfilePanel();
@@ -65,6 +72,12 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
   // 모달 Hook 사용
   const { openModal } = useModal();
 
+  // 스팀 프로필 공유 Hook 사용
+  const { handleShareSteamProfile } = useSteamProfileShare({
+    sendMessage,
+    isBlocked,
+  });
+
   // 플로팅 버튼 표시 여부
   const [showScrollToBottomButton, setShowScrollToBottomButton] =
     useState(false);
@@ -82,6 +95,42 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
     isBlocked,
     otherMemberNickname: otherMemberInfo?.nickname,
   });
+
+  /**
+   * Steam 프로필 URL에서 steam_id 추출
+   */
+  const extractSteamId = useCallback((url: string | null): string | null => {
+    if (!url) {
+      return null;
+    }
+    const match = url.match(/steamcommunity\.com\/profiles\/(\d+)/);
+    return match ? match[1] : null;
+  }, []);
+
+  // 현재 사용자 닉네임 조회
+  useEffect(() => {
+    const fetchCurrentUserNickname = async () => {
+      if (!user?.id) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/profile/${user.id}`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const profileData = await response.json();
+          setCurrentUserNickname(profileData.nickname || '');
+        }
+      } catch (error) {
+        console.error('Failed to fetch current user nickname:', error);
+      }
+    };
+
+    fetchCurrentUserNickname();
+  }, [user?.id]);
 
   // 채팅방이 변경될 때 사이드 패널이 열려있다면 새로운 상대방의 프로필로 자동 업데이트
   useEffect(() => {
@@ -239,6 +288,23 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
         </div>
       )}
 
+      {/* 스팀 프로필 공유 버튼 */}
+      {!isBlocked && otherMemberInfo && (
+        <div className={styles.steamProfileShareSection}>
+          <Button
+            variant="ghost"
+            size="s"
+            shape="rectangle"
+            onClick={handleShareSteamProfile}
+            className={styles.steamProfileShareButton}
+            aria-label="스팀 프로필 공유"
+          >
+            <Icon name="steam" size={20} />
+            <span>스팀 프로필 공유</span>
+          </Button>
+        </div>
+      )}
+
       {/* 메시지 리스트 영역 */}
       <div
         ref={messageListRef}
@@ -323,6 +389,13 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
               : null;
             const gameInfo = gameAppId ? getGameInfo(gameAppId) : null;
 
+            // 프로필 링크인지 확인
+            const isProfileLinkMessage =
+              message.content_type === 'profile_link';
+            const steamId = isProfileLinkMessage
+              ? extractSteamId(message.content)
+              : null;
+
             if (isOwnMessage) {
               return (
                 <div
@@ -332,7 +405,9 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
                   aria-label={
                     isGameLinkMessage
                       ? `내 게임 링크 메시지`
-                      : `내 메시지: ${formattedContent}`
+                      : isProfileLinkMessage
+                        ? `내 스팀 프로필 링크 메시지`
+                        : `내 메시지: ${formattedContent}`
                   }
                 >
                   <div className={styles.ownMessageContainer}>
@@ -396,7 +471,9 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
                 aria-label={
                   isGameLinkMessage
                     ? `${displayNickname}의 게임 링크 메시지`
-                    : `${displayNickname}의 메시지: ${formattedContent}`
+                    : isProfileLinkMessage
+                      ? `${displayNickname}의 스팀 프로필 링크 메시지`
+                      : `${displayNickname}의 메시지: ${formattedContent}`
                 }
               >
                 <div
