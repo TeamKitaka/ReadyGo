@@ -1,5 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { Database } from '@/types/supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * steam_user_stats Repository
@@ -13,6 +14,9 @@ export type SteamUserStatsRow = {
   avg_weekly_playtime: number;
   main_genres: string[];
   active_time_slots: string[];
+  total_playtime_2w_minutes: number | null;
+  genre_playtime_2w_minutes: Record<string, number> | null;
+  top_genres_2w: string[];
   updated_at: string;
 };
 
@@ -24,13 +28,12 @@ export type SteamUserStatsRow = {
  * @param _client - 사용하지 않음 (supabaseAdmin 사용)
  * @param userId - 조회할 사용자 ID
  */
-export const findByUserId = async (
-  _client: unknown,
-  userId: string
-) => {
+export const findByUserId = async (_client: unknown, userId: string) => {
   return await supabaseAdmin
     .from('steam_user_stats')
-    .select('play_style, avg_weekly_playtime, main_genres, active_time_slots')
+    .select(
+      'play_style, avg_weekly_playtime, main_genres, active_time_slots, total_playtime_2w_minutes, genre_playtime_2w_minutes, top_genres_2w'
+    )
     .eq('user_id', userId)
     .maybeSingle();
 };

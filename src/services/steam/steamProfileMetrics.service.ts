@@ -218,6 +218,119 @@ export const classifyPlayStyle = (metrics: ActivityMetrics): PlayStyle => {
 };
 
 /**
+ * total_playtime_2w_minutes 계산
+ * 모든 게임의 playtime_recent 합계 (분 단위)
+ */
+const calculateTotalPlaytime2w = (games: FilteredGame[]): number => {
+  return games.reduce((sum, game) => {
+    return sum + (game.playtimeRecent || 0);
+  }, 0);
+};
+
+/**
+ * 게임 장르 정보 조회 (배치 처리, CHUNK_SIZE = 100)
+ * 성능 최적화: Map<app_id, genres[]> 반환
+ */
+const fetchGameGenres = async (
+  appIds: number[]
+): Promise<Map<number, string[]>> => {
+  const gameInfoMap = new Map<number, string[]>();
+  const CHUNK_SIZE = 100;
+  const supabase = createClient;
+
+  for (let i = 0; i < appIds.length; i += CHUNK_SIZE) {
+    const chunk = appIds.slice(i, i + CHUNK_SIZE);
+    const { data, error } = await supabase
+      .from('steam_game_info')
+      .select('app_id, genres')
+      .in('app_id', chunk);
+
+    if (error) {
+      throw new Error(`Failed to fetch game genres: ${error.message}`);
+    }
+
+    if (data) {
+      for (const info of data) {
+        if (info.genres && Array.isArray(info.genres)) {
+          gameInfoMap.set(
+            info.app_id,
+            info.genres.filter(
+              (g): g is string => typeof g === 'string' && g.trim() !== ''
+            )
+          );
+        }
+      }
+    }
+  }
+
+  return gameInfoMap;
+};
+
+/**
+ * genre_playtime_2w_minutes 계산
+ * 장르별 playtime_2weeks 합계 (중복 포함, 분 단위)
+ */
+const calculateGenrePlaytime2w = async (
+  games: FilteredGame[]
+): Promise<Record<string, number>> => {
+  // playtime_recent가 0보다 큰 게임만 필터링
+  const gamesWithPlaytime = games.filter(
+    (g) => (g.playtimeRecent || 0) > 0
+  );
+
+  if (gamesWithPlaytime.length === 0) {
+    return {};
+  }
+
+  // steam_game_info에서 장르 정보 조회 (배치 처리, Map으로 반환)
+  const appIds = gamesWithPlaytime.map((g) => g.appId);
+  const gameInfoMap = await fetchGameGenres(appIds);
+
+  // 장르별 playtime 합산 (중복 포함)
+  const genreMap = new Map<string, number>();
+
+  for (const game of gamesWithPlaytime) {
+    const playtime = game.playtimeRecent || 0;
+    if (playtime === 0) continue;
+
+    const genres = gameInfoMap.get(game.appId);
+    if (!genres || genres.length === 0) {
+      continue;
+    }
+
+    // 게임이 여러 장르를 가지면 각 장르에 전체 playtime 추가
+    for (const genre of genres) {
+      const current = genreMap.get(genre) || 0;
+      genreMap.set(genre, current + playtime);
+    }
+  }
+
+  // Map을 Record로 변환 (0분 장르 제외)
+  const result: Record<string, number> = {};
+  for (const [genre, minutes] of genreMap.entries()) {
+    if (minutes > 0) {
+      result[genre] = minutes;
+    }
+  }
+
+  return result;
+};
+
+/**
+ * top_genres_2w 계산
+ * genre_playtime_2w_minutes 기준으로 상위 N개 장르 선택
+ */
+const calculateTopGenres2w = (
+  genrePlaytime: Record<string, number>,
+  limit: number = 5
+): string[] => {
+  return Object.entries(genrePlaytime)
+    .sort(([, a], [, b]) => b - a) // 분 내림차순
+    .slice(0, limit)
+    .map(([genre]) => genre);
+};
+
+/**
  * steam_user_stats 업데이트
  *
  * @param userId - 유저 ID
@@ -238,7 +351,12 @@ export const updateSteamUserStats = async (
   // 3. Play Style 분류
   const playStyle = classifyPlayStyle(activityMetrics);
 
-  // 4. steam_user_stats 업데이트
+  // 4. 2주 집계 계산
+  const totalPlaytime2wMinutes = calculateTotalPlaytime2w(games);
+  const genrePlaytime2wMinutes = await calculateGenrePlaytime2w(games);
+  const topGenres2w = calculateTopGenres2w(genrePlaytime2wMinutes);
+
+  // 5. steam_user_stats 업데이트
   const supabase = createClient;
 
   const { error } = await supabase.from('steam_user_stats').upsert(
@@ -248,6 +366,9 @@ export const updateSteamUserStats = async (
       avg_weekly_playtime: activityMetrics.avgWeeklyPlaytimeHours || 0,
       main_genres: genreProfile.mainGenres,
       active_time_slots: [], // 추후 확장용 (현재는 빈 배열)
+      total_playtime_2w_minutes: totalPlaytime2wMinutes,
+      genre_playtime_2w_minutes: genrePlaytime2wMinutes,
+      top_genres_2w: topGenres2w,
       updated_at: new Date().toISOString(),
     },
     {
