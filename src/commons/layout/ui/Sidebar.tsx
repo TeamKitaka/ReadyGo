@@ -1,7 +1,10 @@
+'use client';
+
 import Icon from '@/commons/components/icon';
 import { URL_PATHS } from '@/commons/constants/url';
 import styles from '../styles.module.css';
 import { NavigationButton } from '../hooks/useLayoutNavigation';
+import { useFriendRequests } from '@/hooks/useFriendRequests';
 
 interface SidebarProps {
   activeNav: NavigationButton;
@@ -17,6 +20,8 @@ export const Sidebar = ({
   onNotificationsClick,
   onFriendsClick,
 }: SidebarProps) => {
+  const { requests } = useFriendRequests();
+  const friendRequestCount = requests.length;
   return (
     <aside className={styles.sidebar}>
       {/* Logo */}
@@ -88,7 +93,7 @@ export const Sidebar = ({
           <button className={styles.menuButton} onClick={onFriendsClick}>
             <div className={styles.menuButtonIcon}>
               <Icon name="group" size={24} className={styles.themeIcon} />
-              <div className={styles.badge} />
+              {friendRequestCount > 0 && <div className={styles.badge} />}
             </div>
           </button>
         </div>

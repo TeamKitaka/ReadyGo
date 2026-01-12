@@ -1,5 +1,6 @@
 export type NotificationType =
   | 'FRIEND_REQUESTED'
+  | 'FRIEND_ACCEPTED'
   | 'CHAT_RECEIVED'
   | 'REVIEW_REQUESTED'
   | 'REVIEW_RECEIVED'

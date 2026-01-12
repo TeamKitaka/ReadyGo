@@ -5,10 +5,12 @@ import styles from './styles.module.css';
 import Searchbar from '@/commons/components/searchbar';
 import FriendLists from '../friend-lists/friendLists';
 import FriendRequests from '../friend-requests/friendRequests';
+import { useFriendRequests } from '@/hooks/useFriendRequests';
 
 export default function FriendsContainer() {
   const [activeTab, setActiveTab] = useState<'list' | 'request'>('list');
-  const [friendRequestCount] = useState(3);
+  const { requests } = useFriendRequests();
+  const friendRequestCount = requests.length;
 
   return (
     <div className={styles.container}>
