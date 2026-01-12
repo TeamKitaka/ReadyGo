@@ -42,9 +42,7 @@ export default function PartySection({
             현재 참여 가능한 파티가 없습니다.
           </div>
         ) : (
-          parties.map((party, index) => (
-            <PartyCard key={index} {...party} />
-          ))
+          parties.map((party, index) => <PartyCard key={index} {...party} />)
         )}
       </div>
     </div>

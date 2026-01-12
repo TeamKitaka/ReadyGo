@@ -75,4 +75,3 @@ export const useHomeParties = () => {
 
   return { parties, loading, error };
 };
-

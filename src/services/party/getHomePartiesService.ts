@@ -68,19 +68,21 @@ export const getHomePartiesService = async (
       .slice(0, 6);
 
     // 6. PartyCardProps 형태로 변환
-    const result = underCapacityParties.map(({ post, members, currentMembers }) => ({
-      postId: post.id,
-      title: post.party_title,
-      gameName: post.game_title,
-      description: post.description,
-      currentMembers,
-      maxMembers: post.max_members,
-      members: members.slice(0, 3).map((m: PartyMemberWithProfile) => ({
-        animalType: m.animal_type || undefined,
-        nickname: m.nickname,
-      })),
-      tags: Array.isArray(post.tags) ? (post.tags as string[]) : [],
-    }));
+    const result = underCapacityParties.map(
+      ({ post, members, currentMembers }) => ({
+        postId: post.id,
+        title: post.party_title,
+        gameName: post.game_title,
+        description: post.description,
+        currentMembers,
+        maxMembers: post.max_members,
+        members: members.slice(0, 3).map((m: PartyMemberWithProfile) => ({
+          animalType: m.animal_type || undefined,
+          nickname: m.nickname,
+        })),
+        tags: Array.isArray(post.tags) ? (post.tags as string[]) : [],
+      })
+    );
 
     return result;
   } catch (error) {
@@ -88,4 +90,3 @@ export const getHomePartiesService = async (
     return [];
   }
 };
-
