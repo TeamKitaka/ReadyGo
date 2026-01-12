@@ -55,8 +55,7 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
   } = useChatRoom({ roomId: roomIdNumber });
 
   // 게임 링크 미리보기 Hook 사용
-  const { isGameLink, extractGameAppId, getGameInfo } =
-    useGameLinkPreview(messages);
+  const { extractGameAppId, getGameInfo } = useGameLinkPreview(messages);
 
   // 플로팅 버튼 표시 여부
   const [showScrollToBottomButton, setShowScrollToBottomButton] =
