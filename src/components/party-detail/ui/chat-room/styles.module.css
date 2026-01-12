@@ -2,6 +2,7 @@
   flex: 1;
   min-width: 0;
   max-width: 824px;
+  height: 630px;
   padding: 32px;
   display: flex;
   flex-direction: column;

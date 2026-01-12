@@ -1,0 +1,164 @@
+아래의 조건을 모두 적용하여, 아래의 요구사항을 모두 구현할 것.
+구현 결과를 체크리스트로 반환할 것.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하여 작업하고, 이 작업이 끝나면 해당 rules 적용 결과를 체크리스트로 반환할 것.
+            - Service / Domain / Hook 레이어 책임을 엄격히 분리할 것
+            - Hook은 상태 관리 + UX 가공만 담당할 것
+            - Domain 타입, Domain 함수 import 금지
+            - Service 로직 복사 금지
+            - useEffect 내부에 복잡한 분기 로직 금지
+            - throw, null 반환 금지
+            - default export 금지, named export만 허용
+
+==============================================
+
+조건-파일경로) 참고 및 기준 파일 경로는 다음과 같다.
+            - 구현될 Hook 파일 경로: src/components/chat/hooks/useChatRoomInput.hook.tsx
+            - 참고할 Hook 파일 경로: src/hooks/useGameSelectModal.ts
+            - 참고할 컴포넌트 파일 경로: src/commons/components/game-select-modal/index.tsx
+
+==============================================
+
+조건-구현참고) 반드시 참고할 기존 구현 패턴은 다음과 같다.
+            - 다른 Hook들은 다음의 패턴을 따른다.
+                - 상태 관리 분리 (loading / error / data)
+                - useCallback을 사용한 핸들러 최적화
+                - 중복 전송 방지 (ref 사용)
+
+==============================================
+
+핵심요구사항) 다음 기능을 step-by-step으로 구현하고, 각 항목의 적용 여부를 체크리스트로 반환할 것.
+
+1. useChatRoomInput Hook 수정
+    - useGameSelectModal hook을 사용하여 게임 선택 모달 상태 관리
+    - handleGameStart 함수 수정:
+      - 기존 useModal 제거
+      - useGameSelectModal의 openModal 호출
+    - 게임 선택 확인 핸들러 추가:
+      - steam://run/{appId} 형식의 메시지 생성
+      - sendMessage(content, 'game_link') 호출
+    - 반환 타입에 게임 선택 모달 관련 상태 추가:
+      - gameSelectModal 관련 props 반환
+
+2. Hook 시그니처 고정
+    export const useChatRoomInput = (
+        props: UseChatRoomInputProps
+    ): UseChatRoomInputReturn => { ... }
+
+3. useGameSelectModal 통합
+    - useGameSelectModal hook import 및 사용
+    - 게임 선택 모달 상태를 Hook 내부에서 관리
+    - 모달 열기/닫기 제어
+
+4. handleGameStart 함수 수정
+    - 기존 useModal 관련 코드 제거
+    - useGameSelectModal의 openModal() 호출
+    - otherMemberNickname 및 isBlocked 체크 유지
+    - useCallback으로 최적화
+
+5. 게임 선택 확인 핸들러 구현
+    - handleGameConfirm 함수 추가
+    - 함수 시그니처: (game: SteamGame) => Promise<void>
+    - 내부 처리:
+        1) isBlocked 체크
+        2) steam://run/{appId} 형식의 메시지 생성
+        3) sendMessage(gameLink, 'game_link') 호출
+        4) 전송 성공 시 모달 닫기 (gameSelectModalHook.closeModal())
+        5) 에러 발생 시 console.error 로깅 (모달은 열어둠)
+    - useCallback으로 최적화
+    - 의존성 배열: [isBlocked, sendMessage, gameSelectModalHook]
+
+6. 반환 타입 수정
+    - UseChatRoomInputReturn 인터페이스에 gameSelectModal 추가
+    - gameSelectModal 객체 구조:
+        {
+            isOpen: boolean;
+            closeModal: () => void;
+            games: SteamGame[];
+            filteredGames: SteamGame[];
+            isLoading: boolean;
+            searchQuery: string;
+            onSearchChange: (query: string) => void;
+            selectedGame: SteamGame | null;
+            onSelectGame: (game: SteamGame) => void;
+            onConfirm: (game: SteamGame) => void;
+            error: string | null;
+        }
+
+7. 반환 값 구성
+    return {
+        messageInput,
+        setMessageInput,
+        handleSendMessage,
+        handleKeyDown,
+        handleGameStart,
+        gameSelectModal: {
+            isOpen: gameSelectModalHook.isOpen,
+            closeModal: gameSelectModalHook.closeModal,
+            games: gameSelectModalHook.gameList,
+            filteredGames: gameSelectModalHook.filteredGames,
+            isLoading: gameSelectModalHook.isLoadingGames,
+            searchQuery: gameSelectModalHook.searchQuery,
+            onSearchChange: gameSelectModalHook.setSearchQuery,
+            selectedGame: gameSelectModalHook.selectedGame,
+            onSelectGame: gameSelectModalHook.selectGame,
+            onConfirm: handleGameConfirm,
+            error: gameSelectModalHook.error,
+        },
+    };
+
+8. 타입 정의
+    - SteamGame 타입은 useGameSelectModal에서 import
+    - import type { SteamGame } from '@/hooks/useGameSelectModal';
+
+9. 에러 처리 규칙
+    - sendMessage 실패 시 console.error 로깅
+    - throw ❌
+    - null 반환 ❌
+    - 에러 발생 시에도 모달은 열어둠 (재시도 가능하도록)
+
+10. 금지 사항
+    - Service 로직 복사 ❌
+    - Domain 타입 import ❌
+    - throw ❌
+    - null 반환 ❌
+    - default export ❌
+    - useModal 사용 ❌ (useGameSelectModal로 대체)
+
+==============================================
+
+조건-Hook 책임)
+            - 메시지 입력 상태 관리
+            - 메시지 전송 처리
+            - Enter 키 입력 처리
+            - 게임시작 모달 처리
+            - 게임 선택 확인 처리
+
+==============================================
+
+조건-UI 책임)
+            - Hook이 반환한 값만 사용
+            - GameSelectModal 컴포넌트 렌더링
+            - 모달 표시/숨김 제어
+
+==============================================
+
+구현 완료 후 반환) 아래 체크리스트를 반드시 반환할 것.
+            - useChatRoomInput Hook이 지정된 파일 경로에 수정되었는가
+            - named export만 사용했는가
+            - useGameSelectModal hook을 사용하는가
+            - 기존 useModal 관련 코드가 제거되었는가
+            - handleGameStart에서 openModal()을 호출하는가
+            - handleGameConfirm 함수가 구현되었는가
+            - steam://run/{appId} 형식의 메시지를 생성하는가
+            - sendMessage(gameLink, 'game_link')를 호출하는가
+            - 전송 성공 시 모달을 닫는가
+            - 에러 발생 시 모달을 열어두는가
+            - UseChatRoomInputReturn에 gameSelectModal이 추가되었는가
+            - gameSelectModal 객체의 모든 필드가 올바르게 매핑되었는가
+            - useCallback으로 핸들러들이 최적화되었는가
+            - Domain / Service 접근이 없는가
+            - 금지 사항이 모두 지켜졌는가
+

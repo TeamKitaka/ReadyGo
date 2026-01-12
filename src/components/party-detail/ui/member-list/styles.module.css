@@ -1,7 +1,6 @@
 .container {
   flex: 1;
-  min-width: 0;
-  min-height: 0;
+  min-height: 480px;
   padding: 32px;
   display: flex;
   align-items: stretch;
