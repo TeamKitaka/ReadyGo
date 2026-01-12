@@ -5,6 +5,7 @@ import { URL_PATHS } from '@/commons/constants/url';
 import styles from '../styles.module.css';
 import { NavigationButton } from '../hooks/useLayoutNavigation';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface SidebarProps {
   activeNav: NavigationButton;
@@ -22,6 +23,7 @@ export const Sidebar = ({
 }: SidebarProps) => {
   const { requests } = useFriendRequests();
   const friendRequestCount = requests.length;
+  const { unreadCount } = useNotifications();
   return (
     <aside className={styles.sidebar}>
       {/* Logo */}
@@ -86,7 +88,7 @@ export const Sidebar = ({
                 size={24}
                 className={styles.themeIcon}
               />
-              <div className={styles.badge} />
+              {unreadCount > 0 && <div className={styles.badge} />}
             </div>
           </button>
 

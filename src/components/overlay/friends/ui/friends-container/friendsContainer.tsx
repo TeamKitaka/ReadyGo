@@ -1,14 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './styles.module.css';
 import Searchbar from '@/commons/components/searchbar';
 import FriendLists from '../friend-lists/friendLists';
 import FriendRequests from '../friend-requests/friendRequests';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
 
-export default function FriendsContainer() {
-  const [activeTab, setActiveTab] = useState<'list' | 'request'>('list');
+interface FriendsContainerProps {
+  initialTab?: 'list' | 'request';
+}
+
+export default function FriendsContainer({
+  initialTab = 'list',
+}: FriendsContainerProps) {
+  const [activeTab, setActiveTab] = useState<'list' | 'request'>(initialTab);
+
+  // initialTab이 변경되면 activeTab도 업데이트
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const { requests } = useFriendRequests();
   const friendRequestCount = requests.length;
 
