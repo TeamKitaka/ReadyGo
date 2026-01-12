@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/types/supabase';
+import { sendPartyMessageService } from '@/services/party/sendPartyMessageService';
 
 type PartyMember = Database['public']['Tables']['party_members']['Row'];
 type UserProfile = Database['public']['Tables']['user_profiles']['Row'];
@@ -220,6 +221,31 @@ export const POST = async (
         );
       }
       return NextResponse.json({ error: insertError.message }, { status: 500 });
+    }
+
+    // 멤버 참가 성공 시 시스템 메시지 생성
+    try {
+      // 사용자 프로필 조회 (닉네임 가져오기)
+      const { data: userProfile, error: _profileError } = await supabase
+        .from('user_profiles')
+        .select('nickname')
+        .eq('id', user.id)
+        .single();
+
+      const nickname = userProfile?.nickname || '알 수 없는 사용자';
+      const systemMessageContent = `${nickname}님이 참가하였습니다`;
+
+      // 시스템 메시지 생성 (sender_id는 null)
+      await sendPartyMessageService(
+        postId,
+        null, // 시스템 메시지는 sender_id가 null
+        systemMessageContent,
+        'system'
+      );
+    } catch (messageError) {
+      // 시스템 메시지 생성 실패해도 멤버 추가는 성공으로 처리
+      // (로그만 남기고 계속 진행)
+      console.error('시스템 메시지 생성 실패:', messageError);
     }
 
     return NextResponse.json({ data: insertData }, { status: 201 });

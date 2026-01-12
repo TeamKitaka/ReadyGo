@@ -10,6 +10,10 @@ import Icon from '@/commons/components/icon';
 import Button from '@/commons/components/button';
 import { AnimalType } from '@/commons/constants/animal';
 import { useChatRoom } from '../../hooks/index.binding.chatRoom.hook';
+import { useGameLinkPreview } from '@/hooks/useGameLinkPreview';
+import { useGameStartLog } from '@/hooks/useGameStartLog';
+import { useModal } from '@/commons/providers/modal/modal.provider';
+import GameLinkPreview from '@/commons/components/game-link-preview';
 import { useSteamProfileShare } from '@/hooks/useSteamProfileShare';
 import SteamProfileLinkPreview from '@/commons/components/steam-profile-link-preview';
 
@@ -32,6 +36,7 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
   // useChatRoom Hook 호출
   const {
     formattedMessages,
+    messages,
     sendMessage,
     isLoading,
     error,
@@ -42,6 +47,15 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
     clearScrollTriggers,
     setMessageListContainerRef,
   } = useChatRoom({ postId: postIdNumber });
+
+  // 게임 링크 미리보기 Hook 사용
+  const { extractGameAppId, getGameInfo } = useGameLinkPreview(messages);
+
+  // 게임 시작 로그 Hook 사용
+  const { createGameStartLog } = useGameStartLog();
+
+  // 모달 Hook 사용
+  const { openModal } = useModal();
 
   // 스팀 프로필 공유 Hook 사용
   const { handleShareSteamProfile } = useSteamProfileShare({
@@ -223,10 +237,15 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
             }
             return null;
           })}
-          {/* 메시지 렌더링 */}
+          {/* 일반 메시지 렌더링 */}
           <div className={styles.messagesWrapper}>
             {formattedMessages.map((item, index) => {
               if (item.type !== 'message' || !item.message) {
+                return null;
+              }
+
+              // 시스템 메시지는 나중에 별도로 렌더링
+              if (item.message.content_type === 'system') {
                 return null;
               }
 
@@ -240,6 +259,13 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                 senderNickname,
                 senderAnimalType,
               } = item;
+
+              // 게임 링크인지 확인
+              const isGameLinkMessage = message.content_type === 'game_link';
+              const gameAppId = isGameLinkMessage
+                ? extractGameAppId(message.content)
+                : null;
+              const gameInfo = gameAppId ? getGameInfo(gameAppId) : null;
 
               // Steam 프로필 링크인지 확인
               const isProfileLink = isSteamProfileLink(message.content);
@@ -257,32 +283,72 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                     <div
                       className={styles.messageRow}
                       aria-label={
-                        isProfileLink
-                          ? `내 스팀 프로필 링크 메시지`
-                          : `내 메시지: ${formattedContent || ''}`
+                        isGameLinkMessage
+                          ? `내 게임 링크 메시지`
+                          : isProfileLink
+                            ? `내 스팀 프로필 링크 메시지`
+                            : `내 메시지: ${formattedContent || ''}`
                       }
                     >
                       <div className={styles.ownMessageContainer}>
-                        <div className={styles.messageTime}>
-                          {formattedTime}
-                        </div>
-                        {isProfileLink && steamId ? (
-                          <SteamProfileLinkPreview
-                            steamId={steamId}
-                            nickname={senderNickname}
-                            onProfileView={() => {
-                              window.open(
-                                `https://steamcommunity.com/profiles/${steamId}/`,
-                                '_blank'
-                              );
-                            }}
-                          />
+                        {isGameLinkMessage && gameAppId ? (
+                          <>
+                            <div className={styles.messageTime}>
+                              {formattedTime}
+                            </div>
+                            <GameLinkPreview
+                              gameInfo={gameInfo}
+                              appId={gameAppId}
+                              onGameStart={() => {
+                                // 확인 모달 표시
+                                openModal({
+                                  variant: 'dual',
+                                  title: '게임 시작',
+                                  description: '게임을 시작하시겠습니까?',
+                                  confirmText: '확인',
+                                  cancelText: '취소',
+                                  onConfirm: async () => {
+                                    // 게임 시작 로그 생성
+                                    await createGameStartLog({
+                                      contextType: 'party',
+                                      contextId: postIdNumber.toString(),
+                                      gameId: gameAppId.toString(),
+                                      gameName: gameInfo?.name ?? undefined,
+                                    });
+                                    // Steam 실행
+                                    window.location.href = `steam://run/${gameAppId}`;
+                                  },
+                                });
+                              }}
+                            />
+                          </>
+                        ) : isProfileLink && steamId ? (
+                          <>
+                            <div className={styles.messageTime}>
+                              {formattedTime}
+                            </div>
+                            <SteamProfileLinkPreview
+                              steamId={steamId}
+                              nickname={senderNickname}
+                              onProfileView={() => {
+                                window.open(
+                                  `https://steamcommunity.com/profiles/${steamId}/`,
+                                  '_blank'
+                                );
+                              }}
+                            />
+                          </>
                         ) : (
-                          <div className={styles.ownMessageBubble}>
-                            <span className={styles.messageContent}>
-                              {formattedContent}
-                            </span>
-                          </div>
+                          <>
+                            <div className={styles.messageTime}>
+                              {formattedTime}
+                            </div>
+                            <div className={styles.ownMessageBubble}>
+                              <span className={styles.messageContent}>
+                                {formattedContent}
+                              </span>
+                            </div>
+                          </>
                         )}
                       </div>
                     </div>
@@ -321,35 +387,91 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                           </div>
                         )}
                         <div className={styles.messageBubbles}>
-                          {isProfileLink && steamId ? (
-                            <SteamProfileLinkPreview
-                              steamId={steamId}
-                              nickname={senderNickname}
-                              onProfileView={() => {
-                                window.open(
-                                  `https://steamcommunity.com/profiles/${steamId}/`,
-                                  '_blank'
-                                );
-                              }}
-                            />
-                          ) : (
-                            <div className={styles.otherMessageWrapper}>
-                              <div className={styles.otherMessageBubble}>
-                                <span className={styles.messageContent}>
-                                  {formattedContent}
-                                </span>
-                              </div>
-                              <div className={styles.messageTime}>
-                                {formattedTime}
-                              </div>
-                            </div>
-                          )}
+                          <div className={styles.otherMessageWrapper}>
+                            {isGameLinkMessage && gameAppId ? (
+                              <>
+                                <GameLinkPreview
+                                  gameInfo={gameInfo}
+                                  appId={gameAppId}
+                                  onGameStart={() => {
+                                    // 확인 모달 표시
+                                    openModal({
+                                      variant: 'dual',
+                                      title: '게임 시작',
+                                      description: '게임을 시작하시겠습니까?',
+                                      confirmText: '확인',
+                                      cancelText: '취소',
+                                      onConfirm: async () => {
+                                        // 게임 시작 로그 생성
+                                        await createGameStartLog({
+                                          contextType: 'party',
+                                          contextId: postIdNumber.toString(),
+                                          gameId: gameAppId.toString(),
+                                          gameName: gameInfo?.name ?? undefined,
+                                        });
+                                        // Steam 실행
+                                        window.location.href = `steam://run/${gameAppId}`;
+                                      },
+                                    });
+                                  }}
+                                />
+                                <div className={styles.messageTime}>
+                                  {formattedTime}
+                                </div>
+                              </>
+                            ) : isProfileLink && steamId ? (
+                              <>
+                                <SteamProfileLinkPreview
+                                  steamId={steamId}
+                                  nickname={senderNickname}
+                                  onProfileView={() => {
+                                    window.open(
+                                      `https://steamcommunity.com/profiles/${steamId}/`,
+                                      '_blank'
+                                    );
+                                  }}
+                                />
+                                <div className={styles.messageTime}>
+                                  {formattedTime}
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className={styles.otherMessageBubble}>
+                                  <span className={styles.messageContent}>
+                                    {formattedContent}
+                                  </span>
+                                </div>
+                                <div className={styles.messageTime}>
+                                  {formattedTime}
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               );
+            })}
+            {/* 시스템 메시지 렌더링 (일반 메시지 뒤에 표시) */}
+            {formattedMessages.map((item, index) => {
+              if (
+                item.type === 'message' &&
+                item.message?.content_type === 'system'
+              ) {
+                return (
+                  <div
+                    key={`system-message-${item.message.id}-${index}`}
+                    className={styles.dateDivider}
+                    aria-label={`시스템 메시지: ${item.formattedContent || ''}`}
+                  >
+                    {item.formattedContent || ''}
+                  </div>
+                );
+              }
+              return null;
             })}
           </div>
         </div>

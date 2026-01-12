@@ -15,6 +15,8 @@ import { formatDateDivider } from '@/lib/chat/messageFormatter';
 import { useAuth } from '@/commons/providers/auth/auth.provider';
 import GameSelectModal from '@/commons/components/game-select-modal';
 import { useGameLinkPreview } from '@/hooks/useGameLinkPreview';
+import { useGameStartLog } from '@/hooks/useGameStartLog';
+import { useModal } from '@/commons/providers/modal/modal.provider';
 import GameLinkPreview from '@/commons/components/game-link-preview';
 import { useSteamProfileShare } from '@/hooks/useSteamProfileShare';
 import SteamProfileLinkPreview from '@/commons/components/steam-profile-link-preview';
@@ -63,6 +65,12 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
 
   // 게임 링크 미리보기 Hook 사용
   const { extractGameAppId, getGameInfo } = useGameLinkPreview(messages);
+
+  // 게임 시작 로그 Hook 사용
+  const { createGameStartLog } = useGameStartLog();
+
+  // 모달 Hook 사용
+  const { openModal } = useModal();
 
   // 스팀 프로필 공유 Hook 사용
   const { handleShareSteamProfile } = useSteamProfileShare({
@@ -414,25 +422,25 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
                           gameInfo={gameInfo}
                           appId={gameAppId}
                           onGameStart={() => {
-                            window.location.href = `steam://run/${gameAppId}`;
-                          }}
-                        />
-                      </>
-                    ) : isProfileLinkMessage && steamId ? (
-                      <>
-                        {isGroupEnd && (
-                          <div className={styles.messageTime}>
-                            {formattedTime}
-                          </div>
-                        )}
-                        <SteamProfileLinkPreview
-                          steamId={steamId}
-                          nickname={currentUserNickname}
-                          onProfileView={() => {
-                            window.open(
-                              `https://steamcommunity.com/profiles/${steamId}/`,
-                              '_blank'
-                            );
+                            // 확인 모달 표시
+                            openModal({
+                              variant: 'dual',
+                              title: '게임 시작',
+                              description: '게임을 시작하시겠습니까?',
+                              confirmText: '확인',
+                              cancelText: '취소',
+                              onConfirm: async () => {
+                                // 게임 시작 로그 생성
+                                await createGameStartLog({
+                                  contextType: 'match',
+                                  contextId: roomIdNumber.toString(),
+                                  gameId: gameAppId.toString(),
+                                  gameName: gameInfo?.name ?? undefined,
+                                });
+                                // Steam 실행
+                                window.location.href = `steam://run/${gameAppId}`;
+                              },
+                            });
                           }}
                         />
                       </>
@@ -492,25 +500,25 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
                           gameInfo={gameInfo}
                           appId={gameAppId}
                           onGameStart={() => {
-                            window.location.href = `steam://run/${gameAppId}`;
-                          }}
-                        />
-                        {isGroupEnd && (
-                          <div className={styles.messageTime}>
-                            {formattedTime}
-                          </div>
-                        )}
-                      </>
-                    ) : isProfileLinkMessage && steamId ? (
-                      <>
-                        <SteamProfileLinkPreview
-                          steamId={steamId}
-                          nickname={displayNickname}
-                          onProfileView={() => {
-                            window.open(
-                              `https://steamcommunity.com/profiles/${steamId}/`,
-                              '_blank'
-                            );
+                            // 확인 모달 표시
+                            openModal({
+                              variant: 'dual',
+                              title: '게임 시작',
+                              description: '게임을 시작하시겠습니까?',
+                              confirmText: '확인',
+                              cancelText: '취소',
+                              onConfirm: async () => {
+                                // 게임 시작 로그 생성
+                                await createGameStartLog({
+                                  contextType: 'match',
+                                  contextId: roomIdNumber.toString(),
+                                  gameId: gameAppId.toString(),
+                                  gameName: gameInfo?.name ?? undefined,
+                                });
+                                // Steam 실행
+                                window.location.href = `steam://run/${gameAppId}`;
+                              },
+                            });
                           }}
                         />
                         {isGroupEnd && (

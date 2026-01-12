@@ -11,7 +11,6 @@ import { AnimalType } from '@/commons/constants/animal';
 import { TierType } from '@/commons/constants/tierType.enum';
 import { useGameLinkPreview } from '@/hooks/useGameLinkPreview';
 import { useGameSelectModal } from '@/hooks/useGameSelectModal';
-import { useGameStartTimer } from '@/hooks/useGameStartTimer.hook';
 import { useReviewSubmission } from '@/hooks/useReviewSubmission.hook';
 import { useModal } from '@/commons/providers/modal/modal.provider';
 import GameLinkPreview from '@/commons/components/game-link-preview';
@@ -253,8 +252,6 @@ export default function RealtimeChatTestPage() {
     gameSelectModal.openModal();
   };
 
-  // 게임 시작 타이머 훅
-  const gameStartTimer = useGameStartTimer();
   const reviewSubmission = useReviewSubmission();
   const { openModal } = useModal();
 
@@ -271,26 +268,6 @@ export default function RealtimeChatTestPage() {
   const currentChatRoom = chatRooms.find((room) => room.room.id === roomId);
   const otherMember = currentChatRoom?.otherMember;
 
-  // 타이머 종료 시 후기 모달 표시
-  useEffect(() => {
-    if (gameStartTimer.timerEnded && otherMember && user?.id) {
-      setTargetUserForReview({
-        id: otherMember.id,
-        nickname: otherMember.nickname || '알 수 없음',
-        avatar: otherMember.avatar_url ?? undefined,
-        animalType: otherMember.animal_type as AnimalType | undefined,
-      });
-      setIsReviewModalOpen(true);
-      gameStartTimer.resetTimerEnded();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    gameStartTimer.timerEnded,
-    gameStartTimer.resetTimerEnded,
-    otherMember,
-    user?.id,
-  ]);
-
   // 게임 선택 모달 확인 핸들러 (게임 링크 전송 + 타이머 시작)
   const handleGameSelectConfirm = async (game: {
     app_id: number;
@@ -305,8 +282,6 @@ export default function RealtimeChatTestPage() {
       const gameLink = `steam://run/${game.app_id}`;
       await sendMessage(gameLink);
 
-      // 게임 시작 타이머 시작
-      gameStartTimer.startGameTimer(game, roomId, otherMember.id);
       gameSelectModal.closeModal();
     } catch (error) {
       console.error('Failed to start game:', error);
@@ -1528,7 +1503,7 @@ export default function RealtimeChatTestPage() {
             shape="rectangle"
             data-testid="game-start-btn"
             onClick={handleGameStartClick}
-            disabled={!roomId || !isConnected || gameStartTimer.isTimerActive}
+            disabled={!roomId || !isConnected}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -1536,12 +1511,10 @@ export default function RealtimeChatTestPage() {
               gap: '8px',
               height: '48px',
               padding: '14px 20px',
-              background: gameStartTimer.isTimerActive
-                ? 'var(--color-bg-secondary, #333)'
-                : 'var(--color-bg-interactive-primary, #56e5ce)',
+              background: 'var(--color-bg-interactive-primary, #56e5ce)',
               border: 'none',
               borderRadius: '12px',
-              cursor: gameStartTimer.isTimerActive ? 'not-allowed' : 'pointer',
+              cursor: 'pointer',
               flexShrink: 0,
               color: 'var(--color-text-interactive-inverse, white)',
               transition: 'background-color 0.2s',
@@ -1552,11 +1525,7 @@ export default function RealtimeChatTestPage() {
             }}
           >
             <Icon name="gamepad" size={20} />
-            <span style={{ whiteSpace: 'nowrap' }}>
-              {gameStartTimer.isTimerActive
-                ? `${gameStartTimer.timeRemaining}초`
-                : '게임시작'}
-            </span>
+            <span style={{ whiteSpace: 'nowrap' }}>게임시작</span>
           </Button>
         </div>
         {roomId && (

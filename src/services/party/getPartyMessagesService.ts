@@ -4,6 +4,7 @@ import {
   ChatValidationError,
 } from '@/commons/errors/chat/chatErrors';
 import type { Database } from '@/types/supabase';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 
 type PartyMessage = Database['public']['Tables']['party_messages']['Row'];
 
@@ -11,7 +12,8 @@ type PartyMessage = Database['public']['Tables']['party_messages']['Row'];
  * 파티 메시지 목록 조회 Service
  *
  * 책임:
- * - 입력 검증 (postId, limit, offset)
+ * - 입력 검증 (postId, limit, offset, userId)
+ * - party_members에서 사용자의 joined_at 조회
  * - Repository 에러 처리
  *
  * 비책임:
@@ -20,7 +22,8 @@ type PartyMessage = Database['public']['Tables']['party_messages']['Row'];
 export const getPartyMessagesService = async (
   postId: number,
   limit: number = 50,
-  offset: number = 0
+  offset: number = 0,
+  userId?: string | null
 ): Promise<PartyMessage[]> => {
   // 입력 검증
   if (typeof postId !== 'number' || isNaN(postId) || postId <= 0) {
@@ -36,10 +39,29 @@ export const getPartyMessagesService = async (
   }
 
   try {
+    // userId가 제공된 경우, party_members에서 joined_at 조회
+    let joinedAt: string | null | undefined = undefined;
+
+    if (userId) {
+      const { data: memberData, error: memberError } = await supabaseAdmin
+        .from('party_members')
+        .select('joined_at')
+        .eq('post_id', postId)
+        .eq('user_id', userId)
+        .single();
+
+      // 멤버가 존재하면 joined_at 사용, 없으면 undefined (모든 메시지 조회)
+      if (!memberError && memberData) {
+        joinedAt = memberData.joined_at;
+      }
+      // memberError가 있어도 joinedAt은 undefined로 유지 (모든 메시지 조회)
+    }
+
     const messages = await partyMessagesRepository.getPartyMessages(
       postId,
       limit,
-      offset
+      offset,
+      joinedAt
     );
     return messages;
   } catch (error) {

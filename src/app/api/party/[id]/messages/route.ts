@@ -116,7 +116,13 @@ export const GET = async (
     }
 
     // 6. Service 호출
-    const messages = await getPartyMessagesService(postId, limit, offset);
+    // 작성자는 userId를 전달하지 않아 모든 메시지 조회, 멤버는 userId 전달하여 참가 시점 이후 메시지만 조회
+    const messages = await getPartyMessagesService(
+      postId,
+      limit,
+      offset,
+      isCreator ? null : user.id
+    );
 
     // 7. 성공 응답
     return NextResponse.json({ data: messages }, { status: 200 });

@@ -73,7 +73,104 @@ export default function PartyDetail() {
   };
 
   const handleGameStart = () => {
-    // 게임시작 기능은 별도로 구현할 예정 (현재는 빈 함수)
+    if (!data?.game_title) {
+      openModal({
+        variant: 'dual',
+        title: '알림',
+        description: '게임 정보가 없습니다.',
+        onConfirm: () => {
+          closeModal();
+        },
+      });
+      return;
+    }
+
+    // 확인 모달 표시
+    openModal({
+      variant: 'dual',
+      title: '게임을 시작하시겠습니까?',
+      description: `${data.game_title} 게임 링크를 채팅방에 전송합니다.`,
+      onConfirm: async () => {
+        try {
+          // 1. game_title로 app_id 검색
+          const searchUrl = `/api/party/game/search?game_title=${encodeURIComponent(data.game_title)}`;
+
+          const searchResponse = await fetch(searchUrl);
+
+          if (!searchResponse.ok) {
+            const errorData = await searchResponse.json().catch(() => ({}));
+            console.error('[게임 시작] 검색 API 에러:', errorData);
+            throw new Error(
+              errorData.message ||
+                '게임 정보를 조회하는 중 오류가 발생했습니다.'
+            );
+          }
+
+          const searchData = await searchResponse.json();
+
+          if (!searchData.data || !searchData.data.app_id) {
+            openModal({
+              variant: 'dual',
+              title: '알림',
+              description: `"${data.game_title}" 게임 정보를 찾을 수 없습니다. 게임 제목이 정확한지 확인해주세요.`,
+              onConfirm: () => {
+                closeModal();
+              },
+            });
+            return;
+          }
+
+          // 2. 게임 링크 생성
+          const gameLink = `steam://run/${searchData.data.app_id}`;
+
+          // 3. 파티 채팅방에 게임 링크 전송
+          if (!partyId) {
+            throw new Error('파티 ID가 없습니다.');
+          }
+
+          const messageResponse = await fetch(
+            `/api/party/${partyId}/messages`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                content: gameLink,
+                contentType: 'game_link',
+              }),
+            }
+          );
+
+          if (!messageResponse.ok) {
+            const errorData = await messageResponse.json().catch(() => ({}));
+            throw new Error(
+              errorData.message || '게임 링크 전송에 실패했습니다.'
+            );
+          }
+
+          // 성공 시 모달 닫기
+          closeModal();
+        } catch (error) {
+          console.error('게임 시작 실패:', error);
+          openModal({
+            variant: 'dual',
+            title: '알림',
+            description:
+              error instanceof Error
+                ? error.message
+                : '게임 링크 전송에 실패했습니다.',
+            onConfirm: () => {
+              closeModal();
+            },
+          });
+        }
+      },
+      onCancel: () => {
+        closeModal();
+      },
+    });
   };
 
   const handleEditClick = () => {
@@ -111,7 +208,7 @@ export default function PartyDetail() {
       <div className={styles.titleArea}>
         <div className={styles.titleAreaContent}>
           <Link href={URL_PATHS.PARTY} className={styles.backLink}>
-            <Icon name="arrow-left" size={24} className={styles.backIcon} />
+            <Icon name="arrow-left" size={16} className={styles.backIcon} />
             <span className={styles.backText}>돌아가기</span>
           </Link>
           <div className={styles.titleRow}>

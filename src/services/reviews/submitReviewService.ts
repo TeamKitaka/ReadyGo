@@ -63,7 +63,7 @@ export const submitReview = async (
   await temperatureLogRepository.createTemperatureLog({
     user_id: targetUserId,
     change: temperatureChange,
-    reason: 'review',
+    reason: `리뷰: 매너 ${scoreManner}/2, 팀워크 ${scoreTeamwork}/1, 소통 ${scoreCommunication}/2`,
   });
 
   // 5. user_profiles.temperature_score 업데이트 (기존 점수 + change)

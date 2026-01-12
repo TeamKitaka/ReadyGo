@@ -534,6 +534,7 @@ export type Database = {
       party_messages: {
         Row: {
           content: string | null
+          content_type: string | null
           created_at: string | null
           id: number
           post_id: number | null
@@ -541,6 +542,7 @@ export type Database = {
         }
         Insert: {
           content?: string | null
+          content_type?: string | null
           created_at?: string | null
           id?: number
           post_id?: number | null
@@ -548,6 +550,7 @@ export type Database = {
         }
         Update: {
           content?: string | null
+          content_type?: string | null
           created_at?: string | null
           id?: number
           post_id?: number | null

@@ -38,16 +38,26 @@ export const getPartyMembers = async (
  * - DB 접근만 수행, 에러 처리 및 데이터 가공 없음
  * - Supabase 응답 구조를 그대로 반환
  * - created_at 기준 내림차순 정렬 (최신 메시지가 먼저)
+ * - joinedAt이 제공되면 해당 시점 이후의 메시지만 조회
+ * - joinedAt이 null이면 모든 메시지 조회 (파티 작성자용)
  */
 export const getPartyMessages = async (
   postId: number,
   limit: number = 50,
-  offset: number = 0
+  offset: number = 0,
+  joinedAt?: string | null
 ): Promise<PartyMessage[]> => {
-  const { data, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from('party_messages')
     .select('*')
-    .eq('post_id', postId)
+    .eq('post_id', postId);
+
+  // joinedAt이 제공되고 null이 아니면 해당 시점 이후의 메시지만 조회
+  if (joinedAt != null) {
+    query = query.gte('created_at', joinedAt);
+  }
+
+  const { data, error } = await query
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -63,10 +73,11 @@ export const getPartyMessages = async (
  * - DB 접근만 수행, 에러 처리 및 데이터 가공 없음
  * - Supabase 응답 구조를 그대로 반환
  * - senderId는 해당 postId의 party_members에 포함된 사용자여야 함 (검증은 호출부에서 수행)
+ * - 시스템 메시지의 경우 senderId는 null일 수 있음
  */
 export const sendPartyMessage = async (
   postId: number,
-  senderId: string,
+  senderId: string | null,
   content: string,
   contentType: string = 'text'
 ): Promise<PartyMessage> => {
