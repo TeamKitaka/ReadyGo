@@ -177,7 +177,6 @@ export default function PartyDetail() {
           <ChatNull />
         )}
         <div className={styles.sideArea}>
-          <MemberList />
           <PartyInfo
             data={data}
             isLoading={isLoading}
@@ -187,6 +186,7 @@ export default function PartyDetail() {
             onLeaveClick={handleLeaveClick}
             onGameStartClick={handleGameStart}
           />
+          <MemberList />
         </div>
       </div>
     </div>

@@ -1,8 +1,7 @@
 .container {
   flex: 1;
-  min-width: 0;
-  min-height: 0;
-  padding: 32px;
+  height: 100%;
+  overflow: hidden;
   display: flex;
   align-items: stretch;
   justify-content: center;
@@ -16,7 +15,8 @@
   width: 100%;
   flex: 1;
   min-height: 0;
-  padding: 24px;
+  padding: 20px;
+  margin: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
