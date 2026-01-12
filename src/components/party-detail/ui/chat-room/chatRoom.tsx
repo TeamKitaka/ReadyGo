@@ -8,6 +8,8 @@ import Input from '@/commons/components/input';
 import Icon from '@/commons/components/icon';
 import { AnimalType } from '@/commons/constants/animal';
 import { useChatRoom } from '../../hooks/index.binding.chatRoom.hook';
+import { useGameLinkPreview } from '@/hooks/useGameLinkPreview';
+import GameLinkPreview from '@/commons/components/game-link-preview';
 
 interface ChatRoomProps {
   isExpired?: boolean;
@@ -28,6 +30,7 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
   // useChatRoom Hook 호출
   const {
     formattedMessages,
+    messages,
     sendMessage,
     isLoading,
     error,
@@ -38,6 +41,9 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
     clearScrollTriggers,
     setMessageListContainerRef,
   } = useChatRoom({ postId: postIdNumber });
+
+  // 게임 링크 미리보기 Hook 사용
+  const { extractGameAppId, getGameInfo } = useGameLinkPreview(messages);
 
   // 플로팅 버튼 표시 여부
   const [showScrollToBottomButton, setShowScrollToBottomButton] =
@@ -193,6 +199,13 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                 senderAnimalType,
               } = item;
 
+              // 게임 링크인지 확인
+              const isGameLinkMessage = message.content_type === 'game_link';
+              const gameAppId = isGameLinkMessage
+                ? extractGameAppId(message.content)
+                : null;
+              const gameInfo = gameAppId ? getGameInfo(gameAppId) : null;
+
               // 내 메시지 렌더링
               if (isOwnMessage) {
                 return (
@@ -202,17 +215,38 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                   >
                     <div
                       className={styles.messageRow}
-                      aria-label={`내 메시지: ${formattedContent || ''}`}
+                      aria-label={
+                        isGameLinkMessage
+                          ? `내 게임 링크 메시지`
+                          : `내 메시지: ${formattedContent || ''}`
+                      }
                     >
                       <div className={styles.ownMessageContainer}>
-                        <div className={styles.messageTime}>
-                          {formattedTime}
-                        </div>
-                        <div className={styles.ownMessageBubble}>
-                          <span className={styles.messageContent}>
-                            {formattedContent}
-                          </span>
-                        </div>
+                        {isGameLinkMessage && gameAppId ? (
+                          <>
+                            <div className={styles.messageTime}>
+                              {formattedTime}
+                            </div>
+                            <GameLinkPreview
+                              gameInfo={gameInfo}
+                              appId={gameAppId}
+                              onGameStart={() => {
+                                window.location.href = `steam://run/${gameAppId}`;
+                              }}
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <div className={styles.messageTime}>
+                              {formattedTime}
+                            </div>
+                            <div className={styles.ownMessageBubble}>
+                              <span className={styles.messageContent}>
+                                {formattedContent}
+                              </span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -251,14 +285,31 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                         )}
                         <div className={styles.messageBubbles}>
                           <div className={styles.otherMessageWrapper}>
-                            <div className={styles.otherMessageBubble}>
-                              <span className={styles.messageContent}>
-                                {formattedContent}
-                              </span>
-                            </div>
-                            <div className={styles.messageTime}>
-                              {formattedTime}
-                            </div>
+                            {isGameLinkMessage && gameAppId ? (
+                              <>
+                                <GameLinkPreview
+                                  gameInfo={gameInfo}
+                                  appId={gameAppId}
+                                  onGameStart={() => {
+                                    window.location.href = `steam://run/${gameAppId}`;
+                                  }}
+                                />
+                                <div className={styles.messageTime}>
+                                  {formattedTime}
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className={styles.otherMessageBubble}>
+                                  <span className={styles.messageContent}>
+                                    {formattedContent}
+                                  </span>
+                                </div>
+                                <div className={styles.messageTime}>
+                                  {formattedTime}
+                                </div>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>

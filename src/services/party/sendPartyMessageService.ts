@@ -21,7 +21,8 @@ type PartyMessage = Database['public']['Tables']['party_messages']['Row'];
 export const sendPartyMessageService = async (
   postId: number,
   senderId: string,
-  content: string
+  content: string,
+  contentType: string = 'text'
 ): Promise<PartyMessage> => {
   // 입력 검증
   if (typeof postId !== 'number' || isNaN(postId) || postId <= 0) {
@@ -48,7 +49,8 @@ export const sendPartyMessageService = async (
     const message = await partyMessagesRepository.sendPartyMessage(
       postId,
       senderId,
-      content.trim()
+      content.trim(),
+      contentType
     );
 
     if (!message) {
