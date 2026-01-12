@@ -46,12 +46,15 @@ export const getHomeMatches = async (
     return [];
   }
 
-  // 2. 캐시 조회
-  const { data: cached } = await matchCacheRepo.findByViewer(
+  // 2. 캐시 조회 (home context만)
+  const { data: allCached } = await matchCacheRepo.findByViewer(
     client,
     viewerId,
     candidateIds
   );
+
+  // context='home'인 것만 필터링
+  const cached = allCached?.filter((item) => item.context === 'home');
 
   // 3. 캐시로 4개 이상 확보되면 즉시 반환
   if (cached && cached.length >= 4) {
@@ -101,8 +104,21 @@ export const getHomeMatches = async (
   // 실패한 계산 제외
   const validComputed = computed.filter((c) => c !== null);
 
-  // 5. 병합 후 점수순 정렬, 상위 4개
-  const all = [...(cached || []), ...validComputed];
+  // 5. 병합 시 중복 제거 (같은 target_id가 양쪽에 있으면 computed 우선)
+  const resultMap = new Map();
+
+  // 캐시된 결과 먼저 추가
+  (cached || []).forEach((item) => {
+    resultMap.set(item.target_id, item);
+  });
+
+  // 새로 계산된 결과로 덮어쓰기 (최신 데이터 우선)
+  validComputed.forEach((item) => {
+    resultMap.set(item.target_id, item);
+  });
+
+  // 점수순 정렬, 상위 4개
+  const all = Array.from(resultMap.values());
   const sorted = all.sort((a, b) => b.score - a.score).slice(0, 4);
 
   return await enrichWithProfiles(client, sorted);
