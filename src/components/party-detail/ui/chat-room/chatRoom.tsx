@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import styles from './styles.module.css';
+import parentStyles from '../../styles.module.css';
 import Avatar from '@/commons/components/avatar';
 import Input from '@/commons/components/input';
 import Icon from '@/commons/components/icon';
@@ -116,7 +117,7 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
   // 로딩 상태 처리
   if (isLoading) {
     return (
-      <div className={styles.chatRoom}>
+      <div className={parentStyles.chatArea}>
         <div className={styles.messageList} aria-label="메시지 목록">
           <div className={styles.messagesContainer}>
             <div className={styles.messagesWrapper}>
@@ -124,7 +125,7 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
             </div>
           </div>
         </div>
-        <div className={styles.inputArea} aria-label="메시지 입력 영역">
+        <div className={parentStyles.messageArea} aria-label="메시지 입력 영역">
           <div className={styles.inputWrapper}>
             <Input
               variant="primary"
@@ -152,7 +153,7 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
   }
 
   return (
-    <div className={styles.chatRoom}>
+    <div className={parentStyles.chatArea}>
       {/* 메시지 리스트 영역 */}
       <div
         ref={messageListRef}
@@ -286,7 +287,7 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
       </div>
 
       {/* 입력 영역 */}
-      <div className={styles.inputArea} aria-label="메시지 입력 영역">
+      <div className={parentStyles.messageArea} aria-label="메시지 입력 영역">
         <div className={styles.inputWrapper}>
           <Input
             variant="primary"
