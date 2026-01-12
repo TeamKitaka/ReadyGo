@@ -344,8 +344,8 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | id         | bigserial   | ❌       | PK                                   |
 | viewer_id  | uuid        | ❌       | 기준 유저                            |
 | target_id  | uuid        | ❌       | 노출된 매칭 대상                     |
-| exposed_at | timestamptz | ❌       | 노출 시각 (기본값: NOW())            |
-| context    | text        | ❌       | 노출 컨텍스트 (기본값: 'match_list') |
+| exposed_at | timestamptz | ⭕       | 노출 시각                            |
+| context    | text        | ⭕       | 노출 컨텍스트                        |
 
 **인덱스**:
 
@@ -414,8 +414,8 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 | Column     | Type        | Nullable | Description                |
 | ---------- | ----------- | -------- | -------------------------- |
-| id         | bigint      | ❌       | PK                         |
-| app_id     | bigint      | ⭕       | Steam App ID               |
+| id         | bigint      | ❌       | PK (자동 증가)             |
+| app_id     | numeric     | ⭕       | Steam App ID               |
 | user_id    | uuid        | ⭕       | 유저(유저 기반 동기화 시)  |
 | status     | text        | ❌       | success / skipped / failed |
 | reason     | text        | ⭕       | 실패 또는 스킵 사유        |
@@ -425,14 +425,16 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 - 유저별 Steam 플레이 통계 및 성향 분석 데이터
 
-| Column              | Type        | Nullable | Description                             |
-| ------------------- | ----------- | -------- | --------------------------------------- |
-| user_id             | uuid        | ❌       | PK, 유저 ID                             |
-| play_style          | text        | ❌       | 플레이 스타일 (casual, hardcore 등)     |
-| avg_weekly_playtime | numeric     | ⭕       | 주당 평균 플레이 시간 (시간 단위)       |
-| main_genres         | text[]      | ⭕       | 주로 플레이하는 장르 목록               |
-| active_time_slots   | text[]      | ⭕       | 주로 활동하는 시간대 (dawn, morning 등) |
-| updated_at          | timestamptz | ❌       | 마지막 업데이트 시각                    |
+| Column                    | Type        | Nullable | Description                                     |
+| ------------------------- | ----------- | -------- | ----------------------------------------------- |
+| user_id                   | uuid        | ❌       | PK, 유저 ID                                     |
+| play_style                | text        | ❌       | 플레이 스타일 (casual, hardcore 등)             |
+| avg_weekly_playtime       | numeric     | ❌       | 주당 평균 플레이 시간 (분 단위)                 |
+| main_genres               | text[]      | ❌       | 주로 플레이하는 장르 목록                       |
+| active_time_slots         | text[]      | ❌       | 주로 활동하는 시간대 (00-06, 06-12, 12-18, 18-24) |
+| genre_playtime_2w_minutes | jsonb       | ⭕       | 최근 2주간 장르별 플레이 시간 (분 단위)         |
+| total_playtime_2w_minutes | numeric     | ⭕       | 최근 2주간 총 플레이 시간 (분 단위)             |
+| updated_at                | timestamptz | ❌       | 마지막 업데이트 시각                            |
 
 ---
 
@@ -487,17 +489,18 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 #### 30. game_start_logs
 
-- 게임 시작 로그
+- 게임 시작 로그 테이블
+- 매칭/파티 등에서 실제 게임 시작 시점의 행동을 기록
 
-| Column       | Type        | Nullable | Description   |
-| ------------ | ----------- | -------- | ------------- |
-| id           | bigint      | ❌       | PK            |
-| actor_id     | uuid        | ❌       | 행동 주체     |
-| context_type | text        | ❌       | 컨텍스트 타입 |
-| context_id   | uuid        | ❌       | 컨텍스트 ID   |
-| game_id      | text        | ⭕       | 게임 ID       |
-| game_name    | text        | ⭕       | 게임명        |
-| created_at   | timestamptz | ❌       | 생성 시각     |
+| Column       | Type        | Nullable | Description                        |
+| ------------ | ----------- | -------- | ---------------------------------- |
+| id           | bigint      | ❌       | PK                                 |
+| actor_id     | uuid        | ❌       | 게임 시작을 요청한 유저            |
+| context_type | text        | ❌       | 게임 시작 컨텍스트 (match, party)  |
+| context_id   | text        | ❌       | 컨텍스트 식별자 (매칭 ID, 파티 ID) |
+| game_id      | text        | ⭕       | Steam 게임 ID                      |
+| game_name    | text        | ⭕       | 게임 이름                          |
+| created_at   | timestamptz | ❌       | 게임 시작 기록 시각                |
 
 #### 31. analytics_user_actions
 
@@ -523,21 +526,6 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | event_type | text        | ⭕       | 이벤트 타입   |
 | metadata   | jsonb       | ⭕       | 이벤트 데이터 |
 | created_at | timestamptz | ⭕       | 발생 시각     |
-
-#### 32. game_start_logs
-
-- 게임 시작 로그 테이블
-- 매칭/파티 등에서 실제 게임 시작 시점의 행동을 기록
-
-| Column       | Type        | Nullable | Description                        |
-| ------------ | ----------- | -------- | ---------------------------------- |
-| id           | bigint      | ❌       | PK                                 |
-| actor_id     | uuid        | ❌       | 게임 시작을 요청한 유저            |
-| context_type | text        | ❌       | 게임 시작 컨텍스트 (match, party)  |
-| context_id   | text        | ❌       | 컨텍스트 식별자 (매칭 ID, 파티 ID) |
-| game_id      | text        | ⭕       | Steam 게임 ID                      |
-| game_name    | text        | ⭕       | 게임 이름                          |
-| created_at   | timestamptz | ❌       | 게임 시작 기록 시각                |
 
 #### 33. error_logs
 
@@ -631,8 +619,8 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
-- **Last Updated At**: 2026-01-12
-- **Document Version**: v1.0.15
+- **Last Updated At**: 2026-01-15
+- **Document Version**: v1.0.16
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
@@ -658,3 +646,4 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | v1.0.13 | 2026-01-09 | match_results_cache에 context 컬럼 추가, match_exposure_log 테이블 추가 (Step 2 중복 방지 + 5분 TTL)         |
 | v1.0.14 | 2026-01-11 | notifications 테이블에 actor_id, entity_id, entity_type 컬럼 추가                                            |
 | v1.0.15 | 2026-01-12 | System/Logs Domain에 game_start_logs 테이블 추가 (게임 시작 로그), 테이블 번호 재정렬 (32~38번)              |
+| v1.0.16 | 2026-01-15 | steam_user_stats 테이블 컬럼 추가 (genre_playtime_2w_minutes, total_playtime_2w_minutes) 및 타입 수정, match_exposure_log nullable 수정, game_start_logs 중복 제거 및 타입 수정, steam_game_sync_logs 타입 수정 |
