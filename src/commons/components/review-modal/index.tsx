@@ -8,6 +8,7 @@ import Avatar from '@/commons/components/avatar';
 import Icon from '@/commons/components/icon';
 import styles from './styles.module.css';
 import type { ReviewAnswers } from '@/services/temperature/calculateTemperatureFromReview.service';
+import type { AnimalType } from '@/commons/constants/animal';
 
 export interface ReviewModalProps {
   isOpen: boolean;
@@ -15,7 +16,7 @@ export interface ReviewModalProps {
   onSubmit: (answers: ReviewAnswers) => Promise<void>;
   targetUserNickname: string;
   targetUserAvatar?: string;
-  targetUserAnimalType?: string;
+  targetUserAnimalType?: AnimalType;
 }
 
 /**

@@ -76,7 +76,7 @@ export const TraitsAlert = ({ className = '' }: TraitsAlertProps) => {
           <div className={styles.actionSection}>
             <Button
               variant="primary"
-              size="l"
+              size="m"
               shape="round"
               onClick={handleStartTest}
               className={styles.testButton}
