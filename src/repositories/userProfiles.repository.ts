@@ -204,3 +204,19 @@ export const updateTier = async (
     throw error;
   }
 };
+
+/**
+ * user_profiles의 steam_id를 조회한다
+ * - DB 접근만 수행, 에러 처리는 상위 레이어에서 담당
+ * - Supabase 응답 구조를 그대로 반환
+ */
+export const getSteamId = async (
+  client: SupabaseClient<Database>,
+  userId: string
+) => {
+  return await client
+    .from('user_profiles')
+    .select('steam_id')
+    .eq('id', userId)
+    .maybeSingle();
+};

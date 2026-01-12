@@ -693,7 +693,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
    * 메시지 전송
    */
   const sendMessage = useCallback(
-    async (content: string): Promise<void> => {
+    async (content: string, contentType: string = 'text'): Promise<void> => {
       // 중복 전송 방지
       if (isSendingRef.current) {
         console.warn(
@@ -723,6 +723,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
           credentials: 'include',
           body: JSON.stringify({
             content,
+            contentType,
           }),
         });
 

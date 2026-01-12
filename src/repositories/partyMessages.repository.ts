@@ -67,7 +67,8 @@ export const getPartyMessages = async (
 export const sendPartyMessage = async (
   postId: number,
   senderId: string,
-  content: string
+  content: string,
+  contentType: string = 'text'
 ): Promise<PartyMessage> => {
   const { data, error } = await supabaseAdmin
     .from('party_messages')
@@ -75,6 +76,7 @@ export const sendPartyMessage = async (
       post_id: postId,
       sender_id: senderId,
       content,
+      content_type: contentType,
     })
     .select()
     .single();

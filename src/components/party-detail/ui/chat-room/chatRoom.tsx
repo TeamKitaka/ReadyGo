@@ -7,8 +7,11 @@ import parentStyles from '../../styles.module.css';
 import Avatar from '@/commons/components/avatar';
 import Input from '@/commons/components/input';
 import Icon from '@/commons/components/icon';
+import Button from '@/commons/components/button';
 import { AnimalType } from '@/commons/constants/animal';
 import { useChatRoom } from '../../hooks/index.binding.chatRoom.hook';
+import { useSteamProfileShare } from '@/hooks/useSteamProfileShare';
+import SteamProfileLinkPreview from '@/commons/components/steam-profile-link-preview';
 
 interface ChatRoomProps {
   isExpired?: boolean;
@@ -40,12 +43,39 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
     setMessageListContainerRef,
   } = useChatRoom({ postId: postIdNumber });
 
+  // 스팀 프로필 공유 Hook 사용
+  const { handleShareSteamProfile } = useSteamProfileShare({
+    sendMessage,
+    isBlocked,
+  });
+
   // 플로팅 버튼 표시 여부
   const [showScrollToBottomButton, setShowScrollToBottomButton] =
     useState(false);
 
   // 메시지 입력 상태 관리
   const [messageInput, setMessageInput] = useState('');
+
+  /**
+   * Steam 프로필 URL에서 steam_id 추출
+   */
+  const extractSteamId = useCallback((url: string | null): string | null => {
+    if (!url) {
+      return null;
+    }
+    const match = url.match(/steamcommunity\.com\/profiles\/(\d+)/);
+    return match ? match[1] : null;
+  }, []);
+
+  /**
+   * 메시지가 Steam 프로필 링크인지 확인
+   */
+  const isSteamProfileLink = useCallback(
+    (content: string | null): boolean => {
+      return extractSteamId(content) !== null;
+    },
+    [extractSteamId]
+  );
 
   // 메시지 전송 핸들러
   const handleSendMessage = async () => {
@@ -154,6 +184,23 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
 
   return (
     <div className={parentStyles.chatArea}>
+      {/* 스팀 프로필 공유 버튼 */}
+      {!isBlocked && !isExpired && (
+        <div className={styles.steamProfileShareSection}>
+          <Button
+            variant="ghost"
+            size="s"
+            shape="rectangle"
+            onClick={handleShareSteamProfile}
+            className={styles.steamProfileShareButton}
+            aria-label="스팀 프로필 공유"
+          >
+            <Icon name="steam" size={20} />
+            <span>스팀 프로필 공유</span>
+          </Button>
+        </div>
+      )}
+
       {/* 메시지 리스트 영역 */}
       <div
         ref={messageListRef}
@@ -194,6 +241,12 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                 senderAnimalType,
               } = item;
 
+              // Steam 프로필 링크인지 확인
+              const isProfileLink = isSteamProfileLink(message.content);
+              const steamId = isProfileLink
+                ? extractSteamId(message.content)
+                : null;
+
               // 내 메시지 렌더링
               if (isOwnMessage) {
                 return (
@@ -203,17 +256,34 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                   >
                     <div
                       className={styles.messageRow}
-                      aria-label={`내 메시지: ${formattedContent || ''}`}
+                      aria-label={
+                        isProfileLink
+                          ? `내 스팀 프로필 링크 메시지`
+                          : `내 메시지: ${formattedContent || ''}`
+                      }
                     >
                       <div className={styles.ownMessageContainer}>
                         <div className={styles.messageTime}>
                           {formattedTime}
                         </div>
-                        <div className={styles.ownMessageBubble}>
-                          <span className={styles.messageContent}>
-                            {formattedContent}
-                          </span>
-                        </div>
+                        {isProfileLink && steamId ? (
+                          <SteamProfileLinkPreview
+                            steamId={steamId}
+                            nickname={senderNickname}
+                            onProfileView={() => {
+                              window.open(
+                                `https://steamcommunity.com/profiles/${steamId}/`,
+                                '_blank'
+                              );
+                            }}
+                          />
+                        ) : (
+                          <div className={styles.ownMessageBubble}>
+                            <span className={styles.messageContent}>
+                              {formattedContent}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -251,16 +321,29 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                           </div>
                         )}
                         <div className={styles.messageBubbles}>
-                          <div className={styles.otherMessageWrapper}>
-                            <div className={styles.otherMessageBubble}>
-                              <span className={styles.messageContent}>
-                                {formattedContent}
-                              </span>
+                          {isProfileLink && steamId ? (
+                            <SteamProfileLinkPreview
+                              steamId={steamId}
+                              nickname={senderNickname}
+                              onProfileView={() => {
+                                window.open(
+                                  `https://steamcommunity.com/profiles/${steamId}/`,
+                                  '_blank'
+                                );
+                              }}
+                            />
+                          ) : (
+                            <div className={styles.otherMessageWrapper}>
+                              <div className={styles.otherMessageBubble}>
+                                <span className={styles.messageContent}>
+                                  {formattedContent}
+                                </span>
+                              </div>
+                              <div className={styles.messageTime}>
+                                {formattedTime}
+                              </div>
                             </div>
-                            <div className={styles.messageTime}>
-                              {formattedTime}
-                            </div>
-                          </div>
+                          )}
                         </div>
                       </div>
                     </div>

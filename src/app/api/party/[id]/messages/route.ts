@@ -219,7 +219,7 @@ export const POST = async (
       );
     }
 
-    const { content } = body;
+    const { content, contentType = 'text' } = body;
 
     // 4. 파티 존재 확인
     const { data: partyData, error: fetchError } = await supabase
@@ -263,7 +263,8 @@ export const POST = async (
     const savedMessage = await sendPartyMessageService(
       postId,
       user.id,
-      content
+      content,
+      contentType
     );
 
     // 7. 성공 응답

@@ -1,0 +1,60 @@
+.container {
+  width: 398px;
+  background-color: var(--color-bg-primary);
+  border-radius: var(--border-radius-12, 12px);
+  overflow: hidden;
+  border: 1px solid var(--color-border-secondary);
+}
+
+.content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.iconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background-color: var(--color-bg-secondary);
+  border-radius: 50%;
+}
+
+.steamIcon {
+  color: var(--color-icon-interactive-primary);
+}
+
+.textContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--typo-heading-md-font-family);
+  font-size: var(--typo-heading-md-font-size);
+  line-height: var(--typo-heading-md-line-height);
+  font-weight: var(--typo-heading-md-font-weight);
+  color: var(--color-text-primary);
+}
+
+.description {
+  margin: 0;
+  font-family: var(--typo-body-md-font-family);
+  font-size: var(--typo-body-md-font-size);
+  line-height: var(--typo-body-md-line-height);
+  font-weight: var(--typo-body-md-font-weight);
+  color: var(--color-text-secondary);
+}
+
+.profileViewButton {
+  width: 100%;
+  margin-top: 8px;
+}
