@@ -95,6 +95,7 @@ export const getHomePartiesService = async (
 
     // 6. PartyCardProps 형태로 변환
     const result = underCapacityParties.map(({ post, members, currentMembers }) => ({
+      postId: post.id,
       title: post.party_title,
       gameName: post.game_title,
       description: post.description,
