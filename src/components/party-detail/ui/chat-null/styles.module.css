@@ -1,26 +1,7 @@
-.chatArea {
-  flex: 1;
-  min-width: 0;
-  max-width: 824px;
-  padding: 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  box-sizing: border-box;
-  background-color: var(--color-bg-primary);
-  border-radius: 36px;
-  border: 1px solid var(--color-border-secondary);
-}
-
-.chatLog {
-  flex: 1;
-  min-height: 0;
-  display: flex;
+/* ChatNull 전용 스타일 - 공통 스타일 확장 */
+.chatLogCentered {
   align-items: center;
   justify-content: center;
-  box-sizing: border-box;
-  background-color: var(--color-bg-secondary);
-  border-radius: 20px;
 }
 
 .chatLogContent {
@@ -67,12 +48,4 @@
   font-weight: var(--typo-body-md-font-weight);
   color: var(--color-text-interactive-secondary);
   text-align: center;
-}
-
-.messageArea {
-  height: 48px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  box-sizing: border-box;
 }

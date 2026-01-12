@@ -225,6 +225,7 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
+  max-width: 80%;
 }
 
 .messageAvatar {
@@ -241,7 +242,6 @@
   flex-direction: row;
   gap: 12px;
   align-items: flex-end;
-  max-width: 80%;
 }
 
 .otherMessageBubble {
