@@ -170,20 +170,20 @@ export default function Home() {
             {!profileLoading &&
               !profileError &&
               profileViewModel && (
-                <ProfileSection
-                  nickname={profileViewModel.nickname || '익명 사용자'}
-                  tier={profileViewModel.tier}
-                  animal={profileViewModel.animalType || AnimalType.rabbit}
+              <ProfileSection
+                nickname={profileViewModel.nickname || '익명 사용자'}
+                tier={profileViewModel.tier}
+                animal={profileViewModel.animalType || AnimalType.rabbit}
                   favoriteGenre={profileTexts.favoriteGenre}
                   activeTime={profileTexts.activeTime}
                   gameStyle={profileTexts.gameStyle}
                   weeklyAverage={profileTexts.weeklyAverage}
-                  perfectMatchTypes={profileViewModel.perfectMatchTypes}
-                  radarData={profileViewModel.radarData || []}
-                  barData={mockBarData}
-                  className={styles.profileSection}
-                />
-              )}
+                perfectMatchTypes={profileViewModel.perfectMatchTypes}
+                radarData={profileViewModel.radarData || []}
+                barData={mockBarData}
+                className={styles.profileSection}
+              />
+            )}
           </div>
         )}
       </div>

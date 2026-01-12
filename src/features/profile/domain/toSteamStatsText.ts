@@ -20,6 +20,27 @@ const TIME_SLOT_LABEL_MAP: Record<string, string> = {
 };
 
 /**
+ * 영어 장르명 → 한글 장르명 매핑
+ * party.tsx의 genreItems와 일치
+ */
+const GENRE_LABEL_MAP: Record<string, string> = {
+  Action: '액션',
+  Adventure: '모험',
+  Casual: '캐주얼',
+  'Early Access': '얼리 액세스',
+  'Free To Play': '무료 플레이',
+  Indie: '인디',
+  'Massively Multiplayer': 'MMO',
+  Nudity: '성인 요소',
+  Racing: '레이싱',
+  RPG: 'RPG',
+  Simulation: '시뮬레이션',
+  Sports: '스포츠',
+  Strategy: '전략',
+  Violent: '폭력성',
+};
+
+/**
  * 플레이 스타일 → 한글 표시 매핑
  */
 const PLAY_STYLE_LABEL_MAP: Record<string, string> = {
@@ -29,10 +50,21 @@ const PLAY_STYLE_LABEL_MAP: Record<string, string> = {
 };
 
 /**
+ * 영어 장르명을 한글로 변환
+ *
+ * @param genre - 영어 장르명 (예: "Action")
+ * @returns string - 한글 장르명 (예: "액션"), 매핑이 없으면 원본 반환
+ */
+const translateGenreToKorean = (genre: string): string => {
+  return GENRE_LABEL_MAP[genre] || genre;
+};
+
+/**
  * SteamStatsDTO의 mainGenres를 선호 장르 텍스트로 변환
+ * - 첫 번째 장르의 글자 수가 5자 이하일 경우, 두 번째 장르와 " · "로 합쳐서 표시
  *
  * @param steamStats - SteamStatsDTO | undefined
- * @returns string | undefined - 첫 번째 장르만 반환 (예: "액션")
+ * @returns string | undefined - 한글로 변환된 장르 텍스트 (예: "액션" 또는 "액션 · 모험")
  */
 export const toFavoriteGenreText = (
   steamStats: SteamStatsDTO | undefined
@@ -41,8 +73,17 @@ export const toFavoriteGenreText = (
     return undefined;
   }
 
+  // 첫 번째 장르를 한글로 변환
+  const firstGenre = translateGenreToKorean(steamStats.mainGenres[0]);
+
+  // 첫 번째 장르의 글자 수가 5자 이하이고, 두 번째 장르가 있는 경우
+  if (firstGenre.length <= 5 && steamStats.mainGenres.length >= 2) {
+    const secondGenre = translateGenreToKorean(steamStats.mainGenres[1]);
+    return `${firstGenre} · ${secondGenre}`;
+  }
+
   // 첫 번째 장르만 반환
-  return steamStats.mainGenres[0];
+  return firstGenre;
 };
 
 /**
