@@ -315,11 +315,11 @@ const calculateGenrePlaytime2w = async (
 
   // Map을 Record로 변환 (0분 장르 제외)
   const result: Record<string, number> = {};
-  for (const [genre, minutes] of genreMap.entries()) {
+  Array.from(genreMap.entries()).forEach(([genre, minutes]) => {
     if (minutes > 0) {
       result[genre] = minutes;
     }
-  }
+  });
 
   return result;
 };

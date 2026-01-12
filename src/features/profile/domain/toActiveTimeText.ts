@@ -37,7 +37,7 @@ const analyzeTimePattern = (indices: number[]): string => {
   }
 
   // 정렬된 인덱스 집합
-  const sortedIndices = [...new Set(indices)].sort((a, b) => a - b);
+  const sortedIndices = Array.from(new Set(indices)).sort((a, b) => a - b);
   const indexSet = new Set(sortedIndices);
 
   // 종일형: 모든 시간대 포함
@@ -68,16 +68,14 @@ const analyzeTimePattern = (indices: number[]): string => {
 
   // 비연속 패턴 (유동형)
   // 연속된 인덱스가 아닌 경우
-  const isConsecutive = sortedIndices.every(
-    (_, i) =>
-      i === sortedIndices.length - 1 ||
-      sortedIndices[i + 1] - sortedIndices[i] === 1
-  );
-
   // 단일 시간대도 연속으로 간주 (예: {0}, {1}, {2}, {3})
-  if (sortedIndices.length === 1) {
-    isConsecutive = true;
-  }
+  const isConsecutive =
+    sortedIndices.length === 1 ||
+    sortedIndices.every(
+      (_, i) =>
+        i === sortedIndices.length - 1 ||
+        sortedIndices[i + 1] - sortedIndices[i] === 1
+    );
 
   // 연속되지 않으면 유동형
   if (!isConsecutive) {
