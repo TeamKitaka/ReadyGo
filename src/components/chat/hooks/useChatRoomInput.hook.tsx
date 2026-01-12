@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { useModal } from '@/commons/providers/modal/modal.provider';
+import { useGameSelectModal } from '@/hooks/useGameSelectModal';
+import type { SteamGame } from '@/hooks/useGameSelectModal';
 
 /**
  * Hook 파라미터 타입
@@ -21,6 +22,20 @@ export interface UseChatRoomInputReturn {
   handleSendMessage: () => Promise<void>;
   handleKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   handleGameStart: () => void;
+  // 게임 선택 모달 관련
+  gameSelectModal: {
+    isOpen: boolean;
+    closeModal: () => void;
+    games: SteamGame[];
+    filteredGames: SteamGame[];
+    isLoading: boolean;
+    searchQuery: string;
+    onSearchChange: (query: string) => void;
+    selectedGame: SteamGame | null;
+    onSelectGame: (game: SteamGame) => void;
+    onConfirm: (game: SteamGame) => void;
+    error: string | null;
+  };
 }
 
 /**
@@ -35,7 +50,9 @@ export const useChatRoomInput = (
   props: UseChatRoomInputProps
 ): UseChatRoomInputReturn => {
   const { sendMessage, isBlocked, otherMemberNickname } = props;
-  const { openModal } = useModal();
+
+  // 게임 선택 모달 상태 관리
+  const gameSelectModalHook = useGameSelectModal();
 
   // 메시지 입력 상태
   const [messageInput, setMessageInput] = useState('');
@@ -80,24 +97,31 @@ export const useChatRoomInput = (
 
   // 게임시작 버튼 클릭 핸들러
   const handleGameStart = useCallback(() => {
-    if (!otherMemberNickname) {
+    if (!otherMemberNickname || isBlocked) {
       return;
     }
 
-    openModal({
-      variant: 'dual',
-      title: '게임 시작',
-      description: `${otherMemberNickname}님과 게임을 시작하시겠습니까?`,
-      confirmText: '확인',
-      cancelText: '취소',
-      onConfirm: () => {
-        // 확인 버튼 클릭 시 모달만 닫기 (페이지 이동 없음)
-      },
-      onCancel: () => {
-        // 취소 버튼 클릭 시 모달만 닫기 (페이지 이동 없음)
-      },
-    });
-  }, [otherMemberNickname, openModal]);
+    gameSelectModalHook.openModal();
+  }, [otherMemberNickname, isBlocked, gameSelectModalHook]);
+
+  // 게임 선택 확인 핸들러
+  const handleGameConfirm = useCallback(
+    async (game: SteamGame) => {
+      if (isBlocked) {
+        return;
+      }
+
+      try {
+        const gameLink = `steam://run/${game.app_id}`;
+        await sendMessage(gameLink, 'game_link');
+        gameSelectModalHook.closeModal();
+      } catch (err) {
+        console.error('Failed to send game link message:', err);
+        // 에러 발생 시에도 모달은 닫지 않음 (재시도 가능하도록)
+      }
+    },
+    [isBlocked, sendMessage, gameSelectModalHook]
+  );
 
   return {
     messageInput,
@@ -105,5 +129,18 @@ export const useChatRoomInput = (
     handleSendMessage,
     handleKeyDown,
     handleGameStart,
+    gameSelectModal: {
+      isOpen: gameSelectModalHook.isOpen,
+      closeModal: gameSelectModalHook.closeModal,
+      games: gameSelectModalHook.gameList,
+      filteredGames: gameSelectModalHook.filteredGames,
+      isLoading: gameSelectModalHook.isLoadingGames,
+      searchQuery: gameSelectModalHook.searchQuery,
+      onSearchChange: gameSelectModalHook.setSearchQuery,
+      selectedGame: gameSelectModalHook.selectedGame,
+      onSelectGame: gameSelectModalHook.selectGame,
+      onConfirm: handleGameConfirm,
+      error: gameSelectModalHook.error,
+    },
   };
 };
