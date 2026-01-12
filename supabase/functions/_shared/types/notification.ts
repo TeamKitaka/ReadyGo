@@ -1,6 +1,6 @@
 /**
  * Notification Types
- * 
+ *
  * ⚠️ 중요: src/types/notification.ts와 항상 동기화 필요
  * 새로운 알림 타입 추가 시 양쪽 파일 모두 업데이트해야 함
  */
@@ -29,4 +29,3 @@ export interface NotificationRow {
   is_read: boolean;
   created_at: string;
 }
-

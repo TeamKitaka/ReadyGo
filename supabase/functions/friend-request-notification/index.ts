@@ -69,10 +69,7 @@ Deno.serve(async (req) => {
 
     // 필수 필드 검증
     if (!record || !record.id || !record.sender_id || !record.receiver_id) {
-      console.error(
-        '[Friend Request Notification] Invalid payload:',
-        payload
-      );
+      console.error('[Friend Request Notification] Invalid payload:', payload);
       return new Response(
         JSON.stringify({ error: 'Invalid payload: missing required fields' }),
         {
@@ -96,13 +93,10 @@ Deno.serve(async (req) => {
       console.log(
         `[Friend Request Notification] Duplicate detected: requestId=${requestId}, skipping (last processed ${Math.floor((now - lastProcessed) / 1000)}s ago)`
       );
-      return new Response(
-        JSON.stringify({ success: true, duplicate: true }),
-        {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      return new Response(JSON.stringify({ success: true, duplicate: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Supabase Admin 클라이언트 생성
@@ -135,13 +129,10 @@ Deno.serve(async (req) => {
       console.log(
         `[Friend Request Notification] Duplicate ignored: requestId=${requestId}`
       );
-      return new Response(
-        JSON.stringify({ success: true, duplicate: true }),
-        {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      return new Response(JSON.stringify({ success: true, duplicate: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     console.log(
@@ -171,4 +162,3 @@ Deno.serve(async (req) => {
     );
   }
 });
-

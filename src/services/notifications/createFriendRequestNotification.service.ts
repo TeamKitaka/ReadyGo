@@ -2,13 +2,13 @@ import * as notificationsRepository from '@/repositories/notifications.repositor
 
 /**
  * Friend Request Notification Service
- * 
+ *
  * 📌 책임:
  * - "친구 요청 알림"의 의미만 정의
  * - actor(sender) / receiver 관계 정의
  * - entity 연결 (friend_request)
  * - Repository 호출만 수행
- * 
+ *
  * ❌ 하면 안 되는 것:
  * - SupabaseClient 생성
  * - auth.uid() 접근
@@ -24,7 +24,7 @@ export interface FriendRequestNotificationInput {
 
 /**
  * 친구 요청 알림을 생성한다
- * 
+ *
  * @param input - 친구 요청 정보
  * @returns Repository 응답 그대로 반환 (에러 처리 없음)
  */
@@ -39,4 +39,3 @@ export const createFriendRequestNotification = async (
     entity_id: String(input.requestId), // number → string 변환
   });
 };
-

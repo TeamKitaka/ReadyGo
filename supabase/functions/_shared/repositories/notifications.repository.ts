@@ -79,4 +79,3 @@ export const bulkInsert = async (
 
   return await client.from('notifications').insert(notifications).select();
 };
-
