@@ -16,6 +16,12 @@ import { useHomeMatches } from './hooks/useHomeMatches';
 import { useHomeParties } from './hooks/useHomeParties';
 import { usePresenceStore } from '@/stores/presence.store';
 import { getEffectiveStatus } from '@/stores/user-status.store';
+import {
+  getFavoriteGenreText,
+  getWeeklyAverageText,
+} from '@/features/profile/domain/toSteamStatsText';
+import { toGameStyleFromTraits } from '@/features/profile/domain/toGameStyleFromTraits';
+import { toActiveTimeText } from '@/features/profile/domain/toActiveTimeText';
 
 // 임시 Bar Chart 데이터 (최근 플레이 패턴)
 const mockBarData: BarChartDataItem[] = [
@@ -55,6 +61,46 @@ export default function Home() {
       status: getEffectiveStatus(card.userId),
     }));
   }, [matchCards]);
+
+  // 프로필 정보 텍스트 변환 (ProfileSection용)
+  const profileTexts = useMemo(() => {
+    if (!profileViewModel) {
+      return {
+        favoriteGenre: '--',
+        activeTime: undefined,
+        gameStyle: '--',
+        weeklyAverage: '--시간',
+      };
+    }
+
+    // 게임 성향: 성향분석 결과 우선, 없으면 기본값
+    const gameStyleFromTraits = toGameStyleFromTraits(profileViewModel.traits);
+    const gameStyle = gameStyleFromTraits || '--';
+
+    // 활동 시간: 성향분석 결과(schedule) 우선, 없으면 activeTimeText
+    const activeTimeFromSchedule = toActiveTimeText(profileViewModel.schedule);
+    const activeTime =
+      activeTimeFromSchedule || profileViewModel.activeTimeText || undefined;
+
+    // 선호 장르: 스팀 상태에 따라 표시
+    const favoriteGenre = getFavoriteGenreText(
+      profileViewModel.steamId,
+      profileViewModel.steamStats
+    );
+
+    // 주간 평균: 스팀 상태에 따라 표시
+    const weeklyAverage = getWeeklyAverageText(
+      profileViewModel.steamId,
+      profileViewModel.steamStats
+    );
+
+    return {
+      favoriteGenre,
+      activeTime,
+      gameStyle,
+      weeklyAverage,
+    };
+  }, [profileViewModel]);
 
   // 테스트 완료 여부 확인 (animalType이 unknown이 아니고 null/undefined가 아니며, 또는 traits가 존재하면 완료)
   const isTestCompleted =
@@ -127,7 +173,10 @@ export default function Home() {
                 nickname={profileViewModel.nickname || '익명 사용자'}
                 tier={profileViewModel.tier}
                 animal={profileViewModel.animalType || AnimalType.rabbit}
-                activeTime={profileViewModel.activeTimeText}
+                favoriteGenre={profileTexts.favoriteGenre}
+                activeTime={profileTexts.activeTime}
+                gameStyle={profileTexts.gameStyle}
+                weeklyAverage={profileTexts.weeklyAverage}
                 perfectMatchTypes={profileViewModel.perfectMatchTypes}
                 radarData={profileViewModel.radarData || []}
                 barData={mockBarData}

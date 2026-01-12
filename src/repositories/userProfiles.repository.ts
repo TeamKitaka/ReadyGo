@@ -14,6 +14,7 @@ export type UserProfileRow = {
   avatar_url: string | null;
   nickname: string | null;
   tier: string;
+  steam_id: string | null;
   created_at: string;
   updated_at: string;
 };

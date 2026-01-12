@@ -13,6 +13,9 @@ export type SteamUserStatsInput = {
   avgWeeklyPlaytime: number;
   mainGenres: string[];
   activeTimeSlots: string[];
+  totalPlaytime2wMinutes?: number;
+  genrePlaytime2wMinutes?: Record<string, number>;
+  topGenres2w?: string[];
 };
 
 /**
@@ -37,6 +40,11 @@ export const upsert = async (client: DbClient, params: SteamUserStatsInput) => {
       avg_weekly_playtime: params.avgWeeklyPlaytime,
       main_genres: params.mainGenres,
       active_time_slots: params.activeTimeSlots,
+      total_playtime_2w_minutes: params.totalPlaytime2wMinutes ?? null,
+      genre_playtime_2w_minutes: params.genrePlaytime2wMinutes
+        ? (params.genrePlaytime2wMinutes as any)
+        : null,
+      top_genres_2w: params.topGenres2w ?? [],
       updated_at: new Date().toISOString(),
     },
     {

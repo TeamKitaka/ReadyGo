@@ -789,24 +789,33 @@ export type Database = {
         Row: {
           active_time_slots: string[]
           avg_weekly_playtime: number
+          genre_playtime_2w_minutes: Json | null
           main_genres: string[]
           play_style: string
+          top_genres_2w: string[]
+          total_playtime_2w_minutes: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           active_time_slots?: string[]
           avg_weekly_playtime?: number
+          genre_playtime_2w_minutes?: Json | null
           main_genres?: string[]
           play_style: string
+          top_genres_2w?: string[]
+          total_playtime_2w_minutes?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           active_time_slots?: string[]
           avg_weekly_playtime?: number
+          genre_playtime_2w_minutes?: Json | null
           main_genres?: string[]
           play_style?: string
+          top_genres_2w?: string[]
+          total_playtime_2w_minutes?: number | null
           updated_at?: string
           user_id?: string
         }

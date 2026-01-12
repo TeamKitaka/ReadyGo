@@ -18,6 +18,12 @@ import { useSendFriendRequest } from '@/hooks/useSendFriendRequest';
 import { toMatchResultViewModel } from '@/viewmodels/match/toMatchResultViewModel';
 import type { MatchReasonCoreDTO } from '@/commons/types/match/matchReasonCore.dto';
 import type { MatchTagCoreDTO } from '@/commons/types/match/matchTagCore.dto';
+import {
+  getFavoriteGenreText,
+  getWeeklyAverageText,
+} from '@/features/profile/domain/toSteamStatsText';
+import { toGameStyleFromTraits } from '@/features/profile/domain/toGameStyleFromTraits';
+import { toActiveTimeText } from '@/features/profile/domain/toActiveTimeText';
 
 export interface ProfilePanelProps {
   userId: string;
@@ -299,7 +305,31 @@ export default function ProfilePanel({
   }
 
   // Success 상태 - ViewModel로 렌더링
-  const { nickname, tier, animalType, radarData, activeTimeText } = viewModel;
+  const {
+    nickname,
+    tier,
+    animalType,
+    radarData,
+    activeTimeText,
+    steamStats,
+    steamId,
+    traits,
+    schedule,
+  } = viewModel;
+
+  // 게임 성향: 성향분석 결과 우선, 없으면 스팀 데이터
+  const gameStyleFromTraits = toGameStyleFromTraits(traits);
+  const gameStyle = gameStyleFromTraits || '알 수 없음';
+
+  // 활동 시간: 성향분석 결과(schedule) 우선, 없으면 스팀 데이터
+  const activeTimeFromSchedule = toActiveTimeText(schedule);
+  const activeTime = activeTimeFromSchedule || activeTimeText || '알 수 없음';
+
+  // 선호 장르: 스팀 상태에 따라 표시
+  const favoriteGenre = getFavoriteGenreText(steamId, steamStats);
+
+  // 주간 평균: 스팀 상태에 따라 표시
+  const weeklyAverage = getWeeklyAverageText(steamId, steamStats);
 
   return (
     <>
@@ -310,10 +340,10 @@ export default function ProfilePanel({
           nickname={nickname || '익명 사용자'}
           tier={tier}
           animal={animalType ?? AnimalType.rabbit}
-          favoriteGenre="알 수 없음"
-          activeTime={activeTimeText || '알 수 없음'}
-          gameStyle="알 수 없음"
-          weeklyAverage="알 수 없음"
+          favoriteGenre={favoriteGenre}
+          activeTime={activeTime}
+          gameStyle={gameStyle}
+          weeklyAverage={weeklyAverage}
           matchPercentage={
             isMyProfile ? undefined : (matchData?.finalScore ?? 0)
           }
