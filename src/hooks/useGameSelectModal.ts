@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 export type SteamGame = {
   app_id: number;
@@ -12,7 +12,7 @@ export type SteamGame = {
  *
  * 책임:
  * - 모달 열기/닫기 상태 관리
- * - 게임 목록 조회 및 검색어 필터링
+ * - 게임 목록 조회 및 검색어 필터링 (서버 측 검색 지원)
  * - 선택된 게임 상태 관리
  */
 export const useGameSelectModal = () => {
@@ -22,16 +22,22 @@ export const useGameSelectModal = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGame, setSelectedGame] = useState<SteamGame | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   /**
-   * 게임 목록 조회
+   * 게임 목록 조회 (검색어 옵션 포함)
    */
-  const fetchGameList = useCallback(async () => {
+  const fetchGameList = useCallback(async (search?: string) => {
     setIsLoadingGames(true);
     setError(null);
 
     try {
-      const response = await fetch('/api/steam/games', {
+      const url = new URL('/api/steam/games', window.location.origin);
+      if (search && search.trim()) {
+        url.searchParams.set('search', search.trim());
+      }
+
+      const response = await fetch(url.toString(), {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -75,7 +81,7 @@ export const useGameSelectModal = () => {
     setSearchQuery('');
     setSelectedGame(null);
     setError(null);
-    // 게임 목록이 없으면 조회
+    // 게임 목록이 없으면 조회 (전체 목록)
     if (gameList.length === 0) {
       fetchGameList();
     }
@@ -92,11 +98,40 @@ export const useGameSelectModal = () => {
   }, []);
 
   /**
-   * 검색어에 따라 필터링된 게임 목록
+   * 검색어 변경 시 서버에서 검색 (debounce 적용)
    */
-  const filteredGames = gameList.filter((game) =>
-    game.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  useEffect(() => {
+    // 기존 타이머 클리어
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // 검색어가 있고 모달이 열려있을 때만 서버 검색
+    if (isOpen && searchQuery.trim()) {
+      debounceTimerRef.current = setTimeout(() => {
+        fetchGameList(searchQuery);
+      }, 300); // 300ms debounce
+    } else if (isOpen && !searchQuery.trim() && gameList.length === 0) {
+      // 검색어가 없고 목록도 없으면 전체 목록 조회
+      fetchGameList();
+    }
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchQuery, isOpen, fetchGameList, gameList.length]);
+
+  /**
+   * 검색어가 있을 때는 서버에서 필터링된 결과를 사용하고,
+   * 없을 때는 클라이언트에서 필터링 (기존 동작 유지)
+   */
+  const filteredGames = searchQuery.trim()
+    ? gameList // 서버에서 이미 필터링됨
+    : gameList.filter((game) =>
+        game.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
 
   /**
    * 게임 선택
