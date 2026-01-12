@@ -24,12 +24,8 @@ export const useHomeParties = () => {
         setLoading(true);
         setError(null);
 
-        console.log('[useHomeParties] Fetching parties from API...');
-
         // API 호출하여 파티 목록 조회
         const response = await fetch('/api/home/parties');
-
-        console.log('[useHomeParties] API response status:', response.status);
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -38,13 +34,11 @@ export const useHomeParties = () => {
         }
 
         const data = await response.json();
-        console.log('[useHomeParties] API response data:', data);
 
         if (data.error) {
           throw new Error(data.message || data.error);
         }
 
-        console.log('[useHomeParties] Setting parties:', data.parties);
         setParties(data.parties || []);
       } catch (err) {
         console.error('[useHomeParties] Error fetching parties:', err);
@@ -61,14 +55,12 @@ export const useHomeParties = () => {
     // 페이지가 다시 보일 때 (뒤로가기, 탭 전환 등)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('[useHomeParties] Page visible, refetching...');
         fetchParties();
       }
     };
 
     // 윈도우 포커스 시 (다른 앱에서 돌아올 때)
     const handleFocus = () => {
-      console.log('[useHomeParties] Window focused, refetching...');
       fetchParties();
     };
 

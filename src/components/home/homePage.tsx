@@ -46,13 +46,6 @@ export default function Home() {
   const { parties, loading: partiesLoading, error: partiesError } =
     useHomeParties();
 
-  // 디버깅: 파티 데이터 확인
-  console.log('[HomePage] Parties data:', {
-    parties,
-    loading: partiesLoading,
-    error: partiesError,
-  });
-
   // Presence 상태 구독 (실시간 온라인 상태 반영)
   usePresenceStore();
 
