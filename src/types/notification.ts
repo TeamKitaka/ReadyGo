@@ -4,7 +4,8 @@ export type NotificationType =
   | 'CHAT_RECEIVED'
   | 'REVIEW_REQUESTED'
   | 'REVIEW_RECEIVED'
-  | 'GAME_STARTED';
+  | 'GAME_STARTED'
+  | 'PARTY_INVITED';
 
 export type NotificationEntityType =
   | 'chat_room'

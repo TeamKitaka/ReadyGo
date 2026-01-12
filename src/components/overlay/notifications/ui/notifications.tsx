@@ -98,6 +98,8 @@ const getNotificationMessage = (
       return `${nickname}님이 메시지를 보냄`;
     case 'GAME_STARTED':
       return `${nickname}님과 게임이 시작되었습니다`;
+    case 'PARTY_INVITED':
+      return `${nickname}님이 파티에 초대함`;
     default:
       return '';
   }
@@ -118,6 +120,8 @@ const getNotificationIcon = (type: NotificationType): IconName => {
       return 'message-circle-dots';
     case 'GAME_STARTED':
       return 'play-circle';
+    case 'PARTY_INVITED':
+      return 'gamepad';
     default:
       return 'notification';
   }
@@ -138,6 +142,8 @@ const getNotificationColorClass = (type: NotificationType): string => {
       return styles.chatReceived;
     case 'GAME_STARTED':
       return styles.partyInvited; // 게임 시작도 파티와 같은 색상 사용
+    case 'PARTY_INVITED':
+      return styles.partyInvited;
     default:
       return '';
   }
