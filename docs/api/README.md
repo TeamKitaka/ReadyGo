@@ -95,6 +95,35 @@
 
 ---
 
+## Friends
+
+- **POST** `/api/friends/request`  
+  → `friends/request.md`
+
+- **POST** `/api/friends/accept`  
+  → `friends/accept.md`
+
+- **POST** `/api/friends/reject`  
+  → `friends/reject.md`
+
+- **GET** `/api/friends/list`  
+  → `friends/list.md`
+
+- **GET** `/api/friends/requests`  
+  → `friends/requests.md`
+
+---
+
+## Notifications
+
+- **GET** `/api/notifications`  
+  → `notifications/index.md`
+
+- **POST** `/api/notifications/mark-read`  
+  → `notifications/mark-read.md`
+
+---
+
 ## 공통 Response 형식
 
 ### Success
