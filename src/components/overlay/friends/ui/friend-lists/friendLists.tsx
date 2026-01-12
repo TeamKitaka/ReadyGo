@@ -1,34 +1,145 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import styles from './styles.module.css';
 import Avatar from '@/commons/components/avatar';
 import Icon from '@/commons/components/icon';
-
-interface Friend {
-  id: string;
-  nickname: string;
-  status: 'online' | 'offline' | 'away' | 'dnd';
-}
+import { useFriendList } from '@/hooks/useFriendList';
+import { useChatList } from '@/components/chat/hooks';
+import { useAuthStore } from '@/stores/auth.store';
 
 export default function FriendLists() {
-  const [friends] = useState<Friend[]>([
-    { id: '1', nickname: '게이머호랑이', status: 'online' },
-    { id: '2', nickname: '게이머호랑이', status: 'offline' },
-    { id: '3', nickname: '게이머호랑이', status: 'away' },
-    { id: '4', nickname: '게이머호랑이', status: 'dnd' },
-    { id: '5', nickname: '까칠한까마귀', status: 'online' },
-  ]);
+  const router = useRouter();
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
+  const { friends, loading, error } = useFriendList();
+  const { chatRooms } = useChatList();
+  const myUserId = useAuthStore((state) => state.user?.id);
 
-  const handleMessage = (id: string) => {
-    // TODO: Implement message functionality
-    void id;
+  const handleMessage = async (userId: string) => {
+    if (!myUserId || !userId || isCreatingChat) {
+      return;
+    }
+
+    try {
+      setIsCreatingChat(true);
+
+      // 먼저 기존 채팅방이 있는지 확인
+      const existingRoom = chatRooms.find((room) => {
+        // 다른 멤버의 user_id가 현재 userId와 일치하는지 확인
+        return room.otherMember?.id === userId && room.room.type === 'direct';
+      });
+
+      if (existingRoom && existingRoom.room.id) {
+        // 기존 채팅방이 있으면 해당 채팅방으로 이동
+        router.push(`/chat/${existingRoom.room.id}`);
+        return;
+      }
+
+      // 기존 채팅방이 없으면 새로 생성
+      const response = await fetch('/api/chat/room', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          memberIds: [myUserId, userId],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[FriendLists] Failed to create chat room:', errorData);
+        alert('채팅방 생성에 실패했습니다.');
+        return;
+      }
+
+      const { data: newRoom } = await response.json();
+
+      // 채팅 페이지로 이동
+      router.push(`/chat/${newRoom.id}`);
+    } catch (error) {
+      console.error('[FriendLists] Error creating chat room:', error);
+      alert('채팅방 생성 중 오류가 발생했습니다.');
+    } finally {
+      setIsCreatingChat(false);
+    }
   };
 
-  const handleMore = (id: string) => {
+  const handleMore = (userId: string) => {
     // TODO: Implement more options functionality
-    void id;
+    void userId;
   };
+
+  // 상태 텍스트 변환 함수
+  const getStatusText = (status: string | null): string => {
+    switch (status) {
+      case 'online':
+        return '온라인';
+      case 'offline':
+        return '오프라인';
+      case 'away':
+        return '자리비움';
+      case 'dnd':
+        return '방해금지';
+      default:
+        return '오프라인';
+    }
+  };
+
+  // 상태를 Avatar 컴포넌트가 받는 형식으로 변환
+  const getStatusForAvatar = (
+    status: string | null
+  ): 'online' | 'offline' | 'away' | 'dnd' => {
+    if (
+      status === 'online' ||
+      status === 'offline' ||
+      status === 'away' ||
+      status === 'dnd'
+    ) {
+      return status;
+    }
+    return 'offline';
+  };
+
+  // 로딩 상태
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.content}>
+          <div className={styles.listContainer}>
+            <p>로딩 중...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 에러 상태
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.content}>
+          <div className={styles.listContainer}>
+            <p>오류가 발생했습니다: {error.message}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 친구가 없는 경우
+  if (friends.length === 0) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.content}>
+          <div className={styles.listContainer}>
+            <p>친구가 없습니다.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -36,51 +147,55 @@ export default function FriendLists() {
       <div className={styles.content}>
         {/* Friend List */}
         <div className={styles.listContainer}>
-          {friends.map((friend) => (
-            <div key={friend.id} className={styles.friendItem}>
-              <div className={styles.userInfo}>
-                <div className={styles.avatarWrapper}>
-                  <Avatar size="s" status={friend.status} showStatus={true} />
+          {friends.map((friend) => {
+            const nickname = friend.profile?.nickname || '알 수 없음';
+            const status = friend.status?.status || null;
+            const statusForAvatar = getStatusForAvatar(status);
+
+            return (
+              <div key={friend.user_id} className={styles.friendItem}>
+                <div className={styles.userInfo}>
+                  <div className={styles.avatarWrapper}>
+                    <Avatar
+                      size="s"
+                      status={statusForAvatar}
+                      showStatus={true}
+                    />
+                  </div>
+                  <div className={styles.textInfo}>
+                    <div className={styles.nicknameContainer}>
+                      <p className={styles.nickname}>{nickname}</p>
+                    </div>
+                    <div className={styles.statusContainer}>
+                      <p className={styles.statusText}>
+                        {getStatusText(status)}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className={styles.textInfo}>
-                  <div className={styles.nicknameContainer}>
-                    <p className={styles.nickname}>{friend.nickname}</p>
-                  </div>
-                  <div className={styles.statusContainer}>
-                    <p className={styles.statusText}>
-                      {friend.status === 'online'
-                        ? '온라인'
-                        : friend.status === 'offline'
-                          ? '오프라인'
-                          : friend.status === 'away'
-                            ? '자리비움'
-                            : '방해금지'}
-                    </p>
-                  </div>
+                <div className={styles.actions}>
+                  <button
+                    className={styles.actionButton}
+                    onClick={() => handleMessage(friend.user_id)}
+                    aria-label="메시지 보내기"
+                  >
+                    <Icon name="message-circle-dots" size={20} />
+                  </button>
+                  <button
+                    className={styles.actionButton}
+                    onClick={() => handleMore(friend.user_id)}
+                    aria-label="더보기"
+                  >
+                    <div className={styles.moreIcon}>
+                      <span className={styles.dot} />
+                      <span className={styles.dot} />
+                      <span className={styles.dot} />
+                    </div>
+                  </button>
                 </div>
               </div>
-              <div className={styles.actions}>
-                <button
-                  className={styles.actionButton}
-                  onClick={() => handleMessage(friend.id)}
-                  aria-label="메시지 보내기"
-                >
-                  <Icon name="message-circle-dots" size={20} />
-                </button>
-                <button
-                  className={styles.actionButton}
-                  onClick={() => handleMore(friend.id)}
-                  aria-label="더보기"
-                >
-                  <div className={styles.moreIcon}>
-                    <span className={styles.dot} />
-                    <span className={styles.dot} />
-                    <span className={styles.dot} />
-                  </div>
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
