@@ -10,16 +10,6 @@
 import type { SteamStatsDTO } from '@/commons/types/profile/profileCore.dto';
 
 /**
- * 시간대 → 한글 시간 표시 매핑
- */
-const TIME_SLOT_LABEL_MAP: Record<string, string> = {
-  '00-06': '00 - 06시',
-  '06-12': '06 - 12시',
-  '12-18': '12 - 18시',
-  '18-24': '18 - 24시',
-};
-
-/**
  * 영어 장르명 → 한글 장르명 매핑
  * party.tsx의 genreItems와 일치
  */
@@ -69,7 +59,11 @@ const translateGenreToKorean = (genre: string): string => {
 export const toFavoriteGenreText = (
   steamStats: SteamStatsDTO | undefined
 ): string | undefined => {
-  if (!steamStats || !steamStats.mainGenres || steamStats.mainGenres.length === 0) {
+  if (
+    !steamStats ||
+    !steamStats.mainGenres ||
+    steamStats.mainGenres.length === 0
+  ) {
     return undefined;
   }
 
@@ -118,7 +112,13 @@ const analyzeTimePattern = (indices: number[]): string => {
   const indexSet = new Set(sortedIndices);
 
   // 종일형: 모든 시간대 포함
-  if (indexSet.size === 4 && indexSet.has(0) && indexSet.has(1) && indexSet.has(2) && indexSet.has(3)) {
+  if (
+    indexSet.size === 4 &&
+    indexSet.has(0) &&
+    indexSet.has(1) &&
+    indexSet.has(2) &&
+    indexSet.has(3)
+  ) {
     return '종일형';
   }
 
@@ -139,13 +139,11 @@ const analyzeTimePattern = (indices: number[]): string => {
 
   // 비연속 패턴 (유동형)
   // 연속된 인덱스가 아닌 경우
-  let isConsecutive = true;
-  for (let i = 0; i < sortedIndices.length - 1; i++) {
-    if (sortedIndices[i + 1] - sortedIndices[i] !== 1) {
-      isConsecutive = false;
-      break;
-    }
-  }
+  const isConsecutive = sortedIndices.every(
+    (_, i) =>
+      i === sortedIndices.length - 1 ||
+      sortedIndices[i + 1] - sortedIndices[i] === 1
+  );
 
   // 단일 시간대도 연속으로 간주 (예: {0}, {1}, {2}, {3})
   if (sortedIndices.length === 1) {
@@ -224,7 +222,7 @@ export const toWeeklyAverageText = (
 
   // 분을 시간으로 변환 (60으로 나누기)
   const hours = steamStats.avgWeeklyPlaytime / 60;
-  
+
   // 소수점 첫째 자리까지 표시
   const hoursText = hours.toFixed(1);
   return `${hoursText} 시간`;
@@ -287,4 +285,3 @@ export const getWeeklyAverageText = (
   // 스팀 연동O, 싱크 실패 (비공개 계정 등)
   return '정보 필요';
 };
-

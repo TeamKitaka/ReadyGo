@@ -19,7 +19,6 @@ import { useGameStartLog } from '@/hooks/useGameStartLog';
 import { useModal } from '@/commons/providers/modal/modal.provider';
 import GameLinkPreview from '@/commons/components/game-link-preview';
 import { useSteamProfileShare } from '@/hooks/useSteamProfileShare';
-import SteamProfileLinkPreview from '@/commons/components/steam-profile-link-preview';
 
 interface ChatRoomProps {
   roomId?: string;
@@ -28,7 +27,7 @@ interface ChatRoomProps {
 export default function ChatRoom({ roomId }: ChatRoomProps) {
   // 현재 사용자 정보
   const { user } = useAuth();
-  const [currentUserNickname, setCurrentUserNickname] = useState<string>('');
+  const [_currentUserNickname, setCurrentUserNickname] = useState<string>('');
 
   // 사이드 프로필 패널 제어
   const { toggleProfile, openProfile, isOpen, targetUserId } =
@@ -95,17 +94,6 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
     isBlocked,
     otherMemberNickname: otherMemberInfo?.nickname,
   });
-
-  /**
-   * Steam 프로필 URL에서 steam_id 추출
-   */
-  const extractSteamId = useCallback((url: string | null): string | null => {
-    if (!url) {
-      return null;
-    }
-    const match = url.match(/steamcommunity\.com\/profiles\/(\d+)/);
-    return match ? match[1] : null;
-  }, []);
 
   // 현재 사용자 닉네임 조회
   useEffect(() => {
@@ -392,9 +380,6 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
             // 프로필 링크인지 확인
             const isProfileLinkMessage =
               message.content_type === 'profile_link';
-            const steamId = isProfileLinkMessage
-              ? extractSteamId(message.content)
-              : null;
 
             if (isOwnMessage) {
               return (

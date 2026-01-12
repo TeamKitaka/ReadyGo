@@ -41,7 +41,13 @@ const analyzeTimePattern = (indices: number[]): string => {
   const indexSet = new Set(sortedIndices);
 
   // 종일형: 모든 시간대 포함
-  if (indexSet.size === 4 && indexSet.has(0) && indexSet.has(1) && indexSet.has(2) && indexSet.has(3)) {
+  if (
+    indexSet.size === 4 &&
+    indexSet.has(0) &&
+    indexSet.has(1) &&
+    indexSet.has(2) &&
+    indexSet.has(3)
+  ) {
     return '종일형';
   }
 
@@ -62,13 +68,11 @@ const analyzeTimePattern = (indices: number[]): string => {
 
   // 비연속 패턴 (유동형)
   // 연속된 인덱스가 아닌 경우
-  let isConsecutive = true;
-  for (let i = 0; i < sortedIndices.length - 1; i++) {
-    if (sortedIndices[i + 1] - sortedIndices[i] !== 1) {
-      isConsecutive = false;
-      break;
-    }
-  }
+  const isConsecutive = sortedIndices.every(
+    (_, i) =>
+      i === sortedIndices.length - 1 ||
+      sortedIndices[i + 1] - sortedIndices[i] === 1
+  );
 
   // 단일 시간대도 연속으로 간주 (예: {0}, {1}, {2}, {3})
   if (sortedIndices.length === 1) {
@@ -130,12 +134,7 @@ export const toActiveTimeText = (
   }
 
   // timeSlots 추출 (중복 제거)
-  const timeSlots: string[] = [];
-  for (const item of schedule) {
-    if (!timeSlots.includes(item.timeSlot)) {
-      timeSlots.push(item.timeSlot);
-    }
-  }
+  const timeSlots = Array.from(new Set(schedule.map((item) => item.timeSlot)));
 
   // timeSlot을 인덱스로 변환
   const indices = timeSlots

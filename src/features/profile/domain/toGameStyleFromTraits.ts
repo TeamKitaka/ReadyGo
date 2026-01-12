@@ -22,15 +22,6 @@ export const toGameStyleFromTraits = (
     return undefined;
   }
 
-  // 각 trait의 평균값 계산
-  const avgValue =
-    (traits.cooperation +
-      traits.exploration +
-      traits.strategy +
-      traits.leadership +
-      traits.social) /
-    5;
-
   // leadership과 strategy가 높으면 경쟁적
   // cooperation과 social이 높으면 협력적
   // exploration이 높으면 탐험적
@@ -40,7 +31,10 @@ export const toGameStyleFromTraits = (
   const exploratoryScore = traits.exploration;
 
   // 가장 높은 점수를 가진 성향 반환
-  if (competitiveScore >= cooperativeScore && competitiveScore >= exploratoryScore) {
+  if (
+    competitiveScore >= cooperativeScore &&
+    competitiveScore >= exploratoryScore
+  ) {
     return '경쟁적';
   } else if (cooperativeScore >= exploratoryScore) {
     return '협력적';
@@ -48,4 +42,3 @@ export const toGameStyleFromTraits = (
     return '탐험적';
   }
 };
-

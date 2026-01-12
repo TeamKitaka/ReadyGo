@@ -238,30 +238,38 @@ const fetchGameGenres = async (
   const CHUNK_SIZE = 100;
   const supabase = createClient;
 
-  for (let i = 0; i < appIds.length; i += CHUNK_SIZE) {
-    const chunk = appIds.slice(i, i + CHUNK_SIZE);
-    const { data, error } = await supabase
-      .from('steam_game_info')
-      .select('app_id, genres')
-      .in('app_id', chunk);
+  // 배열을 chunk로 나누기
+  const chunks = Array.from(
+    { length: Math.ceil(appIds.length / CHUNK_SIZE) },
+    (_, i) => appIds.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE)
+  );
 
-    if (error) {
-      throw new Error(`Failed to fetch game genres: ${error.message}`);
-    }
+  // 각 chunk를 순차적으로 처리
+  await Promise.all(
+    chunks.map(async (chunk) => {
+      const { data, error } = await supabase
+        .from('steam_game_info')
+        .select('app_id, genres')
+        .in('app_id', chunk);
 
-    if (data) {
-      for (const info of data) {
-        if (info.genres && Array.isArray(info.genres)) {
-          gameInfoMap.set(
-            info.app_id,
-            info.genres.filter(
-              (g): g is string => typeof g === 'string' && g.trim() !== ''
-            )
-          );
-        }
+      if (error) {
+        throw new Error(`Failed to fetch game genres: ${error.message}`);
       }
-    }
-  }
+
+      if (data) {
+        data.forEach((info) => {
+          if (info.genres && Array.isArray(info.genres)) {
+            gameInfoMap.set(
+              info.app_id,
+              info.genres.filter(
+                (g): g is string => typeof g === 'string' && g.trim() !== ''
+              )
+            );
+          }
+        });
+      }
+    })
+  );
 
   return gameInfoMap;
 };
@@ -274,9 +282,7 @@ const calculateGenrePlaytime2w = async (
   games: FilteredGame[]
 ): Promise<Record<string, number>> => {
   // playtime_recent가 0보다 큰 게임만 필터링
-  const gamesWithPlaytime = games.filter(
-    (g) => (g.playtimeRecent || 0) > 0
-  );
+  const gamesWithPlaytime = games.filter((g) => (g.playtimeRecent || 0) > 0);
 
   if (gamesWithPlaytime.length === 0) {
     return {};
@@ -289,21 +295,23 @@ const calculateGenrePlaytime2w = async (
   // 장르별 playtime 합산 (중복 포함)
   const genreMap = new Map<string, number>();
 
-  for (const game of gamesWithPlaytime) {
+  gamesWithPlaytime.forEach((game) => {
     const playtime = game.playtimeRecent || 0;
-    if (playtime === 0) continue;
+    if (playtime === 0) {
+      return;
+    }
 
     const genres = gameInfoMap.get(game.appId);
     if (!genres || genres.length === 0) {
-      continue;
+      return;
     }
 
     // 게임이 여러 장르를 가지면 각 장르에 전체 playtime 추가
-    for (const genre of genres) {
+    genres.forEach((genre) => {
       const current = genreMap.get(genre) || 0;
       genreMap.set(genre, current + playtime);
-    }
-  }
+    });
+  });
 
   // Map을 Record로 변환 (0분 장르 제외)
   const result: Record<string, number> = {};

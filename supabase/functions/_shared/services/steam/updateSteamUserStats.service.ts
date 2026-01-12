@@ -236,9 +236,7 @@ const calculateGenrePlaytime2w = async (
   games: FilteredGame[]
 ): Promise<Record<string, number>> => {
   // playtime_recent가 0보다 큰 게임만 필터링
-  const gamesWithPlaytime = games.filter(
-    (g) => (g.playtimeRecent || 0) > 0
-  );
+  const gamesWithPlaytime = games.filter((g) => (g.playtimeRecent || 0) > 0);
 
   if (gamesWithPlaytime.length === 0) {
     return {};
