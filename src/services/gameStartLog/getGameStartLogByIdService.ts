@@ -19,9 +19,7 @@ import {
 export const getGameStartLogByIdService = async (logId: number) => {
   // 입력 검증
   if (typeof logId !== 'number' || isNaN(logId) || logId < 1) {
-    throw new GameStartLogValidationError(
-      'logId는 1 이상의 숫자여야 합니다.'
-    );
+    throw new GameStartLogValidationError('logId는 1 이상의 숫자여야 합니다.');
   }
 
   try {

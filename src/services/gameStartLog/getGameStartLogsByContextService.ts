@@ -35,15 +35,11 @@ export const getGameStartLogsByContextService = async (
   }
 
   if (typeof limit !== 'number' || isNaN(limit) || limit < 1) {
-    throw new GameStartLogValidationError(
-      'limit은 1 이상의 숫자여야 합니다.'
-    );
+    throw new GameStartLogValidationError('limit은 1 이상의 숫자여야 합니다.');
   }
 
   if (typeof offset !== 'number' || isNaN(offset) || offset < 0) {
-    throw new GameStartLogValidationError(
-      'offset은 0 이상의 숫자여야 합니다.'
-    );
+    throw new GameStartLogValidationError('offset은 0 이상의 숫자여야 합니다.');
   }
 
   try {

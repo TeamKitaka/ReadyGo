@@ -94,8 +94,35 @@ export const createGameStartLogService = async (
       throw error;
     }
 
-    throw new GameStartLogCreateError(
-      error instanceof Error ? error.message : 'Unknown error'
-    );
+    // Supabase 에러 처리
+    if (error && typeof error === 'object' && 'message' in error) {
+      const supabaseError = error as {
+        message: string;
+        code?: string;
+        details?: string;
+        hint?: string;
+      };
+      const errorMessage = supabaseError.message || 'Unknown error';
+      const errorDetails =
+        supabaseError.details || supabaseError.hint || undefined;
+
+      console.error('[Service] Supabase error creating game start log:', {
+        message: errorMessage,
+        code: supabaseError.code,
+        details: errorDetails,
+      });
+
+      throw new GameStartLogCreateError(
+        `${errorMessage}${errorDetails ? `: ${errorDetails}` : ''}`
+      );
+    }
+
+    // 일반 에러 처리
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+
+    console.error('[Service] Unknown error creating game start log:', error);
+
+    throw new GameStartLogCreateError(errorMessage);
   }
 };

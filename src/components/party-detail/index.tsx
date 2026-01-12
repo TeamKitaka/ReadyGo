@@ -94,14 +94,15 @@ export default function PartyDetail() {
         try {
           // 1. game_title로 app_id 검색
           const searchUrl = `/api/party/game/search?game_title=${encodeURIComponent(data.game_title)}`;
-          
+
           const searchResponse = await fetch(searchUrl);
 
           if (!searchResponse.ok) {
             const errorData = await searchResponse.json().catch(() => ({}));
             console.error('[게임 시작] 검색 API 에러:', errorData);
             throw new Error(
-              errorData.message || '게임 정보를 조회하는 중 오류가 발생했습니다.'
+              errorData.message ||
+                '게임 정보를 조회하는 중 오류가 발생했습니다.'
             );
           }
 
@@ -127,17 +128,20 @@ export default function PartyDetail() {
             throw new Error('파티 ID가 없습니다.');
           }
 
-          const messageResponse = await fetch(`/api/party/${partyId}/messages`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-            body: JSON.stringify({
-              content: gameLink,
-              contentType: 'game_link',
-            }),
-          });
+          const messageResponse = await fetch(
+            `/api/party/${partyId}/messages`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                content: gameLink,
+                contentType: 'game_link',
+              }),
+            }
+          );
 
           if (!messageResponse.ok) {
             const errorData = await messageResponse.json().catch(() => ({}));

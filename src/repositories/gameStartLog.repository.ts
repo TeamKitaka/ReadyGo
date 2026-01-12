@@ -125,6 +125,13 @@ export const createGameStartLog = async (
     .single();
 
   if (error) {
+    console.error('[Repository] Error creating game start log:', {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+      params,
+    });
     throw error;
   }
 

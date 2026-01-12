@@ -9,6 +9,8 @@ import Icon from '@/commons/components/icon';
 import { AnimalType } from '@/commons/constants/animal';
 import { useChatRoom } from '../../hooks/index.binding.chatRoom.hook';
 import { useGameLinkPreview } from '@/hooks/useGameLinkPreview';
+import { useGameStartLog } from '@/hooks/useGameStartLog';
+import { useModal } from '@/commons/providers/modal/modal.provider';
 import GameLinkPreview from '@/commons/components/game-link-preview';
 
 interface ChatRoomProps {
@@ -44,6 +46,12 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
 
   // 게임 링크 미리보기 Hook 사용
   const { extractGameAppId, getGameInfo } = useGameLinkPreview(messages);
+
+  // 게임 시작 로그 Hook 사용
+  const { createGameStartLog } = useGameStartLog();
+
+  // 모달 Hook 사용
+  const { openModal } = useModal();
 
   // 플로팅 버튼 표시 여부
   const [showScrollToBottomButton, setShowScrollToBottomButton] =
@@ -236,7 +244,25 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                               gameInfo={gameInfo}
                               appId={gameAppId}
                               onGameStart={() => {
-                                window.location.href = `steam://run/${gameAppId}`;
+                                // 확인 모달 표시
+                                openModal({
+                                  variant: 'dual',
+                                  title: '게임 시작',
+                                  description: '게임을 시작하시겠습니까?',
+                                  confirmText: '확인',
+                                  cancelText: '취소',
+                                  onConfirm: async () => {
+                                    // 게임 시작 로그 생성
+                                    await createGameStartLog({
+                                      contextType: 'party',
+                                      contextId: postIdNumber.toString(),
+                                      gameId: gameAppId.toString(),
+                                      gameName: gameInfo?.name ?? undefined,
+                                    });
+                                    // Steam 실행
+                                    window.location.href = `steam://run/${gameAppId}`;
+                                  },
+                                });
                               }}
                             />
                           </>
@@ -325,7 +351,10 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
             })}
             {/* 시스템 메시지 렌더링 (일반 메시지 뒤에 표시) */}
             {formattedMessages.map((item, index) => {
-              if (item.type === 'message' && item.message?.content_type === 'system') {
+              if (
+                item.type === 'message' &&
+                item.message?.content_type === 'system'
+              ) {
                 return (
                   <div
                     key={`system-message-${item.message.id}-${index}`}
