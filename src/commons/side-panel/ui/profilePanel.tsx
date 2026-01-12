@@ -1,15 +1,20 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import styles from './styles.module.css';
 import AnimalCard from '../../components/animal-card';
 import RadarChart from '../../components/radar-chart';
+import ModalContainer from '../../components/modal-container';
+import Modal from '../../components/modal';
 import { useProfileByUserId } from '@/hooks/useProfileByUserId';
 import { useAuthStore } from '@/stores/auth.store';
 import { AnimalType } from '../../constants/animal';
 import { useChatList } from '@/components/chat/hooks';
 import { useSidePanelStore } from '@/stores/sidePanel.store';
+import { useFriendStatus } from '@/hooks/useFriendStatus';
+import { useSendFriendRequest } from '@/hooks/useSendFriendRequest';
 import { toMatchResultViewModel } from '@/viewmodels/match/toMatchResultViewModel';
 import type { MatchReasonCoreDTO } from '@/commons/types/match/matchReasonCore.dto';
 import type { MatchTagCoreDTO } from '@/commons/types/match/matchTagCore.dto';
@@ -53,6 +58,45 @@ export default function ProfilePanel({
 
   // 채팅 목록 가져오기 (기존 채팅방 확인용)
   const { chatRooms } = useChatList();
+
+  // 친구 상태 확인
+  const { status: friendStatus } = useFriendStatus(isMyProfile ? null : userId);
+
+  // 친구 요청 보내기
+  const { sendRequest, isLoading: isSendingRequest } = useSendFriendRequest();
+
+  // 모달 상태
+  const [showFriendModal, setShowFriendModal] = useState(false);
+  const [showAlreadyFriendModal, setShowAlreadyFriendModal] = useState(false);
+
+  // 친구 추가 핸들러
+  const handleAddFriend = () => {
+    if (isMyProfile) {
+      return;
+    }
+
+    if (friendStatus === 'friend') {
+      setShowAlreadyFriendModal(true);
+    } else {
+      setShowFriendModal(true);
+    }
+  };
+
+  // 친구 요청 전송 확인 핸들러
+  const handleConfirmFriendRequest = async () => {
+    if (!userId || isSendingRequest) {
+      return;
+    }
+
+    const success = await sendRequest(userId);
+    if (success) {
+      setShowFriendModal(false);
+      // 친구 상태가 업데이트되도록 약간의 지연 후 상태 확인
+      setTimeout(() => {
+        // 상태는 자동으로 업데이트됨
+      }, 500);
+    }
+  };
 
   // 채팅하기 버튼 핸들러
   const handleStartChat = async () => {
@@ -163,6 +207,7 @@ export default function ProfilePanel({
       userId: myUserId || '',
       targetUserId: userId,
       similarityScore: matchData.finalScore,
+      isOnlineMatched: false,
       reasons: matchData.reasons,
       tags: matchData.tags,
     };
@@ -257,49 +302,53 @@ export default function ProfilePanel({
   const { nickname, tier, animalType, radarData, activeTimeText } = viewModel;
 
   return (
-    <div className={containerClasses}>
-      {/* Animal Card - 사용자 프로필 */}
-      <AnimalCard
-        property={isMyProfile ? 'my' : 'user'}
-        nickname={nickname || '익명 사용자'}
-        tier={tier}
-        animal={animalType ?? AnimalType.rabbit}
-        favoriteGenre="알 수 없음"
-        activeTime={activeTimeText || '알 수 없음'}
-        gameStyle="알 수 없음"
-        weeklyAverage="알 수 없음"
-        matchPercentage={isMyProfile ? undefined : (matchData?.finalScore ?? 0)}
-        matchReasons={isMyProfile ? undefined : matchReasons}
-        onMessageClick={handleStartChat}
-      />
+    <>
+      <div className={containerClasses}>
+        {/* Animal Card - 사용자 프로필 */}
+        <AnimalCard
+          property={isMyProfile ? 'my' : 'user'}
+          nickname={nickname || '익명 사용자'}
+          tier={tier}
+          animal={animalType ?? AnimalType.rabbit}
+          favoriteGenre="알 수 없음"
+          activeTime={activeTimeText || '알 수 없음'}
+          gameStyle="알 수 없음"
+          weeklyAverage="알 수 없음"
+          matchPercentage={
+            isMyProfile ? undefined : (matchData?.finalScore ?? 0)
+          }
+          matchReasons={isMyProfile ? undefined : matchReasons}
+          onMessageClick={handleStartChat}
+          onProfileClick={isMyProfile ? undefined : handleAddFriend}
+        />
 
-      {/* 플레이스타일과 최근 플레이 패턴을 포함하는 통합 섹션 */}
-      <div className={styles.statsContainer}>
-        {/* 플레이스타일 섹션 */}
-        <div className={styles.playStyleSection}>
-          <div className={styles.sectionHeader}>
-            <h4 className={styles.sectionTitle}>플레이스타일</h4>
+        {/* 플레이스타일과 최근 플레이 패턴을 포함하는 통합 섹션 */}
+        <div className={styles.statsContainer}>
+          {/* 플레이스타일 섹션 */}
+          <div className={styles.playStyleSection}>
+            <div className={styles.sectionHeader}>
+              <h4 className={styles.sectionTitle}>플레이스타일</h4>
+            </div>
+            {radarData && radarData.length > 0 ? (
+              <div className={styles.radarChartWrapper}>
+                <RadarChart
+                  myData={myProfile?.radarData || []}
+                  userData={radarData}
+                  size="m"
+                  showLabels={true}
+                />
+              </div>
+            ) : (
+              <div
+                style={{ padding: '20px', textAlign: 'center', color: '#999' }}
+              >
+                특성 검사를 완료하지 않은 사용자입니다.
+              </div>
+            )}
           </div>
-          {radarData && radarData.length > 0 ? (
-            <div className={styles.radarChartWrapper}>
-              <RadarChart
-                myData={myProfile?.radarData || []}
-                userData={radarData}
-                size="m"
-                showLabels={true}
-              />
-            </div>
-          ) : (
-            <div
-              style={{ padding: '20px', textAlign: 'center', color: '#999' }}
-            >
-              특성 검사를 완료하지 않은 사용자입니다.
-            </div>
-          )}
-        </div>
 
-        {/* 최근 플레이 패턴 섹션 - 현재 ViewModel에 없으므로 숨김 */}
-        {/* <div className={styles.playPatternSection}>
+          {/* 최근 플레이 패턴 섹션 - 현재 ViewModel에 없으므로 숨김 */}
+          {/* <div className={styles.playPatternSection}>
           <div className={styles.sectionHeader}>
             <h4 className={styles.sectionTitle}>최근 플레이 패턴</h4>
           </div>
@@ -307,7 +356,42 @@ export default function ProfilePanel({
             <BarChart data={[]} size="s" showValues={true} />
           </div>
         </div> */}
+        </div>
       </div>
-    </div>
+
+      {/* 친구 추가 확인 모달 */}
+      {showFriendModal &&
+        typeof window !== 'undefined' &&
+        createPortal(
+          <ModalContainer onClose={() => setShowFriendModal(false)}>
+            <Modal
+              variant="dual"
+              title="친구 추가"
+              description={`${nickname || '사용자'}님을 친구로 등록하시겠습니까?`}
+              onConfirm={handleConfirmFriendRequest}
+              onCancel={() => setShowFriendModal(false)}
+              confirmText="확인"
+              cancelText="취소"
+            />
+          </ModalContainer>,
+          document.body
+        )}
+
+      {/* 이미 친구 모달 */}
+      {showAlreadyFriendModal &&
+        typeof window !== 'undefined' &&
+        createPortal(
+          <ModalContainer onClose={() => setShowAlreadyFriendModal(false)}>
+            <Modal
+              variant="single"
+              title="알림"
+              description="이미 친구로 등록된 사용자입니다."
+              onConfirm={() => setShowAlreadyFriendModal(false)}
+              confirmText="확인"
+            />
+          </ModalContainer>,
+          document.body
+        )}
+    </>
   );
 }

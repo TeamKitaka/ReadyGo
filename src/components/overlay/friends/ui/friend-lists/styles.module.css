@@ -123,15 +123,22 @@
 .listContainer {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 12px;
   width: 100%;
   padding: 0 24px;
+  color: var(--color-text-interactive-secondary);
+  font-family: var(--typo-body-lg-font-family);
+  font-size: var(--typo-body-lg-font-size);
+  line-height: var(--typo-body-lg-line-height);
+  font-weight: var(--typo-body-lg-font-weight);
 }
 
 .friendItem {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
   height: 68px;
   padding: 12px;
   background-color: var(--color-bg-secondary);

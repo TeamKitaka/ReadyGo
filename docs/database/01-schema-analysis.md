@@ -14,7 +14,7 @@ database.types.ts와 본 문서는 항상 동일 커밋에 포함되어야 한�
 # Supabase Schema Analysis
 
 Schema: public  
-Total Tables: 36  
+Total Tables: 38  
 Generated from: database.types.ts
 
 ## Scope - 분석 범위
@@ -45,6 +45,7 @@ Generated from: database.types.ts
 - chat_rooms
 - error_logs
 - event_logs
+- game_start_logs
 - friend_requests
 - friendships
 - match_filters
@@ -77,7 +78,7 @@ Generated from: database.types.ts
 - user_play_schedules
 ```
 
-📌 총 36개 (public schema 기준)
+📌 총 38개 (public schema 기준)
 
 ## Column Definition Rules
 
@@ -136,7 +137,7 @@ Generated from: database.types.ts
 
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
-- **Last Updated At**: 2026-01-09
+- **Last Updated At**: 2026-01-12
 - **Document Version**: v1.0.6
 - **Status**: Active
 - **Source of Truth**:

@@ -110,3 +110,97 @@ export const getPartyMembersByUserId = async (
     return [];
   }
 };
+
+/**
+ * 파티 멤버와 프로필 정보를 포함한 타입
+ */
+export interface PartyMemberWithProfile {
+  id: number;
+  post_id: number | null;
+  user_id: string | null;
+  role: string | null;
+  joined_at: string | null;
+  nickname: string;
+  animal_type: string | null;
+}
+
+/**
+ * 특정 파티의 멤버 목록 조회 (프로필 정보 포함)
+ *
+ * @param postId - 파티 게시물 ID
+ * @returns 멤버 목록 (nickname, animal_type 포함)
+ *
+ * @example
+ * ```typescript
+ * const members = await getPartyMembersByPostId(123);
+ * // [{ id: 1, post_id: 123, user_id: 'uuid', nickname: '닉네임', animal_type: 'fox', ... }, ...]
+ * ```
+ */
+export const getPartyMembersByPostId = async (
+  postId: number
+): Promise<PartyMemberWithProfile[]> => {
+  try {
+    // FK 관계가 없으므로 2단계로 조회
+
+    // 1단계: 파티 멤버의 user_id 조회
+    const { data: memberRecords, error: membersError } = await supabaseAdmin
+      .from('party_members')
+      .select('*')
+      .eq('post_id', postId)
+      .order('joined_at', { ascending: true });
+
+    if (membersError) {
+      console.error(
+        '[PartyMembersRepository] Error fetching party members:',
+        membersError
+      );
+      return [];
+    }
+
+    if (!memberRecords || memberRecords.length === 0) {
+      return [];
+    }
+
+    // 2단계: user_id로 프로필 정보 조회
+    const userIds = memberRecords
+      .map((m) => m.user_id)
+      .filter((id): id is string => id !== null);
+
+    if (userIds.length === 0) {
+      return [];
+    }
+
+    const { data: profiles, error: profilesError } = await supabaseAdmin
+      .from('user_profiles')
+      .select('id, nickname, animal_type')
+      .in('id', userIds);
+
+    if (profilesError) {
+      console.error(
+        '[PartyMembersRepository] Error fetching user profiles:',
+        profilesError
+      );
+      return [];
+    }
+
+    // 3단계: 프로필 맵 생성 (id를 키로 사용)
+    const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+
+    // 4단계: 멤버 정보와 프로필 정보 결합
+    return memberRecords.map((member) => {
+      const profile = profileMap.get(member.user_id || '');
+      return {
+        id: member.id,
+        post_id: member.post_id,
+        user_id: member.user_id,
+        role: member.role,
+        joined_at: member.joined_at,
+        nickname: profile?.nickname || '익명',
+        animal_type: profile?.animal_type || null,
+      };
+    });
+  } catch (err) {
+    console.error('[PartyMembersRepository] Unexpected error:', err);
+    return [];
+  }
+};

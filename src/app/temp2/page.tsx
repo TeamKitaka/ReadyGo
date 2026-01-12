@@ -264,7 +264,7 @@ export default function RealtimeChatTestPage() {
     id: string;
     nickname: string;
     avatar?: string;
-    animalType?: string;
+    animalType?: AnimalType;
   } | null>(null);
 
   // 현재 채팅방의 상대방 정보 가져오기
@@ -278,7 +278,7 @@ export default function RealtimeChatTestPage() {
         id: otherMember.id,
         nickname: otherMember.nickname || '알 수 없음',
         avatar: otherMember.avatar_url ?? undefined,
-        animalType: otherMember.animal_type,
+        animalType: otherMember.animal_type as AnimalType | undefined,
       });
       setIsReviewModalOpen(true);
       gameStartTimer.resetTimerEnded();

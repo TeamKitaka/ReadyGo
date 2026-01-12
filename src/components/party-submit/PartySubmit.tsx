@@ -41,6 +41,7 @@ export default function PartySubmit({
   const [gameLoadError, setGameLoadError] = useState<string | null>(null);
   const gameSearchRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 폼 값 감시
   // watch()를 인자 없이 호출하면 모든 필드를 감시하고 리렌더링을 트리거함
@@ -56,62 +57,90 @@ export default function PartySubmit({
     }
   }, [watchedValues.game_title]);
 
-  // API를 통해 게임 목록 가져오기 (SSR 방식)
-  useEffect(() => {
-    const fetchGames = async () => {
-      setIsLoadingGames(true);
-      try {
-        const response = await fetch('/api/steam/games', {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+  // 게임 목록 조회 함수 (검색어 옵션 포함)
+  const fetchGames = async (search?: string) => {
+    setIsLoadingGames(true);
+    setGameLoadError(null);
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          const errorMessage =
-            errorData.message || errorData.detail || response.statusText;
-          console.error('게임 목록 조회 실패:', errorMessage);
+    try {
+      const url = new URL('/api/steam/games', window.location.origin);
+      if (search && search.trim()) {
+        url.searchParams.set('search', search.trim());
+      }
 
-          // 인증 오류인 경우 특별 처리
-          if (response.status === 401) {
-            setGameLoadError('로그인이 필요합니다.');
-          } else {
-            setGameLoadError('게임 목록을 불러올 수 없습니다.');
-          }
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-          // 에러 발생 시 빈 배열로 설정하여 UI가 깨지지 않도록 함
-          setGameList([]);
-          return;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage =
+          errorData.message || errorData.detail || response.statusText;
+        console.error('게임 목록 조회 실패:', errorMessage);
+
+        // 인증 오류인 경우 특별 처리
+        if (response.status === 401) {
+          setGameLoadError('로그인이 필요합니다.');
+        } else {
+          setGameLoadError('게임 목록을 불러올 수 없습니다.');
         }
 
-        const result = await response.json();
-
-        // data가 없거나 빈 배열인 경우도 처리
-        setGameList(result.data || []);
-        setGameLoadError(null); // 성공 시 에러 메시지 초기화
-      } catch (error) {
-        console.error('게임 목록 조회 중 오류 발생:', error);
-        setGameLoadError('게임 목록을 불러오는 중 오류가 발생했습니다.');
         // 에러 발생 시 빈 배열로 설정하여 UI가 깨지지 않도록 함
         setGameList([]);
-      } finally {
-        setIsLoadingGames(false);
+        return;
       }
-    };
 
+      const result = await response.json();
+
+      // data가 없거나 빈 배열인 경우도 처리
+      setGameList(result.data || []);
+      setGameLoadError(null); // 성공 시 에러 메시지 초기화
+    } catch (error) {
+      console.error('게임 목록 조회 중 오류 발생:', error);
+      setGameLoadError('게임 목록을 불러오는 중 오류가 발생했습니다.');
+      // 에러 발생 시 빈 배열로 설정하여 UI가 깨지지 않도록 함
+      setGameList([]);
+    } finally {
+      setIsLoadingGames(false);
+    }
+  };
+
+  // 초기 로드 시 전체 게임 목록 가져오기
+  useEffect(() => {
     fetchGames();
   }, []);
+
+  // 검색어 변경 시 서버에서 검색 (debounce 적용)
+  useEffect(() => {
+    // 기존 타이머 클리어
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // 검색어가 있을 때만 서버 검색 (초기 로드는 위의 useEffect에서 처리)
+    if (gameSearchQuery.trim()) {
+      debounceTimerRef.current = setTimeout(() => {
+        fetchGames(gameSearchQuery);
+      }, 300); // 300ms debounce
+    }
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameSearchQuery]);
 
   // 폼 유효성 확인
   const isFormValid = isValid;
 
-  // 검색어에 따라 필터링된 게임 목록
-  const filteredGames = gameList.filter((game) =>
-    game.value.toLowerCase().includes(gameSearchQuery.toLowerCase())
-  );
+  // 서버에서 이미 필터링된 결과를 사용 (검색어가 없을 때는 전체 목록)
+  const filteredGames = gameList;
 
   // 외부 클릭 감지
   useEffect(() => {
@@ -142,11 +171,9 @@ export default function PartySubmit({
     setGameSearchQuery(value);
 
     // 검색어가 있고 게임 목록이 로드되었을 때만 옵션 표시
+    // 서버에서 이미 필터링된 결과를 받으므로 gameList를 그대로 사용
     if (value.length > 0 && !isLoadingGames) {
-      const filtered = gameList.filter((game) =>
-        game.value.toLowerCase().includes(value.toLowerCase())
-      );
-      setIsGameOptionsOpen(filtered.length > 0);
+      setIsGameOptionsOpen(gameList.length > 0);
     } else {
       setIsGameOptionsOpen(false);
     }

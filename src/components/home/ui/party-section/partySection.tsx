@@ -37,9 +37,13 @@ export default function PartySection({
 
       {/* 파티 카드 그리드 */}
       <div className={styles.gridContainer}>
-        {parties.map((party, index) => (
-          <PartyCard key={index} {...party} />
-        ))}
+        {parties.length === 0 ? (
+          <div style={{ padding: '20px', textAlign: 'center', color: '#999' }}>
+            현재 참여 가능한 파티가 없습니다.
+          </div>
+        ) : (
+          parties.map((party, index) => <PartyCard key={index} {...party} />)
+        )}
       </div>
     </div>
   );
