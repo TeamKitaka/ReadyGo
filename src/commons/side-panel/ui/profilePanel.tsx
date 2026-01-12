@@ -305,7 +305,17 @@ export default function ProfilePanel({
   }
 
   // Success 상태 - ViewModel로 렌더링
-  const { nickname, tier, animalType, radarData, activeTimeText, steamStats, steamId, traits, schedule } = viewModel;
+  const {
+    nickname,
+    tier,
+    animalType,
+    radarData,
+    activeTimeText,
+    steamStats,
+    steamId,
+    traits,
+    schedule,
+  } = viewModel;
 
   // 게임 성향: 성향분석 결과 우선, 없으면 스팀 데이터
   const gameStyleFromTraits = toGameStyleFromTraits(traits);

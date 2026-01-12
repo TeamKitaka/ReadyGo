@@ -20,9 +20,7 @@ export interface UseSteamProfileShareProps {
  * - Steam 프로필 URL 생성 및 메시지 전송
  * - steam_id가 없는 경우 에러 모달 표시
  */
-export const useSteamProfileShare = (
-  props: UseSteamProfileShareProps
-) => {
+export const useSteamProfileShare = (props: UseSteamProfileShareProps) => {
   const { sendMessage, isBlocked = false } = props;
   const { user } = useAuth();
   const { openModal, closeAllModals } = useModal();
@@ -90,4 +88,3 @@ export const useSteamProfileShare = (
     handleShareSteamProfile,
   };
 };
-

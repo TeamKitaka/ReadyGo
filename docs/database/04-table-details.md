@@ -339,13 +339,13 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 - 매칭 목록 노출 이력 (중복 방지용)
 
-| Column     | Type        | Nullable | Description                          |
-| ---------- | ----------- | -------- | ------------------------------------ |
-| id         | bigserial   | ❌       | PK                                   |
-| viewer_id  | uuid        | ❌       | 기준 유저                            |
-| target_id  | uuid        | ❌       | 노출된 매칭 대상                     |
-| exposed_at | timestamptz | ⭕       | 노출 시각                            |
-| context    | text        | ⭕       | 노출 컨텍스트                        |
+| Column     | Type        | Nullable | Description      |
+| ---------- | ----------- | -------- | ---------------- |
+| id         | bigserial   | ❌       | PK               |
+| viewer_id  | uuid        | ❌       | 기준 유저        |
+| target_id  | uuid        | ❌       | 노출된 매칭 대상 |
+| exposed_at | timestamptz | ⭕       | 노출 시각        |
+| context    | text        | ⭕       | 노출 컨텍스트    |
 
 **인덱스**:
 
@@ -425,16 +425,16 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 - 유저별 Steam 플레이 통계 및 성향 분석 데이터
 
-| Column                    | Type        | Nullable | Description                                     |
-| ------------------------- | ----------- | -------- | ----------------------------------------------- |
-| user_id                   | uuid        | ❌       | PK, 유저 ID                                     |
-| play_style                | text        | ❌       | 플레이 스타일 (casual, hardcore 등)             |
-| avg_weekly_playtime       | numeric     | ❌       | 주당 평균 플레이 시간 (분 단위)                 |
-| main_genres               | text[]      | ❌       | 주로 플레이하는 장르 목록                       |
+| Column                    | Type        | Nullable | Description                                       |
+| ------------------------- | ----------- | -------- | ------------------------------------------------- |
+| user_id                   | uuid        | ❌       | PK, 유저 ID                                       |
+| play_style                | text        | ❌       | 플레이 스타일 (casual, hardcore 등)               |
+| avg_weekly_playtime       | numeric     | ❌       | 주당 평균 플레이 시간 (분 단위)                   |
+| main_genres               | text[]      | ❌       | 주로 플레이하는 장르 목록                         |
 | active_time_slots         | text[]      | ❌       | 주로 활동하는 시간대 (00-06, 06-12, 12-18, 18-24) |
-| genre_playtime_2w_minutes | jsonb       | ⭕       | 최근 2주간 장르별 플레이 시간 (분 단위)         |
-| total_playtime_2w_minutes | numeric     | ⭕       | 최근 2주간 총 플레이 시간 (분 단위)             |
-| updated_at                | timestamptz | ❌       | 마지막 업데이트 시각                            |
+| genre_playtime_2w_minutes | jsonb       | ⭕       | 최근 2주간 장르별 플레이 시간 (분 단위)           |
+| total_playtime_2w_minutes | numeric     | ⭕       | 최근 2주간 총 플레이 시간 (분 단위)               |
+| updated_at                | timestamptz | ❌       | 마지막 업데이트 시각                              |
 
 ---
 
@@ -628,22 +628,22 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 ## Version History
 
-| Version | Date       | Description                                                                                                  |
-| ------: | ---------- | ------------------------------------------------------------------------------------------------------------ |
-|  v1.0.0 | 2025-12-24 | Detailed table & column documentation (33 tables)                                                            |
-|  v1.0.1 | 2025-12-26 | steam_game_info 테이블 컬럼 추가 및 수정                                                                     |
-|  v1.0.2 | 2025-12-26 | steam_game_info categories, genres 컬럼 수정(jsonb[], text[])                                                |
-|  v1.0.3 | 2025-12-26 | 게임 단위 Steam 메타 동기화 상세 로그 확인을 위한 steam_game_sync_logs 테이블 추가                           |
-|  v1.0.4 | 2025-12-27 | party_posts 컬럼 NOT NULL 정리 및 RLS 정책 적용(생성자만 수정 가능, 인증 유저 조회 허용)                     |
-|  v1.0.5 | 2025-12-27 | title => game_title 컬럼 명 변경                                                                             |
-|  v1.0.6 | 2025-12-29 | User/Profile Domain에 user_status 테이블 추가                                                                |
-|  v1.0.7 | 2025-12-29 | user_play_schedules 테이블 추가, 테이블 번호 순서 정리 (5번 중복 해결, 6~36번으로 재정렬)                    |
-|  v1.0.8 | 2025-01-13 | chat_blocks 테이블명을 user_blocks로 변경, User/Profile Domain으로 이동                                      |
-|  v1.0.9 | 2025-01-15 | chat_message_reads 테이블: message_id, user_id를 NOT NULL로 변경, (message_id, user_id) UNIQUE 제약조건 추가 |
-| v1.0.10 | 2025-01-07 | Steam Domain에 steam_user_stats 테이블 추가, 테이블 번호 재정렬 (27~37번)                                    |
-| v1.0.11 | 2025-01-15 | user_profiles.temperature_score, temperature_logs.change 컬럼 타입을 int → numeric으로 변경                  |
-| v1.0.12 | 2026-01-09 | Match Domain에 match_results_cache 테이블 추가 (Step 1 캐싱 시스템)                                          |
-| v1.0.13 | 2026-01-09 | match_results_cache에 context 컬럼 추가, match_exposure_log 테이블 추가 (Step 2 중복 방지 + 5분 TTL)         |
-| v1.0.14 | 2026-01-11 | notifications 테이블에 actor_id, entity_id, entity_type 컬럼 추가                                            |
-| v1.0.15 | 2026-01-12 | System/Logs Domain에 game_start_logs 테이블 추가 (게임 시작 로그), 테이블 번호 재정렬 (32~38번)              |
+| Version | Date       | Description                                                                                                                                                                                                     |
+| ------: | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|  v1.0.0 | 2025-12-24 | Detailed table & column documentation (33 tables)                                                                                                                                                               |
+|  v1.0.1 | 2025-12-26 | steam_game_info 테이블 컬럼 추가 및 수정                                                                                                                                                                        |
+|  v1.0.2 | 2025-12-26 | steam_game_info categories, genres 컬럼 수정(jsonb[], text[])                                                                                                                                                   |
+|  v1.0.3 | 2025-12-26 | 게임 단위 Steam 메타 동기화 상세 로그 확인을 위한 steam_game_sync_logs 테이블 추가                                                                                                                              |
+|  v1.0.4 | 2025-12-27 | party_posts 컬럼 NOT NULL 정리 및 RLS 정책 적용(생성자만 수정 가능, 인증 유저 조회 허용)                                                                                                                        |
+|  v1.0.5 | 2025-12-27 | title => game_title 컬럼 명 변경                                                                                                                                                                                |
+|  v1.0.6 | 2025-12-29 | User/Profile Domain에 user_status 테이블 추가                                                                                                                                                                   |
+|  v1.0.7 | 2025-12-29 | user_play_schedules 테이블 추가, 테이블 번호 순서 정리 (5번 중복 해결, 6~36번으로 재정렬)                                                                                                                       |
+|  v1.0.8 | 2025-01-13 | chat_blocks 테이블명을 user_blocks로 변경, User/Profile Domain으로 이동                                                                                                                                         |
+|  v1.0.9 | 2025-01-15 | chat_message_reads 테이블: message_id, user_id를 NOT NULL로 변경, (message_id, user_id) UNIQUE 제약조건 추가                                                                                                    |
+| v1.0.10 | 2025-01-07 | Steam Domain에 steam_user_stats 테이블 추가, 테이블 번호 재정렬 (27~37번)                                                                                                                                       |
+| v1.0.11 | 2025-01-15 | user_profiles.temperature_score, temperature_logs.change 컬럼 타입을 int → numeric으로 변경                                                                                                                     |
+| v1.0.12 | 2026-01-09 | Match Domain에 match_results_cache 테이블 추가 (Step 1 캐싱 시스템)                                                                                                                                             |
+| v1.0.13 | 2026-01-09 | match_results_cache에 context 컬럼 추가, match_exposure_log 테이블 추가 (Step 2 중복 방지 + 5분 TTL)                                                                                                            |
+| v1.0.14 | 2026-01-11 | notifications 테이블에 actor_id, entity_id, entity_type 컬럼 추가                                                                                                                                               |
+| v1.0.15 | 2026-01-12 | System/Logs Domain에 game_start_logs 테이블 추가 (게임 시작 로그), 테이블 번호 재정렬 (32~38번)                                                                                                                 |
 | v1.0.16 | 2026-01-15 | steam_user_stats 테이블 컬럼 추가 (genre_playtime_2w_minutes, total_playtime_2w_minutes) 및 타입 수정, match_exposure_log nullable 수정, game_start_logs 중복 제거 및 타입 수정, steam_game_sync_logs 타입 수정 |

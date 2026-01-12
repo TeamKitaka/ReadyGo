@@ -79,7 +79,8 @@ export default function Home() {
 
     // 활동 시간: 성향분석 결과(schedule) 우선, 없으면 activeTimeText
     const activeTimeFromSchedule = toActiveTimeText(profileViewModel.schedule);
-    const activeTime = activeTimeFromSchedule || profileViewModel.activeTimeText || undefined;
+    const activeTime =
+      activeTimeFromSchedule || profileViewModel.activeTimeText || undefined;
 
     // 선호 장르: 스팀 상태에 따라 표시
     const favoriteGenre = getFavoriteGenreText(
@@ -167,17 +168,15 @@ export default function Home() {
             )}
 
             {/* 데이터 있음 - ProfileSection 컴포넌트 사용 */}
-            {!profileLoading &&
-              !profileError &&
-              profileViewModel && (
+            {!profileLoading && !profileError && profileViewModel && (
               <ProfileSection
                 nickname={profileViewModel.nickname || '익명 사용자'}
                 tier={profileViewModel.tier}
                 animal={profileViewModel.animalType || AnimalType.rabbit}
-                  favoriteGenre={profileTexts.favoriteGenre}
-                  activeTime={profileTexts.activeTime}
-                  gameStyle={profileTexts.gameStyle}
-                  weeklyAverage={profileTexts.weeklyAverage}
+                favoriteGenre={profileTexts.favoriteGenre}
+                activeTime={profileTexts.activeTime}
+                gameStyle={profileTexts.gameStyle}
+                weeklyAverage={profileTexts.weeklyAverage}
                 perfectMatchTypes={profileViewModel.perfectMatchTypes}
                 radarData={profileViewModel.radarData || []}
                 barData={mockBarData}
