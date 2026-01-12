@@ -7,7 +7,7 @@ import styles from './styles.module.css';
 import { HTMLAttributes } from 'react';
 import TierTag from '../tier-tag';
 import Icon from '../icon';
-import Dropdown from '../dropdown';
+import Dropdown, { type DropdownItem } from '../dropdown';
 import { TierType } from '../../constants/tierType.enum';
 import { AnimalType, getAnimalTypeMeta } from '../../constants/animal';
 import { URL_PATHS } from '../../constants/url';
@@ -89,7 +89,7 @@ export default function AnimalCard({
     }
   };
 
-  const dropdownItems = [
+  const dropdownItems: DropdownItem[] = [
     {
       id: 'block',
       icon: 'block',

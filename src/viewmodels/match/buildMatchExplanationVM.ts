@@ -46,6 +46,7 @@ const FALLBACK_REASONS: MatchReasonViewModel[] = [
     type: 'FALLBACK',
     icon: '✨',
     label: '새로운조합',
+    shortDescription: '새로운 조합',
     primaryText: '새로운 조합이라 더 재밌을 수 있어요',
     isHighlight: false,
     isFallback: true,
@@ -54,6 +55,7 @@ const FALLBACK_REASONS: MatchReasonViewModel[] = [
     type: 'FALLBACK',
     icon: '🎲',
     label: '취향발견',
+    shortDescription: '취향 발견',
     primaryText: '함께 플레이하며 취향을 더 맞춰갈 수 있어요',
     isHighlight: false,
     isFallback: true,
@@ -62,6 +64,7 @@ const FALLBACK_REASONS: MatchReasonViewModel[] = [
     type: 'FALLBACK',
     icon: '📈',
     label: '성장가능',
+    shortDescription: '성장 가능',
     primaryText: '프로필이 채워질수록 더 정교해져요',
     isHighlight: false,
     isFallback: true,
@@ -136,6 +139,7 @@ export const buildMatchExplanationVM = (
     userId: '',
     targetUserId: '',
     similarityScore: 0,
+    isOnlineMatched: false,
     reasons: selectedReasons,
     tags: [],
   };
@@ -150,7 +154,7 @@ export const buildMatchExplanationVM = (
   let fallbackIndex = 0;
   while (headlineReasons.length < reasonCount) {
     const fallback = FALLBACK_REASONS[fallbackIndex % FALLBACK_REASONS.length];
-    headlineReasons.push(fallback);
+    headlineReasons.push({ ...fallback, isFallback: true });
     fallbackIndex++;
   }
 

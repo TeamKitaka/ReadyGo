@@ -179,12 +179,17 @@ async function getCacheStats() {
 
     if (matchCache.length > 0) {
       const latestMatch = matchCache.reduce((latest, current) => {
+        if (!current.computed_at || !latest.computed_at) {
+          return latest;
+        }
         return new Date(current.computed_at) > new Date(latest.computed_at)
           ? current
           : latest;
       });
-      const age = Date.now() - new Date(latestMatch.computed_at).getTime();
-      console.log(`   매칭 캐시 나이: ${(age / 1000).toFixed(0)}초`);
+      if (latestMatch.computed_at) {
+        const age = Date.now() - new Date(latestMatch.computed_at).getTime();
+        console.log(`   매칭 캐시 나이: ${(age / 1000).toFixed(0)}초`);
+      }
     }
   }
 
