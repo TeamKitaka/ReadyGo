@@ -226,7 +226,7 @@ export const POST = async (
     // 멤버 참가 성공 시 시스템 메시지 생성
     try {
       // 사용자 프로필 조회 (닉네임 가져오기)
-      const { data: userProfile, error: profileError } = await supabase
+      const { data: userProfile, error: _profileError } = await supabase
         .from('user_profiles')
         .select('nickname')
         .eq('id', user.id)

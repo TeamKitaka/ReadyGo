@@ -94,7 +94,6 @@ export default function PartyDetail() {
         try {
           // 1. game_title로 app_id 검색
           const searchUrl = `/api/party/game/search?game_title=${encodeURIComponent(data.game_title)}`;
-          console.log('[게임 시작] 검색 URL:', searchUrl);
           
           const searchResponse = await fetch(searchUrl);
 
@@ -107,7 +106,6 @@ export default function PartyDetail() {
           }
 
           const searchData = await searchResponse.json();
-          console.log('[게임 시작] 검색 결과:', searchData);
 
           if (!searchData.data || !searchData.data.app_id) {
             openModal({

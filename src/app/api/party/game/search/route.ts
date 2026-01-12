@@ -90,7 +90,6 @@ export const GET = async (request: NextRequest) => {
 
     // 6. 검색 결과 반환
     if (!matchedGame) {
-      console.log(`[게임 검색] 게임을 찾을 수 없음: "${gameTitleTrimmed}"`);
       return NextResponse.json(
         {
           data: null,
@@ -98,10 +97,6 @@ export const GET = async (request: NextRequest) => {
         { status: 200 }
       );
     }
-
-    console.log(
-      `[게임 검색] 매칭 성공: "${gameTitleTrimmed}" -> "${matchedGame.name}" (app_id: ${matchedGame.app_id})`
-    );
 
     return NextResponse.json(
       {
