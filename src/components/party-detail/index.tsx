@@ -111,7 +111,7 @@ export default function PartyDetail() {
       <div className={styles.titleArea}>
         <div className={styles.titleAreaContent}>
           <Link href={URL_PATHS.PARTY} className={styles.backLink}>
-            <Icon name="arrow-left" size={24} className={styles.backIcon} />
+            <Icon name="arrow-left" size={16} className={styles.backIcon} />
             <span className={styles.backText}>돌아가기</span>
           </Link>
           <div className={styles.titleRow}>
