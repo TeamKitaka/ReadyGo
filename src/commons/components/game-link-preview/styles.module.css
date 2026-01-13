@@ -33,10 +33,10 @@
 
 .description {
   margin: 0;
-  font-family: var(--typo-body-md-font-family);
-  font-size: var(--typo-body-md-font-size);
-  line-height: var(--typo-body-md-line-height);
-  font-weight: var(--typo-body-md-font-weight);
+  font-family: var(--typo-body-lg-font-family);
+  font-size: var(--typo-body-lg-font-size);
+  line-height: var(--typo-body-lg-line-height);
+  font-weight: var(--typo-body-lg-font-weight);
   color: var(--color-text-secondary);
   display: -webkit-box;
   -webkit-line-clamp: 2;
