@@ -183,10 +183,7 @@ export const useMemberList = (
       }
 
       // 이미 같은 postId에 구독 중이면 early return
-      if (
-        channelRef.current &&
-        subscribedPostIdRef.current === targetPostId
-      ) {
+      if (channelRef.current && subscribedPostIdRef.current === targetPostId) {
         return;
       }
 
@@ -206,6 +203,7 @@ export const useMemberList = (
               filter: `post_id=eq.${targetPostId}`,
             },
             (payload) => {
+              // eslint-disable-next-line no-console
               console.log('Party member INSERT event received:', payload);
               // 멤버 추가 시 목록 갱신
               if (isMountedRef.current && fetchMembersRef.current) {
@@ -222,6 +220,7 @@ export const useMemberList = (
               filter: `post_id=eq.${targetPostId}`,
             },
             (payload) => {
+              // eslint-disable-next-line no-console
               console.log('Party member DELETE event received:', payload);
               // 멤버 삭제 시 목록 갱신
               if (isMountedRef.current && fetchMembersRef.current) {
@@ -231,6 +230,7 @@ export const useMemberList = (
           )
           .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
+              // eslint-disable-next-line no-console
               console.log(
                 `Subscribed to party_members changes for post ${targetPostId}`
               );

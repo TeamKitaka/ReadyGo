@@ -1,0 +1,149 @@
+# Match List API Route 프롬프트
+
+## 개요
+매칭 화면용 매칭 목록 조회 API 엔드포인트입니다.
+필터링 가능한 12개 매칭 카드를 반환합니다.
+
+## 엔드포인트
+- **경로**: `GET /api/match/list`
+- **인증**: 필수 (Supabase Auth)
+- **응답 형식**: JSON
+
+## Query Parameters
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|----------|------|------|--------|------|
+| minScore | number | ❌ | 75 | 최소 매칭 점수 (75-100) |
+| status | string | ❌ | 'all' | 상태 필터 ('all', 'online', 'offline') |
+
+## 요청 예시
+```http
+GET /api/match/list?minScore=80&status=online HTTP/1.1
+Host: localhost:3000
+Cookie: sb-auth-token=...
+```
+
+## 응답 예시
+
+### 성공 (200)
+```json
+{
+  "results": [
+    {
+      "profile": {
+        "userId": "uuid-1",
+        "nickname": "플레이어1",
+        "animalType": "fox",
+        "avatarUrl": "/images/fox_m.svg"
+      },
+      "score": 85,
+      "status": "online",
+      "isOnline": true,
+      "reasons": [...],
+      "tags": [...]
+    },
+    ...
+  ]
+}
+```
+
+### 인증 실패 (401)
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
+### 서버 오류 (500)
+```json
+{
+  "error": "Internal server error"
+}
+```
+
+## 구현 세부사항
+
+### 파라미터 파싱
+```typescript
+const minScore = parseInt(searchParams.get('minScore') || '75', 10);
+const statusFilter = (searchParams.get('status') as 'all' | 'online' | 'offline') || 'all';
+```
+
+**주의사항**:
+- minScore는 서버에서 기본값 75로 고정 (클라이언트 조작 방지)
+- status는 'all' | 'online' | 'offline'만 허용
+
+### 인증 확인
+```typescript
+const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+if (authError || !user) {
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+}
+```
+
+### 서비스 호출
+```typescript
+const results = await getMatchList(supabase, user.id, {
+  minScore,
+  statusFilter,
+  limit: 12, // 고정
+});
+```
+
+**고정값**:
+- limit: 12 (매칭 화면은 항상 12개)
+
+### 에러 핸들링
+```typescript
+try {
+  // ...
+} catch (error) {
+  console.error('[API /match/list] Error:', error);
+  return NextResponse.json(
+    { error: 'Internal server error' },
+    { status: 500 }
+  );
+}
+```
+
+## 성능 특성
+- **캐시 적중**: ~100ms (5분 이내 캐시 존재 시)
+- **실시간 계산**: ~500ms (캐시 미스 시)
+- **전체 응답**: ~600ms (최악의 경우)
+
+## 홈 화면 API와의 차이점
+| 구분 | /api/match/results | /api/match/list |
+|------|-------------------|------------------|
+| **목적** | 홈 화면 (4개) | 매칭 화면 (12개) |
+| **필터** | 없음 | minScore, status |
+| **캐시** | 무제한 | 5분 TTL |
+| **중복 방지** | 없음 | 조회 24h + 노출 4h |
+| **정렬** | 점수순 | 온라인 우선 + 점수순 |
+
+## 사용 흐름
+1. 클라이언트에서 useMatchList Hook 호출
+2. Hook이 /api/match/list 호출 (쿼리 파라미터 포함)
+3. API Route에서 인증 확인
+4. getMatchList 서비스 호출
+5. 결과 반환 (JSON)
+6. Hook에서 results 상태 업데이트
+
+## 보안 고려사항
+- **인증 필수**: Supabase Auth 토큰 검증
+- **파라미터 검증**: minScore, status 유효성 확인
+- **서버 고정값**: limit, 기본 minScore (클라이언트 조작 방지)
+
+## 디버깅
+```typescript
+console.error('[API /match/list] Error:', error);
+```
+
+**로그 확인**:
+- 서버 콘솔에서 에러 로그 확인
+- Supabase 대시보드에서 DB 쿼리 성능 확인
+
+## 연관 파일
+- src/hooks/useMatchList.ts (호출처)
+- src/services/match/getMatchList.service.ts (서비스)
+- src/components/match/matchPage.tsx (최종 사용처)
+

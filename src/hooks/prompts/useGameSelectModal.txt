@@ -1,0 +1,147 @@
+아래의 조건을 모두 적용하여, 아래의 요구사항을 모두 구현할 것.
+구현 결과를 체크리스트로 반환할 것.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하여 작업하고, 이 작업이 끝나면 해당 rules 적용 결과를 체크리스트로 반환할 것.
+            - Service / Domain / Hook 레이어 책임을 엄격히 분리할 것
+            - Hook은 상태 관리 + UX 가공만 담당할 것
+            - Domain 타입, Domain 함수 import 금지
+            - Service 로직 복사 금지
+            - useEffect 내부에 복잡한 분기 로직 금지
+            - throw, null 반환 금지
+            - default export 금지, named export만 허용
+
+==============================================
+
+조건-파일경로) 참고 및 기준 파일 경로는 다음과 같다.
+            - 구현될 Hook 파일 경로: src/hooks/useGameSelectModal.ts
+            - 참고할 Repository 파일 경로: src/repositories/steamGame.repository.ts
+
+==============================================
+
+조건-구현참고) 반드시 참고할 기존 구현 패턴은 다음과 같다.
+            - 다른 Hook들은 다음의 패턴을 따른다.
+                - Repository 직접 호출 (단순 조회인 경우)
+                - loading / error / data 상태 분리
+                - 파생 상태(computed) 분리
+                - 검색어 필터링은 Hook에서 처리
+
+==============================================
+
+핵심요구사항) 다음 기능을 step-by-step으로 구현하고, 각 항목의 적용 여부를 체크리스트로 반환할 것.
+
+1. useGameSelectModal Hook 구현
+    - 게임 선택 모달 상태 관리
+    - 모달 열기/닫기 상태
+    - 게임 목록 조회 및 검색어 필터링
+    - 선택된 게임 상태 관리
+
+2. Hook 시그니처 고정
+    export const useGameSelectModal = () => { ... }
+
+3. 내부 상태 설계
+    - isOpen: boolean (모달 열림/닫힘)
+    - games: Array<{ app_id: number; name: string }> (전체 게임 목록)
+    - filteredGames: Array<{ app_id: number; name: string }> (필터링된 게임 목록)
+    - selectedGame: { app_id: number; name: string } | null (선택된 게임)
+    - searchQuery: string (검색어)
+    - loading: boolean
+    - error: Error | null
+
+4. Repository 호출 규칙
+    - getAllSteamGames()만 호출
+    - SteamGame Repository 직접 접근 ✅
+    - Service 접근 ❌
+    - Domain / Repository 로직 복사 ❌
+
+5. 게임 목록 조회 규칙
+    - 모달이 열릴 때만 게임 목록 조회
+    - 한 번 조회한 목록은 캐싱 (메모리 캐시)
+    - 이미 조회한 목록이 있으면 재요청하지 않음
+
+6. 검색어 필터링 규칙
+    - searchQuery를 기반으로 게임 이름 필터링
+    - 대소문자 구분 없이 필터링
+    - filteredGames는 searchQuery가 변경될 때마다 재계산
+    - useMemo를 사용하여 필터링 최적화
+
+7. 모달 제어 함수
+    - openModal: () => void - 모달 열기 (게임 목록 조회)
+    - closeModal: () => void - 모달 닫기 (상태 초기화)
+    - selectGame: (game: { app_id: number; name: string }) => void - 게임 선택
+    - setSearchQuery: (query: string) => void - 검색어 설정
+    - confirmSelection: () => void - 선택 확인 (부모로 콜백 전달)
+
+8. Effect 트리거 규칙
+    useEffect(() => {
+        if (!isOpen) return;
+        // 게임 목록 조회 (캐시 확인)
+    }, [isOpen]);
+
+    - isOpen이 true일 때만 게임 목록 조회
+    - 검색어 변경 시 필터링만 수행 (재요청 ❌)
+
+9. 반환 값 규칙
+    return {
+        isOpen,
+        filteredGames,
+        selectedGame,
+        searchQuery,
+        loading,
+        error,
+        openModal,
+        closeModal,
+        selectGame,
+        setSearchQuery,
+        confirmSelection,
+    };
+
+10. 에러 처리 규칙
+    - Repository 에러는 catch하여 error 상태에 저장
+    - throw ❌
+    - null 반환 ❌
+    - 에러 발생 시 games는 빈 배열, error만 설정
+
+11. 금지 사항
+    - Service 로직 복사 ❌
+    - Domain 타입 import ❌
+    - throw ❌
+    - null 반환 ❌
+    - default export ❌
+
+==============================================
+
+조건-Hook 책임)
+            - 모달 열기/닫기 상태 관리
+            - 게임 목록 조회 (Repository 호출)
+            - 검색어 필터링
+            - 선택된 게임 상태 관리
+            - 로딩 / 에러 상태 관리
+            - 게임 목록 캐싱
+
+==============================================
+
+조건-UI 책임)
+            - Hook이 반환한 값만 사용
+            - 모달 표시
+            - 게임 목록 렌더링
+            - 검색 UI 표시
+            - 필터링 로직 ❌
+
+==============================================
+
+구현 완료 후 반환) 아래 체크리스트를 반드시 반환할 것.
+            - useGameSelectModal Hook이 지정된 파일 경로에 구현되었는가
+            - named export만 사용했는가
+            - getAllSteamGames Repository만 호출하는가
+            - 모달이 열릴 때만 게임 목록을 조회하는가
+            - 게임 목록 캐싱이 구현되어 있는가
+            - 검색어 필터링이 Hook에서 처리되는가
+            - useMemo를 사용하여 필터링 최적화를 했는가
+            - loading / error / games 상태가 분리되어 있는가
+            - 모달 제어 함수들이 모두 구현되었는가
+            - Repository 에러를 catch하여 error 상태에 저장하는가
+            - Domain / Service 접근이 없는가
+            - 금지 사항이 모두 지켜졌는가
+

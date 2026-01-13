@@ -21,6 +21,7 @@ import type { AnimalType } from '@/commons/constants/animal/animal.enum';
 import type { TraitVector } from '@/commons/constants/animal/animal.vector';
 import type { TierType } from '@/commons/constants/tierType.enum';
 import type { RadarChartData } from '@/commons/components/radar-chart';
+import type { SteamStatsDTO } from '@/commons/types/profile/profileCore.dto';
 
 /**
  * AnimalType UI 메타 정보
@@ -97,4 +98,16 @@ export interface ProfileViewModel {
    * 천생연분 동물 타입들 (bestMatches + goodMatches)
    */
   perfectMatchTypes?: AnimalType[];
+
+  /**
+   * Steam 통계 정보 (선택)
+   * Steam 계정 연동 및 stats 업데이트 완료 시에만 존재
+   */
+  steamStats?: SteamStatsDTO;
+
+  /**
+   * Steam 계정 연동 여부 (선택)
+   * Steam 계정이 연동되어 있는지 여부
+   */
+  steamId?: string | null;
 }

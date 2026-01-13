@@ -34,6 +34,22 @@ export interface PlayScheduleItem {
 }
 
 /**
+ * Steam 통계 정보
+ *
+ * DB 테이블: steam_user_stats
+ * - play_style: 플레이 스타일 (casual, regular, hardcore)
+ * - avg_weekly_playtime: 주당 평균 플레이타임 (시간 단위)
+ * - main_genres: 주요 장르 목록 (상위 3개)
+ * - active_time_slots: 활동 시간대 목록 (예: ['18-24', '00-06'])
+ */
+export interface SteamStatsDTO {
+  playStyle: 'casual' | 'regular' | 'hardcore';
+  avgWeeklyPlaytime: number;
+  mainGenres: string[];
+  activeTimeSlots: string[];
+}
+
+/**
  * ProfileCoreDTO
  *
  * 내 프로필과 상대 프로필 모두에서 재사용 가능한 핵심 프로필 데이터
@@ -145,6 +161,35 @@ export interface ProfileCoreDTO {
    * - 값 존재: '주중 18-24시', '주말 12-18시' 등으로 표시
    */
   schedule?: PlayScheduleItem[];
+
+  /**
+   * Steam 통계 정보
+   *
+   * 선택 필드
+   * DB: steam_user_stats (play_style, avg_weekly_playtime, main_genres, active_time_slots)
+   *
+   * - undefined: Steam 미연동 또는 stats 미계산
+   * - 값 존재: Steam 연동 및 stats 계산 완료
+   *
+   * UI 정책:
+   * - undefined: Steam 정보 숨김
+   * - 값 존재: Steam 프로필 카드 표시
+   */
+  steamStats?: SteamStatsDTO;
+
+  /**
+   * Steam 계정 연동 여부
+   *
+   * 선택 필드
+   * DB: user_profiles.steam_id (nullable)
+   *
+   * - undefined/null: Steam 미연동
+   * - 값 존재: Steam 연동 완료
+   *
+   * UI 정책:
+   * - steamStats와 함께 사용하여 Steam 정보 표시 여부 결정
+   */
+  steamId?: string | null;
 }
 
 /**

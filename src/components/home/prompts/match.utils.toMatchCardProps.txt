@@ -1,0 +1,176 @@
+아래의 조건을 모두 적용하여, 아래의 요구사항을 모두 구현할 것.
+구현 결과를 체크리스트로 반환할 것.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하여 작업하고, 이 작업이 끝나면 해당 rules 적용 결과를 체크리스트로 반환할 것.
+	- Utils는 순수 함수로 데이터 변환만 수행
+	- 비즈니스 로직 금지
+	- 외부 의존성 최소화 (타입만 import)
+	- side effect 금지
+	- immutability 유지
+	- 입력값 직접 수정 금지
+
+==============================================
+
+조건-파일경로) 참고 및 기준 파일 경로는 다음과 같다.
+	- 구현 대상:
+		- src/components/home/utils/toMatchCardProps.ts
+	- 의존:
+		- src/components/home/ui/match-section/card/matchCard.tsx (MatchCardProps 타입)
+	- 참고 패턴:
+		- src/viewmodels/match/toMatchResultViewModel.ts
+
+==============================================
+
+조건-구현참고) 반드시 참고할 기존 구현 패턴은 다음과 같다.
+	- toMatchResultViewModel은 CoreDTO → ViewModel 변환
+	- 순수 함수로 구현
+	- reasons 배열을 분석하여 UI 표시용 필드 추출
+	- fallback 값 제공
+
+==============================================
+
+핵심요구사항) 다음 기능을 step-by-step으로 구현하고, 각 항목의 적용 여부를 체크리스트로 반환할 것.
+
+0) 파일/Export 규칙
+	- 파일 위치: src/components/home/utils/toMatchCardProps.ts
+	- named export로 함수 export
+	- 함수명: toMatchCardProps
+
+1) 함수 시그니처
+	- 함수명: toMatchCardProps
+	- 입력: apiResult: any (API 응답 객체)
+	- 반환: MatchCardProps
+		{
+			userId: string
+			nickname: string
+			matchRate: number
+			status: 'online' | 'away' | 'dnd' | 'offline'
+			animalType?: string
+			gamePreference?: string
+			playTime?: string
+			skillLevel?: string
+		}
+
+2) 라벨 매핑 객체 정의
+	- timeTypeLabels: Record<string, string>
+		- morning → '아침 시간대'
+		- afternoon → '낮 시간대'
+		- evening → '저녁 시간대'
+		- lateNight → '밤 시간대'
+		- weekend → '주말'
+		- flexible → '유연한 시간대'
+	- traitLabels: Record<string, string>
+		- cooperation → '협동형 플레이어'
+		- exploration → '탐험형 플레이어'
+		- strategy → '전략형 플레이어'
+		- leadership → '리더형 플레이어'
+		- social → '사교형 플레이어'
+
+3) reasons 분석 로직 (우선순위 기반)
+	- gamePreference 추출:
+		1순위: COMMON_GAME → topGames.join(', ')
+		2순위: STEAM_GENRE → `${genre} 장르`
+		3순위: STEAM_PLAYSTYLE → `${style} 스타일`
+	- playTime 추출:
+		1순위: ACTIVITY_PATTERN → timeTypeLabels[timeType]
+		2순위: TIME_OVERLAP → '비슷한 활동 시간'
+		3순위: PLAYTIME_SIMILARITY → `주간 ${hours}시간 플레이`
+	- skillLevel 추출:
+		1순위: STYLE_SIMILARITY → traitLabels[trait]
+		2순위: RELIABILITY → '매너 좋은 플레이어'
+		3순위: PARTY_EXPERIENCE → '파티 경험 풍부'
+		4순위: ANIMAL_COMPATIBILITY → '동물 궁합 좋음'
+
+4) Fallback 값 제공 (무조건 3개 채우기)
+	- gamePreference 없으면: '다양한 게임 플레이'
+	- playTime 없으면: '자유로운 시간'
+	- skillLevel 없으면: '긍정적인 플레이어'
+
+5) 반환 객체 구성
+	- userId: apiResult.profile.userId
+	- nickname: apiResult.profile.nickname
+	- matchRate: apiResult.score
+	- status: apiResult.status
+	- animalType: apiResult.profile.animalType
+	- gamePreference, playTime, skillLevel (추출 또는 fallback)
+
+6) 금지 사항
+	- 비즈니스 로직 포함 ❌
+	- 점수 계산 ❌
+	- 필터링/정렬 ❌
+	- API 호출 ❌
+	- Service/Repository 호출 ❌
+	- side effect (console.log, localStorage 등) ❌
+	- 입력 객체 직접 수정 ❌
+
+7) Immutability 규칙
+	- 입력 파라미터 직접 수정 ❌
+	- 새로운 객체 리터럴로 반환
+	- 순수 함수 유지
+
+8) 의존성 규칙
+	- 허용:
+		- MatchCardProps 타입 import
+	- 금지:
+		- Service/Repository ❌
+		- Hook ❌
+		- Store ❌
+		- API 호출 ❌
+
+==============================================
+
+조건-Hook/Service/UI 책임)
+	- 해당 작업은 Utils 책임
+	- Hook/Service/UI 파일 수정 금지
+
+==============================================
+
+구현 완료 후 반환) 아래 체크리스트를 반드시 반환할 것.
+	1. Utils 정체성
+		- 순수 함수로 데이터 변환만
+		- 비즈니스 로직 없음
+		- side effect 없음
+
+	2. 파일 / 위치 / export
+		- 파일 위치: src/components/home/utils/toMatchCardProps.ts
+		- named export: toMatchCardProps
+
+	3. 함수 시그니처
+		- 입력: apiResult: any
+		- 반환: MatchCardProps
+
+	4. 라벨 매핑 객체
+		- timeTypeLabels 정의
+		- traitLabels 정의
+
+	5. reasons 분석 로직
+		- gamePreference 추출 (3단계 우선순위)
+		- playTime 추출 (3단계 우선순위)
+		- skillLevel 추출 (4단계 우선순위)
+
+	6. Fallback 값
+		- gamePreference 기본값
+		- playTime 기본값
+		- skillLevel 기본값
+		- 무조건 3개 필드 채움
+
+	7. 반환 객체
+		- userId, nickname, matchRate, status 필수
+		- gamePreference, playTime, skillLevel 포함
+
+	8. 금지 사항
+		- 비즈니스 로직 없음
+		- API/Service 호출 없음
+		- side effect 없음
+		- 입력 수정 없음
+
+	9. Immutability
+		- 순수 함수
+		- 새 객체 반환
+
+	10. 의존성 규칙
+		- 타입만 import
+		- Service/Hook/Store 의존 없음
+

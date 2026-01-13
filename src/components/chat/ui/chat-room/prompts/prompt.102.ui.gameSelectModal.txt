@@ -1,0 +1,127 @@
+아래의 조건을 모두 적용하여, 아래의 요구사항을 모두 구현할 것.
+구현 결과를 체크리스트로 반환할 것.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하고, 작업 종료 후 적용 결과를 체크리스트로 기록할 것.
+            - @01-common.mdc
+            - @03-ui.mdc
+
+==============================================
+
+조건-파일경로) 참고 및 기준 파일 경로는 다음과 같다.
+            - 구현될 컴포넌트 파일 경로: src/components/chat/ui/chat-room/chatRoom.tsx
+            - 참고할 컴포넌트 파일 경로: src/commons/components/game-select-modal/index.tsx
+            - 참고할 Hook 파일 경로: src/components/chat/hooks/useChatRoomInput.hook.tsx
+
+==============================================
+
+조건-구현참고) 반드시 참고할 기존 구현 패턴은 다음과 같다.
+            - GameSelectModal은 이미 ModalContainer를 사용하고 있으므로 추가 작업 불필요
+            - useChatRoomInput에서 반환된 gameSelectModal 관련 값들을 사용
+            - 모달이 열려있을 때만 GameSelectModal 컴포넌트 렌더링
+
+==============================================
+
+핵심요구사항) 다음 기능을 step-by-step으로 구현하고, 각 항목의 적용 여부를 체크리스트로 반환할 것.
+
+1. ChatRoom 컴포넌트 수정
+    - GameSelectModal 컴포넌트 import
+    - useChatRoomInput에서 반환된 게임 선택 모달 관련 값들을 받아서 사용
+    - GameSelectModal 컴포넌트 렌더링 (모달이 열려있을 때만)
+
+2. GameSelectModal Import
+    - import GameSelectModal from '@/commons/components/game-select-modal';
+    - 파일 상단의 import 섹션에 추가
+
+3. useChatRoomInput에서 gameSelectModal 받기
+    - useChatRoomInput hook 호출 부분에서 gameSelectModal 구조 분해 할당
+    - 기존 코드:
+        const {
+            messageInput,
+            setMessageInput,
+            handleSendMessage,
+            handleKeyDown,
+            handleGameStart,
+        } = useChatRoomInput({ ... });
+    - 수정 후:
+        const {
+            messageInput,
+            setMessageInput,
+            handleSendMessage,
+            handleKeyDown,
+            handleGameStart,
+            gameSelectModal,
+        } = useChatRoomInput({ ... });
+
+4. GameSelectModal 컴포넌트 렌더링
+    - 컴포넌트 return 문 내부에 GameSelectModal 추가
+    - 위치: 입력 영역 다음 또는 컴포넌트 최하단
+    - 조건부 렌더링: gameSelectModal.isOpen이 true일 때만 렌더링
+    - Props 전달:
+        - isOpen: gameSelectModal.isOpen
+        - onClose: gameSelectModal.closeModal
+        - onConfirm: gameSelectModal.onConfirm
+        - games: gameSelectModal.games
+        - filteredGames: gameSelectModal.filteredGames
+        - isLoading: gameSelectModal.isLoading
+        - searchQuery: gameSelectModal.searchQuery
+        - onSearchChange: gameSelectModal.onSearchChange
+        - selectedGame: gameSelectModal.selectedGame
+        - onSelectGame: gameSelectModal.onSelectGame
+        - error: gameSelectModal.error
+
+5. 데이터 흐름 확인
+    - 사용자가 게임시작 버튼 클릭
+    - handleGameStart 호출 → gameSelectModal.openModal() 실행
+    - GameSelectModal 컴포넌트 표시 (ModalContainer 사용)
+    - 사용자가 게임 검색 및 선택
+    - 확인 버튼 클릭 → onConfirm 호출
+    - steam://run/{appId} 형식의 메시지 생성
+    - sendMessage('steam://run/{appId}', 'game_link') 호출
+    - 메시지가 chat_messages 테이블에 저장 (content_type: 'game_link')
+    - 모달 닫기
+
+6. 주의사항
+    - content_type은 'game_link' 사용 (추후 'profile_link'와 구분하기 위해)
+    - GameSelectModal은 이미 ModalContainer를 사용하고 있으므로 추가 작업 불필요
+    - 프로필 링크 관련 기능은 이번 구현에서 제외
+
+==============================================
+
+조건-컴포넌트 책임)
+            - useChatRoomInput에서 반환된 gameSelectModal 값 사용
+            - GameSelectModal 컴포넌트 렌더링
+            - 모달 표시/숨김 제어
+
+==============================================
+
+조건-UI 책임)
+            - GameSelectModal 컴포넌트 표시
+            - 모달이 열려있을 때만 렌더링
+            - 모든 props를 올바르게 전달
+
+==============================================
+
+구현 완료 후 반환) 아래 체크리스트를 반드시 반환할 것.
+            - ChatRoom 컴포넌트가 지정된 파일 경로에 수정되었는가
+            - GameSelectModal 컴포넌트가 import되었는가
+            - useChatRoomInput에서 gameSelectModal을 구조 분해 할당으로 받는가
+            - GameSelectModal 컴포넌트가 렌더링되는가
+            - gameSelectModal.isOpen이 true일 때만 렌더링되는가
+            - 모든 props가 올바르게 전달되는가
+            - isOpen prop이 전달되는가
+            - onClose prop이 전달되는가
+            - onConfirm prop이 전달되는가
+            - games prop이 전달되는가
+            - filteredGames prop이 전달되는가
+            - isLoading prop이 전달되는가
+            - searchQuery prop이 전달되는가
+            - onSearchChange prop이 전달되는가
+            - selectedGame prop이 전달되는가
+            - onSelectGame prop이 전달되는가
+            - error prop이 전달되는가
+            - 데이터 흐름이 올바르게 작동하는가
+            - 커서룰 @01-common.mdc 적용 여부
+            - 커서룰 @03-ui.mdc 적용 여부
+

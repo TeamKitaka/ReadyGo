@@ -4,7 +4,7 @@
  * 선택 우선순위:
  * 1. avatar_url (사용자가 커스텀한 아바타)
  * 2. animal_type (동물 타입에 따른 기본 아바타)
- * 3. 기본값 (bear 아바타 - 회원가입 시 기본값)
+ * 3. 기본값 (unknown 아바타 - 회원가입 시 기본값)
  *
  * @param avatarUrl - user_profiles.avatar_url (string | null | undefined)
  * @param animalType - user_profiles.animal_type (string | null | undefined)
@@ -32,7 +32,7 @@ export const getAvatarImagePath = (
     }
   }
 
-  // 3. 둘 다 없으면 기본값 (bear 아바타 - 회원가입 시 기본값)
-  const defaultAnimalAssets = getAnimalAssets(AnimalType.bear);
+  // 3. 둘 다 없으면 기본값 (unknown 아바타 - 회원가입 시 기본값)
+  const defaultAnimalAssets = getAnimalAssets(AnimalType.unknown);
   return defaultAnimalAssets.avatar;
 };

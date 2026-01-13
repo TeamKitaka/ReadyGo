@@ -10,6 +10,7 @@ import {
   animalTypeMeta,
   animalCompatibilities,
 } from '@/commons/constants/animal';
+import { useSteamOAuth } from '@/components/auth/hooks/useSteamOAuth.hook';
 import styles from './styles.module.css';
 
 export interface ResultProps {
@@ -26,6 +27,7 @@ export interface ResultProps {
   };
   matchTypes: string[];
   characteristics: string[];
+  isSteamConnected: boolean;
   onPrevious: () => void;
   onComplete: () => void;
 }
@@ -38,11 +40,29 @@ export default function Result({
   subRole,
   matchTypes: _matchTypes,
   characteristics,
+  isSteamConnected,
   onPrevious,
   onComplete,
 }: ResultProps) {
   const animalMeta = animalTypeMeta[animalType];
   const compatibility = animalCompatibilities[animalType];
+  const { handleSteamLink } = useSteamOAuth();
+
+  // 스팀 연동 유도 버튼 컴포넌트
+  const SteamPromotionButton = () => {
+    return (
+      <Button
+        variant="outline"
+        size="m"
+        shape="round"
+        onClick={handleSteamLink}
+        className={styles.steamPromotionButton}
+      >
+        <Icon name="steam" size={16} />
+        스팀 연동으로 정확도 높이기
+      </Button>
+    );
+  };
 
   return (
     <div className={styles.container}>
@@ -156,6 +176,19 @@ export default function Result({
             </div>
           </div>
         </div>
+
+        {/* 스팀 연동 유도 섹션 (스팀 미연동 회원에게만 표시) */}
+        {!isSteamConnected && (
+          <div className={styles.steamPromotionSection}>
+            <div className={styles.steamPromotionContent}>
+              <p className={styles.steamPromotionText}>
+                이 결과는 성향 테스트 기반이에요. 스팀 연동으로 실제 플레이
+                데이터도 반영할 수 있어요.
+              </p>
+              <SteamPromotionButton />
+            </div>
+          </div>
+        )}
 
         {/* Bottom Cards */}
         <div className={styles.bottomCards}>

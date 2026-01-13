@@ -43,6 +43,8 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
+import type { MatchReasonCoreDTO } from '@/commons/types/match/matchReasonCore.dto';
+import type { MatchTagCoreDTO } from '@/commons/types/match/matchTagCore.dto';
 import { getMatchCandidates } from './getMatchCandidates.service';
 import { calculateMatchResult } from './calculateMatchResult.service';
 
@@ -54,16 +56,20 @@ import { calculateMatchResult } from './calculateMatchResult.service';
  * - finalScore: 최종 매칭 점수 (0~100)
  * - isOnlineMatched: target이 현재 온라인인지 여부
  * - availabilityHint: 가용성 힌트 ('online' | 'offline' | 'unknown')
+ * - reasons: 매칭 이유 (Domain DTO 그대로)
+ * - tags: 매칭 태그 (Domain DTO 그대로)
  *
- * 📌 금지:
+ * 📌 주의:
+ * - Domain DTO를 직접 사용 (API DTO 별도 생성 ❌)
  * - UI용 문구/퍼센트/게이지/표시 단위 가공 ❌
- * - tags, reasons 포함 ❌
  */
 export interface MatchResultWithTarget {
   targetUserId: string;
   finalScore: number;
   isOnlineMatched: boolean;
   availabilityHint: 'online' | 'offline' | 'unknown';
+  reasons: MatchReasonCoreDTO[]; // Domain DTO 그대로
+  tags: MatchTagCoreDTO[]; // Domain DTO 그대로
 }
 
 /**
@@ -130,11 +136,14 @@ export const calculateMatchResults = async (
         candidate.userId
       );
       // 새로운 객체로 조립 (immutability 유지)
+      // reasons, tags를 Domain에서 받은 그대로 전달
       return {
         targetUserId: candidate.userId,
         finalScore: result.finalScore,
         isOnlineMatched: result.isOnlineMatched,
         availabilityHint: result.availabilityHint,
+        reasons: result.reasons, // Domain DTO 그대로
+        tags: result.tags, // Domain DTO 그대로
       };
     })
   );

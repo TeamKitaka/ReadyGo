@@ -100,6 +100,11 @@ export const animalAssets: Record<AnimalType, AnimalAssets> = {
     imageM: '/images/cat_m.svg',
     avatar: '/icons/avatar/cat.svg',
   },
+  [AnimalType.unknown]: {
+    imageS: '/images/unknown_m.svg',
+    imageM: '/images/unknown_m.svg',
+    avatar: '/icons/avatar/unknown.svg',
+  },
 } as const;
 
 // ============================================

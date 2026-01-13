@@ -92,6 +92,8 @@ export const toProfileViewModel = (
     animalType: coreDTO.animalType,
     traits: coreDTO.traits,
     schedule: coreDTO.schedule,
+    steamStats: coreDTO.steamStats,
+    steamId: coreDTO.steamId,
 
     // 변환된 UI 데이터
     radarData,

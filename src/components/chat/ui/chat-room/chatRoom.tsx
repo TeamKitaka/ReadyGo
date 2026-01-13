@@ -12,12 +12,23 @@ import { AnimalType } from '@/commons/constants/animal';
 import { useSideProfilePanel } from '@/hooks/useSideProfilePanel';
 import { useChatRoom, useChatRoomInput } from '@/components/chat/hooks';
 import { formatDateDivider } from '@/lib/chat/messageFormatter';
+import { useAuth } from '@/commons/providers/auth/auth.provider';
+import GameSelectModal from '@/commons/components/game-select-modal';
+import { useGameLinkPreview } from '@/hooks/useGameLinkPreview';
+import { useGameStartLog } from '@/hooks/useGameStartLog';
+import { useModal } from '@/commons/providers/modal/modal.provider';
+import GameLinkPreview from '@/commons/components/game-link-preview';
+import { useSteamProfileShare } from '@/hooks/useSteamProfileShare';
 
 interface ChatRoomProps {
   roomId?: string;
 }
 
 export default function ChatRoom({ roomId }: ChatRoomProps) {
+  // 현재 사용자 정보
+  const { user } = useAuth();
+  const [_currentUserNickname, setCurrentUserNickname] = useState<string>('');
+
   // 사이드 프로필 패널 제어
   const { toggleProfile, openProfile, isOpen, targetUserId } =
     useSideProfilePanel();
@@ -32,6 +43,7 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
 
   // useChatRoom Hook 호출
   const {
+    messages,
     formattedMessages,
     otherMemberInfo,
     isOtherMemberInfoLoading,
@@ -45,8 +57,25 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
     shouldScrollToUnread,
     clearScrollTriggers,
     shouldShowScrollToBottomButton,
+    markAsReadOnScroll,
+    setMessageListContainerRef,
     roomCreatedAt,
   } = useChatRoom({ roomId: roomIdNumber });
+
+  // 게임 링크 미리보기 Hook 사용
+  const { extractGameAppId, getGameInfo } = useGameLinkPreview(messages);
+
+  // 게임 시작 로그 Hook 사용
+  const { createGameStartLog } = useGameStartLog();
+
+  // 모달 Hook 사용
+  const { openModal } = useModal();
+
+  // 스팀 프로필 공유 Hook 사용
+  const { handleShareSteamProfile } = useSteamProfileShare({
+    sendMessage,
+    isBlocked,
+  });
 
   // 플로팅 버튼 표시 여부
   const [showScrollToBottomButton, setShowScrollToBottomButton] =
@@ -59,11 +88,37 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
     handleSendMessage,
     handleKeyDown,
     handleGameStart,
+    gameSelectModal,
   } = useChatRoomInput({
     sendMessage,
     isBlocked,
     otherMemberNickname: otherMemberInfo?.nickname,
   });
+
+  // 현재 사용자 닉네임 조회
+  useEffect(() => {
+    const fetchCurrentUserNickname = async () => {
+      if (!user?.id) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/profile/${user.id}`, {
+          method: 'GET',
+          credentials: 'include',
+        });
+
+        if (response.ok) {
+          const profileData = await response.json();
+          setCurrentUserNickname(profileData.nickname || '');
+        }
+      } catch (error) {
+        console.error('Failed to fetch current user nickname:', error);
+      }
+    };
+
+    fetchCurrentUserNickname();
+  }, [user?.id]);
 
   // 채팅방이 변경될 때 사이드 패널이 열려있다면 새로운 상대방의 프로필로 자동 업데이트
   useEffect(() => {
@@ -95,13 +150,20 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
     clearScrollTriggers,
   ]);
 
-  // 스크롤 위치 감지
+  // 메시지 리스트 컨테이너 ref를 hook에 등록
+  useEffect(() => {
+    setMessageListContainerRef(messageListRef);
+  }, [setMessageListContainerRef]);
+
+  // 스크롤 위치 감지 및 읽음 처리
   const handleScroll = useCallback(() => {
     if (messageListRef.current) {
       const shouldShow = shouldShowScrollToBottomButton(messageListRef);
       setShowScrollToBottomButton(shouldShow);
+      // 스크롤 기반 읽음 처리
+      markAsReadOnScroll(messageListRef);
     }
-  }, [shouldShowScrollToBottomButton]);
+  }, [shouldShowScrollToBottomButton, markAsReadOnScroll]);
 
   // 스크롤 이벤트 리스너 등록
   useEffect(() => {
@@ -214,6 +276,23 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
         </div>
       )}
 
+      {/* 스팀 프로필 공유 버튼 */}
+      {!isBlocked && otherMemberInfo && (
+        <div className={styles.steamProfileShareSection}>
+          <Button
+            variant="ghost"
+            size="s"
+            shape="rectangle"
+            onClick={handleShareSteamProfile}
+            className={styles.steamProfileShareButton}
+            aria-label="스팀 프로필 공유"
+          >
+            <Icon name="steam" size={20} />
+            <span>스팀 프로필 공유</span>
+          </Button>
+        </div>
+      )}
+
       {/* 메시지 리스트 영역 */}
       <div
         ref={messageListRef}
@@ -265,7 +344,6 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
             // message 타입인 경우
             const {
               message,
-              isConsecutive,
               isGroupStart,
               isGroupEnd,
               isOwnMessage,
@@ -292,23 +370,79 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
               );
             }
 
+            // 게임 링크인지 확인
+            const isGameLinkMessage = message.content_type === 'game_link';
+            const gameAppId = isGameLinkMessage
+              ? extractGameAppId(message.content)
+              : null;
+            const gameInfo = gameAppId ? getGameInfo(gameAppId) : null;
+
+            // 프로필 링크인지 확인
+            const isProfileLinkMessage =
+              message.content_type === 'profile_link';
+
             if (isOwnMessage) {
               return (
                 <div
                   key={message.id}
                   data-message-id={message.id}
                   className={styles.messageRow}
-                  aria-label={`내 메시지: ${formattedContent}`}
+                  aria-label={
+                    isGameLinkMessage
+                      ? `내 게임 링크 메시지`
+                      : isProfileLinkMessage
+                        ? `내 스팀 프로필 링크 메시지`
+                        : `내 메시지: ${formattedContent}`
+                  }
                 >
                   <div className={styles.ownMessageContainer}>
-                    {isGroupEnd && (
-                      <div className={styles.messageTime}>{formattedTime}</div>
+                    {isGameLinkMessage && gameAppId ? (
+                      <>
+                        {isGroupEnd && (
+                          <div className={styles.messageTime}>
+                            {formattedTime}
+                          </div>
+                        )}
+                        <GameLinkPreview
+                          gameInfo={gameInfo}
+                          appId={gameAppId}
+                          onGameStart={() => {
+                            // 확인 모달 표시
+                            openModal({
+                              variant: 'dual',
+                              title: '게임 시작',
+                              description: '게임을 시작하시겠습니까?',
+                              confirmText: '확인',
+                              cancelText: '취소',
+                              onConfirm: async () => {
+                                // 게임 시작 로그 생성
+                                await createGameStartLog({
+                                  contextType: 'match',
+                                  contextId: roomIdNumber.toString(),
+                                  gameId: gameAppId.toString(),
+                                  gameName: gameInfo?.name ?? undefined,
+                                });
+                                // Steam 실행
+                                window.location.href = `steam://run/${gameAppId}`;
+                              },
+                            });
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        {isGroupEnd && (
+                          <div className={styles.messageTime}>
+                            {formattedTime}
+                          </div>
+                        )}
+                        <div className={styles.ownMessageBubble}>
+                          <span className={styles.messageContent}>
+                            {formattedContent}
+                          </span>
+                        </div>
+                      </>
                     )}
-                    <div className={styles.ownMessageBubble}>
-                      <span className={styles.messageContent}>
-                        {formattedContent}
-                      </span>
-                    </div>
                   </div>
                 </div>
               );
@@ -319,7 +453,13 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
                 key={message.id}
                 data-message-id={message.id}
                 className={styles.messageRow}
-                aria-label={`${displayNickname}의 메시지: ${formattedContent}`}
+                aria-label={
+                  isGameLinkMessage
+                    ? `${displayNickname}의 게임 링크 메시지`
+                    : isProfileLinkMessage
+                      ? `${displayNickname}의 스팀 프로필 링크 메시지`
+                      : `${displayNickname}의 메시지: ${formattedContent}`
+                }
               >
                 <div
                   className={`${styles.otherMessageContainer} ${
@@ -339,13 +479,52 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
                   )}
                   {!isGroupStart && <div className={styles.avatarSpacer} />}
                   <div className={styles.otherMessageContent}>
-                    <div className={styles.otherMessageBubble}>
-                      <span className={styles.messageContent}>
-                        {formattedContent}
-                      </span>
-                    </div>
-                    {isGroupEnd && (
-                      <div className={styles.messageTime}>{formattedTime}</div>
+                    {isGameLinkMessage && gameAppId ? (
+                      <>
+                        <GameLinkPreview
+                          gameInfo={gameInfo}
+                          appId={gameAppId}
+                          onGameStart={() => {
+                            // 확인 모달 표시
+                            openModal({
+                              variant: 'dual',
+                              title: '게임 시작',
+                              description: '게임을 시작하시겠습니까?',
+                              confirmText: '확인',
+                              cancelText: '취소',
+                              onConfirm: async () => {
+                                // 게임 시작 로그 생성
+                                await createGameStartLog({
+                                  contextType: 'match',
+                                  contextId: roomIdNumber.toString(),
+                                  gameId: gameAppId.toString(),
+                                  gameName: gameInfo?.name ?? undefined,
+                                });
+                                // Steam 실행
+                                window.location.href = `steam://run/${gameAppId}`;
+                              },
+                            });
+                          }}
+                        />
+                        {isGroupEnd && (
+                          <div className={styles.messageTime}>
+                            {formattedTime}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className={styles.otherMessageBubble}>
+                          <span className={styles.messageContent}>
+                            {formattedContent}
+                          </span>
+                        </div>
+                        {isGroupEnd && (
+                          <div className={styles.messageTime}>
+                            {formattedTime}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -410,6 +589,21 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
           <span className={styles.gameStartButtonText}>게임시작</span>
         </Button>
       </div>
+
+      {/* 게임 선택 모달 */}
+      <GameSelectModal
+        isOpen={gameSelectModal.isOpen}
+        onClose={gameSelectModal.closeModal}
+        onConfirm={gameSelectModal.onConfirm}
+        games={gameSelectModal.games}
+        filteredGames={gameSelectModal.filteredGames}
+        isLoading={gameSelectModal.isLoading}
+        searchQuery={gameSelectModal.searchQuery}
+        onSearchChange={gameSelectModal.onSearchChange}
+        selectedGame={gameSelectModal.selectedGame}
+        onSelectGame={gameSelectModal.onSelectGame}
+        error={gameSelectModal.error}
+      />
     </div>
   );
 }

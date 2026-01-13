@@ -20,6 +20,10 @@ type TargetUser = {
 /**
  * steam_id가 있는 유저 목록 조회
  *
+ * 우선순위:
+ * 1. steam_sync_logs에 기록 없는 유저 (완전히 미동기화)
+ * 2. 기록 있는 유저는 제외 (중복 방지)
+ *
  * @param client - DB 클라이언트
  * @param limit - 조회할 최대 유저 수 (기본: 100)
  * @returns 유저 목록
@@ -28,17 +32,47 @@ const fetchTargetUsers = async (
   client: DbClient,
   limit: number = 100
 ): Promise<TargetUser[]> => {
-  const { data: users, error } = await client
+  // 1. steam_sync_logs에 기록된 DISTINCT user_id 조회
+  const { data: syncLogs, error: syncLogError } = await client
+    .from('steam_sync_logs')
+    .select('user_id');
+
+  if (syncLogError) {
+    console.error('[Batch Sync] Failed to fetch sync logs:', syncLogError);
+    throw new Error(`Failed to fetch sync logs: ${syncLogError.message}`);
+  }
+
+  // DISTINCT user_id만 추출
+  const syncedUserIds = new Set(syncLogs?.map((log) => log.user_id) || []);
+
+  console.log(`[Batch Sync] Already synced users: ${syncedUserIds.size}`);
+
+  // 2. steam_id 있는 모든 유저 조회
+  const { data: allUsers, error } = await client
     .from('user_profiles')
     .select('id')
-    .not('steam_id', 'is', null)
-    .limit(limit);
+    .not('steam_id', 'is', null);
 
   if (error) {
     throw new Error(`Failed to fetch users: ${error.message}`);
   }
 
-  return users || [];
+  if (!allUsers || allUsers.length === 0) {
+    return [];
+  }
+
+  console.log(`[Batch Sync] Total users with steam_id: ${allUsers.length}`);
+
+  // 3. 미동기화 유저만 선택 (중복 제거)
+  const unsyncedUsers = allUsers.filter((u) => !syncedUserIds.has(u.id));
+
+  const targetUsers = unsyncedUsers.slice(0, limit).map((u) => ({ id: u.id }));
+
+  console.log(
+    `[Batch Sync] Target users: ${targetUsers.length} (all unsynced)`
+  );
+
+  return targetUsers;
 };
 
 /**

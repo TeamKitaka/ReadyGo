@@ -5,9 +5,17 @@ import { useChatRoom, useChatList } from '@/components/chat/hooks';
 import { useAuth } from '@/commons/providers/auth/auth.provider';
 import Button from '@/commons/components/button';
 import Input from '@/commons/components/input';
+import Icon from '@/commons/components/icon';
 import AnimalCard from '@/commons/components/animal-card';
 import { AnimalType } from '@/commons/constants/animal';
 import { TierType } from '@/commons/constants/tierType.enum';
+import { useGameLinkPreview } from '@/hooks/useGameLinkPreview';
+import { useGameSelectModal } from '@/hooks/useGameSelectModal';
+import GameLinkPreview from '@/commons/components/game-link-preview';
+import GameSelectModal from '@/commons/components/game-select-modal';
+
+// Goose Goose Duck Steam App ID
+// const GOOSE_GOOSE_DUCK_APP_ID = 1568590;
 
 // 테스트할 유저 UUID
 const TEST_USER_ID = 'da532b5d-60ac-46b8-a725-3c38845b15ac';
@@ -48,29 +56,18 @@ export default function RealtimeChatTestPage() {
   } = useChatList();
 
   // useChatRoom Hook 사용 (roomId가 없으면 0으로 전달, hook 내부에서 처리)
-  const chatRoomHook = useChatRoom({
-    roomId: roomId || 0, // roomId가 없으면 0으로 전달
-    onMessage: () => {
-      // useChatList hook이 자동으로 채팅 목록을 업데이트하므로 별도 처리 불필요
-    },
-  });
-
-  // roomId가 없으면 hook의 기본값 사용 (에러 방지)
   const {
     messages,
     sendMessage,
     isLoading: isLoadingMessages,
     error,
     isConnected,
-  } = roomId
-    ? chatRoomHook
-    : {
-        messages: [],
-        sendMessage: async () => {},
-        isLoading: false,
-        error: null,
-        isConnected: false,
-      };
+  } = useChatRoom({
+    roomId: roomId || 0, // roomId가 없으면 0으로 전달 (hook 내부에서 처리)
+    onMessage: () => {
+      // useChatList hook이 자동으로 채팅 목록을 업데이트하므로 별도 처리 불필요
+    },
+  });
 
   // 채팅방 목록이 로드되면 자동으로 첫 번째 채팅방 구독
   useEffect(() => {
@@ -235,6 +232,44 @@ export default function RealtimeChatTestPage() {
     }
   };
 
+  // 게임 시작 버튼 클릭 핸들러 (모달 열기)
+  const handleGameStartClick = () => {
+    if (!roomId) {
+      alert('채팅방이 생성되지 않았습니다. 먼저 채팅방을 생성해주세요.');
+      return;
+    }
+
+    if (!isConnected) {
+      alert(
+        `채팅방에 연결되지 않았습니다.\n\n현재 Room ID: ${roomId}\n연결 상태: 연결 안됨\n\n잠시 후 다시 시도하거나, 구독 버튼을 클릭하여 다시 구독해주세요.`
+      );
+      return;
+    }
+
+    gameSelectModal.openModal();
+  };
+
+  // 게임 선택 모달 확인 핸들러 (링크를 메시지로 전송)
+  const handleGameSelectConfirm = async (game: {
+    app_id: number;
+    name: string;
+  }) => {
+    if (!roomId || !isConnected) {
+      return;
+    }
+
+    try {
+      const gameLink = `steam://run/${game.app_id}`;
+      await sendMessage(gameLink);
+      gameSelectModal.closeModal();
+    } catch (error) {
+      console.error('Failed to send game link:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      alert(`게임 링크 전송 실패: ${errorMessage}`);
+    }
+  };
+
   // 프로필 조회 함수 (API 사용)
   const fetchProfile = useCallback(async (userId: string) => {
     setProfiles((prev) => ({
@@ -295,6 +330,13 @@ export default function RealtimeChatTestPage() {
       setIsLoadingCurrentUserNickname(false);
     }
   }, [user?.id]);
+
+  // 게임 링크 미리보기 Hook 사용
+  const { isGameLink, extractGameAppId, getGameInfo } =
+    useGameLinkPreview(messages);
+
+  // 게임 선택 모달 Hook 사용
+  const gameSelectModal = useGameSelectModal();
 
   // 테스트 유저 프로필 조회
   useEffect(() => {
@@ -1095,20 +1137,26 @@ export default function RealtimeChatTestPage() {
           style={{
             maxHeight: '500px',
             overflowY: 'auto',
-            background: '#1a1a1a',
-            padding: '20px',
+            overflowX: 'hidden',
+            background: 'var(--color-bg-secondary, #1a1a1a)',
+            padding: '16px',
             borderRadius: '8px',
             marginBottom: '10px',
             minHeight: '300px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
           }}
         >
           {messages.length === 0 ? (
             <p
               style={{
-                color: '#999',
+                color: 'var(--color-text-interactive-secondary, #999)',
                 fontStyle: 'italic',
                 textAlign: 'center',
                 padding: '20px',
+                fontFamily: 'var(--typo-body-md-font-family)',
+                fontSize: 'var(--typo-body-md-font-size)',
               }}
             >
               수신된 메시지가 없습니다.
@@ -1118,8 +1166,7 @@ export default function RealtimeChatTestPage() {
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '12px',
-                padding: '10px',
+                gap: '16px',
               }}
             >
               {messages.map((message, index) => {
@@ -1135,82 +1182,178 @@ export default function RealtimeChatTestPage() {
                     })
                   : '';
 
+                // steam://run/{appId} 패턴 감지
+                const gameAppId = extractGameAppId(message.content);
+                const messageIsGameLink = isGameLink(message.content);
+                const gameInfo = gameAppId ? getGameInfo(gameAppId) : null;
+
                 return (
                   <div
                     key={message.id || index}
                     style={{
                       display: 'flex',
-                      justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
-                      alignItems: 'flex-end',
+                      width: '100%',
+                      flexShrink: 0,
+                      flexDirection: 'column',
                       gap: '8px',
                     }}
                   >
-                    {!isOwnMessage && (
+                    {isOwnMessage ? (
                       <div
                         style={{
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '50%',
-                          background: '#ddd',
-                          flexShrink: 0,
-                        }}
-                      />
-                    )}
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: isOwnMessage ? 'flex-end' : 'flex-start',
-                        maxWidth: '70%',
-                      }}
-                    >
-                      <div
-                        style={{
-                          padding: '10px 14px',
-                          borderRadius: '12px',
-                          background: isOwnMessage ? '#4CAF50' : '#3a3a3a',
-                          color: '#fff',
-                          wordBreak: 'break-word',
-                          fontSize: '14px',
-                          lineHeight: '1.4',
-                        }}
-                      >
-                        {message.content}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: '11px',
-                          color: '#999',
-                          marginTop: '4px',
-                          padding: '0 4px',
                           display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
+                          alignItems: 'flex-end',
+                          justifyContent: 'flex-end',
+                          gap: '12px',
+                          marginLeft: 'auto',
+                          alignSelf: 'flex-end',
+                          maxWidth: '80%',
+                          flexDirection: 'column',
                         }}
                       >
-                        {timeString}
-                        {isOwnMessage && (
-                          <span
+                        {/* 게임 링크인 경우: 미리보기 카드만 표시 */}
+                        {messageIsGameLink && gameAppId ? (
+                          <GameLinkPreview
+                            gameInfo={gameInfo}
+                            appId={gameAppId}
+                            onGameStart={() => {
+                              window.location.href = `steam://run/${gameAppId}`;
+                            }}
+                          />
+                        ) : (
+                          /* 일반 메시지인 경우: 메시지 버블 표시 */
+                          <div
                             style={{
-                              fontSize: '10px',
-                              color: message.is_read ? '#4CAF50' : '#999',
+                              display: 'flex',
+                              alignItems: 'flex-end',
+                              gap: '12px',
+                              alignSelf: 'flex-end',
                             }}
                           >
-                            {message.is_read ? '✓✓' : '✓'}
-                          </span>
+                            <div
+                              style={{
+                                height: '100%',
+                                fontFamily: 'var(--typo-body-sm-font-family)',
+                                fontSize: 'var(--typo-body-sm-font-size)',
+                                lineHeight: 'var(--typo-body-sm-line-height)',
+                                fontWeight: 'var(--typo-body-sm-font-weight)',
+                                color:
+                                  'var(--color-text-interactive-secondary, #999)',
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0,
+                                paddingBottom: '12px',
+                              }}
+                            >
+                              {timeString}
+                            </div>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '12px 20px',
+                                background:
+                                  'var(--color-bg-interactive-primary-hover, #56e5ce)',
+                                borderRadius: '24px',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  fontFamily: 'var(--typo-body-lg-font-family)',
+                                  fontSize: 'var(--typo-body-lg-font-size)',
+                                  lineHeight: 'var(--typo-body-lg-line-height)',
+                                  fontWeight: 'var(--typo-body-lg-font-weight)',
+                                  color:
+                                    'var(--color-text-interactive-inverse, #fff)',
+                                  whiteSpace: 'normal',
+                                  wordBreak: 'normal',
+                                  overflowWrap: 'normal',
+                                }}
+                              >
+                                {message.content}
+                              </span>
+                            </div>
+                          </div>
                         )}
                       </div>
-                    </div>
-                    {isOwnMessage && (
+                    ) : (
                       <div
                         style={{
-                          width: '32px',
-                          height: '32px',
-                          borderRadius: '50%',
-                          background: '#ddd',
-                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '12px',
+                          maxWidth: '80%',
+                          flexDirection: 'column',
                         }}
-                      />
+                      >
+                        {/* 게임 링크인 경우: 미리보기 카드만 표시 */}
+                        {messageIsGameLink && gameAppId ? (
+                          <GameLinkPreview
+                            gameInfo={gameInfo}
+                            appId={gameAppId}
+                            onGameStart={() => {
+                              window.location.href = `steam://run/${gameAppId}`;
+                            }}
+                          />
+                        ) : (
+                          /* 일반 메시지인 경우: 메시지 버블 표시 */
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'row',
+                              gap: '12px',
+                              alignItems: 'flex-end',
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: '40px',
+                                flexShrink: 0,
+                              }}
+                            />
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                padding: '12px 20px',
+                                background: 'var(--color-bg-tertiary, #3a3a3a)',
+                                borderRadius: '24px',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  fontFamily: 'var(--typo-body-lg-font-family)',
+                                  fontSize: 'var(--typo-body-lg-font-size)',
+                                  lineHeight: 'var(--typo-body-lg-line-height)',
+                                  fontWeight: 'var(--typo-body-lg-font-weight)',
+                                  color: 'var(--color-text-primary, #fff)',
+                                  whiteSpace: 'normal',
+                                  wordBreak: 'normal',
+                                  overflowWrap: 'normal',
+                                }}
+                              >
+                                {message.content}
+                              </span>
+                            </div>
+                            <div
+                              style={{
+                                height: '100%',
+                                fontFamily: 'var(--typo-body-sm-font-family)',
+                                fontSize: 'var(--typo-body-sm-font-size)',
+                                lineHeight: 'var(--typo-body-sm-line-height)',
+                                fontWeight: 'var(--typo-body-sm-font-weight)',
+                                color:
+                                  'var(--color-text-interactive-secondary, #999)',
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0,
+                                paddingBottom: '12px',
+                              }}
+                            >
+                              {timeString}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 );
@@ -1241,27 +1384,38 @@ export default function RealtimeChatTestPage() {
       <div
         style={{
           marginBottom: '20px',
-          padding: '15px',
-          border: '1px solid #ddd',
+          padding: '20px 16px',
+          background: 'var(--color-bg-primary, #030712)',
           borderRadius: '4px',
         }}
       >
         <h2 style={{ marginTop: 0, marginBottom: '10px' }}>메시지 전송</h2>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <Input
-            placeholder="메시지 입력"
-            value={messageContent}
-            onChange={(e) => setMessageContent(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                e.stopPropagation();
-                handleSendMessage();
-              }
-            }}
-            style={{ flex: 1 }}
-          />
+        <div
+          style={{
+            display: 'flex',
+            gap: '16px',
+            alignItems: 'center',
+          }}
+        >
+          <div style={{ flex: 1, height: '48px', minWidth: 0 }}>
+            <Input
+              placeholder="메시지 입력"
+              value={messageContent}
+              onChange={(e) => setMessageContent(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSendMessage();
+                }
+              }}
+              style={{ width: '100%' }}
+            />
+          </div>
           <Button
+            variant="primary"
+            size="m"
+            shape="rectangle"
             data-testid="send-message-btn"
             onClick={handleSendMessage}
             disabled={
@@ -1272,6 +1426,36 @@ export default function RealtimeChatTestPage() {
             }
           >
             전송
+          </Button>
+          <Button
+            variant="primary"
+            size="m"
+            shape="rectangle"
+            data-testid="game-start-btn"
+            onClick={handleGameStartClick}
+            disabled={!roomId || !isConnected}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              height: '48px',
+              padding: '14px 20px',
+              background: 'var(--color-bg-interactive-primary, #56e5ce)',
+              border: 'none',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              flexShrink: 0,
+              color: 'var(--color-text-interactive-inverse, white)',
+              transition: 'background-color 0.2s',
+              fontFamily: 'var(--typo-body-lg-medium-font-family)',
+              fontSize: 'var(--typo-body-lg-medium-font-size)',
+              lineHeight: 'var(--typo-body-lg-medium-line-height)',
+              fontWeight: 'var(--typo-body-lg-medium-font-weight)',
+            }}
+          >
+            <Icon name="gamepad" size={20} />
+            <span style={{ whiteSpace: 'nowrap' }}>게임시작</span>
           </Button>
         </div>
         {roomId && (
@@ -1397,6 +1581,21 @@ export default function RealtimeChatTestPage() {
           </li>
         </ol>
       </div>
+
+      {/* 게임 선택 모달 */}
+      <GameSelectModal
+        isOpen={gameSelectModal.isOpen}
+        onClose={gameSelectModal.closeModal}
+        onConfirm={handleGameSelectConfirm}
+        games={gameSelectModal.gameList}
+        filteredGames={gameSelectModal.filteredGames}
+        isLoading={gameSelectModal.isLoadingGames}
+        searchQuery={gameSelectModal.searchQuery}
+        onSearchChange={gameSelectModal.setSearchQuery}
+        selectedGame={gameSelectModal.selectedGame}
+        onSelectGame={gameSelectModal.selectGame}
+        error={gameSelectModal.error}
+      />
     </div>
   );
 }

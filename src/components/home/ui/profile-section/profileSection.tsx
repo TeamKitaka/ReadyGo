@@ -45,6 +45,8 @@ export default function ProfileSection({
     .filter(Boolean)
     .join(' ');
 
+  const isUnknown = animal === AnimalType.unknown;
+
   return (
     <div className={sectionClasses}>
       {/* Animal Card */}
@@ -62,37 +64,39 @@ export default function ProfileSection({
       />
 
       {/* Charts Container */}
-      <div className={styles.chartsContainer}>
-        {/* Radar Chart Section */}
-        <div className={styles.chartSection}>
-          <div className={styles.chartHeader}>
-            <h4 className={styles.chartTitle}>플레이스타일</h4>
+      {!isUnknown && (
+        <div className={styles.chartsContainer}>
+          {/* Radar Chart Section */}
+          <div className={styles.chartSection}>
+            <div className={styles.chartHeader}>
+              <h4 className={styles.chartTitle}>플레이스타일</h4>
+            </div>
+            <div className={styles.radarChartWrapper}>
+              <RadarChart
+                myData={radarData}
+                size="m"
+                showLabels={true}
+                className={styles.radarChart}
+              />
+            </div>
           </div>
-          <div className={styles.radarChartWrapper}>
-            <RadarChart
-              myData={radarData}
-              size="m"
-              showLabels={true}
-              className={styles.radarChart}
-            />
-          </div>
-        </div>
 
-        {/* Bar Chart Section */}
-        <div className={styles.chartSection}>
-          <div className={styles.chartHeader}>
-            <h4 className={styles.chartTitle}>최근 플레이 패턴</h4>
-          </div>
-          <div className={styles.barChartWrapper}>
-            <BarChart
-              data={barData}
-              size="s"
-              showValues={true}
-              className={styles.barChart}
-            />
+          {/* Bar Chart Section */}
+          <div className={styles.chartSection}>
+            <div className={styles.chartHeader}>
+              <h4 className={styles.chartTitle}>최근 플레이 패턴</h4>
+            </div>
+            <div className={styles.barChartWrapper}>
+              <BarChart
+                data={barData}
+                size="s"
+                showValues={true}
+                className={styles.barChart}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

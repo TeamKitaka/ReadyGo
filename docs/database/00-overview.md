@@ -79,7 +79,7 @@ Supabase 기반 데이터베이스 구조를 문서화한다.
 
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
-- **Last Updated At**: 2025-12-24
+- **Last Updated At**: 2026-01-12
 - **Document Version**: v1.0.0
 - **Status**: Active
 - **Source of Truth**:

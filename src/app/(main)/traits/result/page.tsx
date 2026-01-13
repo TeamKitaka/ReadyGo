@@ -25,6 +25,7 @@ type TraitsResultApiResponse = {
     dayTypes: string[];
     timeSlots: string[];
   };
+  isSteamConnected: boolean;
 };
 
 const fetchTraitsResult = async (): Promise<TraitsResultApiResponse | null> => {
@@ -110,6 +111,7 @@ export default async function Page() {
       }}
       matchTypes={matchTypes}
       characteristics={animalMeta.checkSentences}
+      isSteamConnected={result.isSteamConnected}
     />
   );
 }

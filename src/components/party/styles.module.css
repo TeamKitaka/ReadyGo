@@ -25,7 +25,7 @@
   margin: 0;
   padding: 0;
   font-family: var(--typo-heading-2xl-font-family);
-  font-size: var(--typo-heading-2xl-line-height);
+  font-size: var(--typo-heading-2xl-font-size);
   line-height: var(--typo-heading-2xl-line-height);
   font-weight: var(--typo-heading-2xl-font-weight);
   color: var(--color-text-primary);
@@ -35,7 +35,7 @@
   margin: 0;
   padding: 0;
   font-family: var(--typo-body-lg-font-family);
-  font-size: var(--typo-heading-lg-font-size);
+  font-size: var(--typo-body-lg-font-size);
   line-height: var(--typo-body-lg-line-height);
   font-weight: var(--typo-body-lg-font-weight);
   color: var(--color-text-secondary);
@@ -69,8 +69,10 @@
   width: 839px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   box-sizing: border-box;
+  flex: 1;
 }
 
 .filterSelect {
@@ -82,8 +84,12 @@
 }
 
 .searchInput {
+  display: none;
   width: 100%;
-  flex: 1;
+}
+
+.searchbarWidth {
+  width: 100%;
 }
 
 .newPartyButton {
@@ -97,9 +103,53 @@
 .tabArea {
   width: 1272px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: space-between;
   gap: 0;
   box-sizing: border-box;
+}
+
+.tabWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.sortArea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+.sortOption {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--typo-body-md-font-family);
+  font-size: var(--typo-body-md-font-size);
+  line-height: var(--typo-body-md-line-height);
+  font-weight: var(--typo-body-md-font-weight);
+  color: var(--color-text-interactive-secondary);
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.sortOption:hover {
+  color: var(--color-text-interactive-primary);
+}
+
+.sortOptionActive {
+  color: var(--color-text-interactive-primary);
+  font-weight: var(--typo-body-md-semibold-font-weight);
+}
+
+.sortSeparator {
+  color: var(--color-text-interactive-secondary);
+  font-family: var(--typo-body-md-font-family);
+  font-size: var(--typo-body-md-font-size);
+  line-height: var(--typo-body-md-line-height);
 }
 
 .tab {
@@ -178,4 +228,136 @@
 
 .floatButton:hover {
   border-color: var(--color-border-interactive-secondary);
+}
+
+/* 반응형 디자인 - 웹 (1448px 이하) */
+@media (max-width: 1448px) {
+  .container {
+    padding: 24px;
+  }
+
+  .titleArea {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .contentWrapper {
+    width: 100%;
+    max-width: 100%;
+    padding: 24px;
+  }
+
+  .searchArea {
+    width: 100%;
+    height: auto;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .filterSearchWrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .filterSelect {
+    width: 240px;
+    flex-shrink: 0;
+  }
+
+  .searchInput {
+    display: block;
+    width: 100%;
+  }
+
+  .newPartyButton {
+    width: 131px;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  .tabArea {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+  }
+
+  .mainArea {
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .sortArea {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+}
+
+/* 반응형 디자인 - 모바일 (768px 이하) */
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+    gap: 24px;
+  }
+
+  .contentWrapper {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .searchArea {
+    gap: 12px;
+  }
+
+  .filterSearchWrapper {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .filterSelect {
+    width: 100%;
+  }
+
+  .searchInput {
+    order: 0;
+    flex: 0 0 auto;
+  }
+
+  .newPartyButton {
+    width: 100%;
+    order: 0;
+  }
+
+  .tabArea {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .sortArea {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  .floatButton {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
+/* 화면 540px 이하 - 반응형 무시하고 고정 */
+@media (max-width: 540px) {
+  .mainArea {
+    align-items: center;
+  }
+
+  .sortArea {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
 }

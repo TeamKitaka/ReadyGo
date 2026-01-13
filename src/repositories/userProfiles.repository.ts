@@ -1,4 +1,5 @@
 import { AnimalType } from '@/commons/constants/animal/animal.enum';
+import { TierType } from '@/commons/constants/tierType.enum';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 
@@ -13,6 +14,7 @@ export type UserProfileRow = {
   avatar_url: string | null;
   nickname: string | null;
   tier: string;
+  steam_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -31,6 +33,18 @@ export const findByUserId = async (
     .select('*')
     .eq('id', userId)
     .maybeSingle();
+};
+
+/**
+ * user_profiles 레코드를 여러 user_id(id)로 조회한다
+ * - DB 접근만 수행, 에러 처리 및 데이터 가공 없음
+ * - Supabase 응답 구조를 그대로 반환
+ */
+export const findByUserIds = async (
+  client: SupabaseClient<Database>,
+  userIds: string[]
+) => {
+  return await client.from('user_profiles').select('*').in('id', userIds);
 };
 
 /**
@@ -73,4 +87,137 @@ export const getAllUserIds = async (
     .filter((id): id is string => id !== null && id !== undefined);
 
   return userIds;
+};
+
+/**
+ * user_traits가 있는 user_profiles의 user id 목록을 조회한다
+ * - user_traits를 조회하여 성향분석 완료된 사용자만 반환
+ * - Cold Start 사용자 제외
+ */
+export const getAllUserIdsWithTraits = async (
+  client: SupabaseClient<Database>
+): Promise<string[]> => {
+  // user_traits를 조회하여 성향분석 완료된 사용자 ID만 반환
+  const { data: traitsData, error: traitsError } = await client
+    .from('user_traits')
+    .select('user_id');
+
+  if (traitsError) {
+    throw traitsError;
+  }
+
+  if (!traitsData || traitsData.length === 0) {
+    return [];
+  }
+
+  const userIdsWithTraits = traitsData
+    .map((row) => row.user_id)
+    .filter((id): id is string => id !== null && id !== undefined);
+
+  return userIdsWithTraits;
+};
+
+/**
+ * user_profiles의 temperature_score를 조회한다
+ * - DB 접근만 수행, 에러 처리는 상위 레이어에서 담당
+ */
+export const getTemperatureScore = async (
+  client: SupabaseClient<Database>,
+  userId: string
+): Promise<number | null> => {
+  const { data, error } = await client
+    .from('user_profiles')
+    .select('temperature_score')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.temperature_score ?? null;
+};
+
+/**
+ * user_profiles의 temperature_score를 업데이트한다 (기존 점수 + change)
+ * - DB 접근만 수행, 에러 처리는 상위 레이어에서 담당
+ */
+export const updateTemperatureScore = async (
+  client: SupabaseClient<Database>,
+  userId: string,
+  change: number
+): Promise<void> => {
+  // 현재 온도 점수 조회
+  const currentScore = await getTemperatureScore(client, userId);
+  if (currentScore === null) {
+    throw new Error(`User profile not found for userId: ${userId}`);
+  }
+
+  // 새로운 온도 점수 계산 (기존 점수 + change)
+  const newScore = Math.max(0, Math.min(100, currentScore + change));
+
+  const { error } = await client
+    .from('user_profiles')
+    .update({ temperature_score: newScore })
+    .eq('id', userId);
+
+  if (error) {
+    throw error;
+  }
+};
+
+/**
+ * user_profiles의 tier를 조회한다
+ * - DB 접근만 수행, 에러 처리는 상위 레이어에서 담당
+ */
+export const getTier = async (
+  client: SupabaseClient<Database>,
+  userId: string
+): Promise<TierType | null> => {
+  const { data, error } = await client
+    .from('user_profiles')
+    .select('tier')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return (data?.tier as TierType) ?? null;
+};
+
+/**
+ * user_profiles의 tier를 업데이트한다
+ * - DB 접근만 수행, 에러 처리는 상위 레이어에서 담당
+ */
+export const updateTier = async (
+  client: SupabaseClient<Database>,
+  userId: string,
+  newTier: TierType
+): Promise<void> => {
+  const { error } = await client
+    .from('user_profiles')
+    .update({ tier: newTier })
+    .eq('id', userId);
+
+  if (error) {
+    throw error;
+  }
+};
+
+/**
+ * user_profiles의 steam_id를 조회한다
+ * - DB 접근만 수행, 에러 처리는 상위 레이어에서 담당
+ * - Supabase 응답 구조를 그대로 반환
+ */
+export const getSteamId = async (
+  client: SupabaseClient<Database>,
+  userId: string
+) => {
+  return await client
+    .from('user_profiles')
+    .select('steam_id')
+    .eq('id', userId)
+    .maybeSingle();
 };

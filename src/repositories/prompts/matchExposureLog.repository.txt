@@ -1,0 +1,98 @@
+# Match Exposure Log Repository 프롬프트
+
+## 개요
+match_exposure_log 테이블에 대한 데이터 접근 계층입니다.
+매칭 목록 노출 이력을 기록하고 조회하여 중복 방지 기능을 지원합니다.
+
+## 책임
+- match_exposure_log 테이블 CRUD
+- 매칭 목록 노출 이력 관리
+- 순수 DB 접근만 담당
+
+## 비책임
+- 비즈니스 로직 (Service에서 처리)
+- 데이터 변환 (ViewModel에서 처리)
+
+## 주요 함수
+
+### findRecentByViewer
+**목적**: 최근 N시간 내 노출된 target_id 조회
+
+**파라미터**:
+- client: Supabase 클라이언트
+- viewerId: viewer 사용자 ID
+- hours: 조회할 시간 범위 (시간 단위)
+
+**반환값**: 최근 노출된 target_id 목록
+
+**사용 예시**:
+```typescript
+const { data: recentExposures } = await findRecentByViewer(client, viewerId, 4);
+// 4시간 이내 노출된 사용자 목록 조회
+```
+
+### bulkInsert
+**목적**: 여러 노출 이력 한 번에 기록 (중복 무시)
+
+**파라미터**:
+- client: Supabase 클라이언트
+- viewerId: viewer 사용자 ID
+- targetIds: target 사용자 ID 목록
+- context: 노출 컨텍스트 (기본값: 'match_list')
+
+**반환값**: 삽입된 레코드
+
+**사용 예시**:
+```typescript
+await bulkInsert(client, viewerId, ['user1', 'user2', 'user3'], 'match_list');
+// 매칭 목록에 노출된 3명의 사용자 기록
+```
+
+**주의사항**:
+- targetIds가 빈 배열이면 early return
+- 중복 삽입은 자동으로 무시됨 (Supabase 특성)
+
+### deleteOldRecords
+**목적**: 오래된 로그 정리 (Cron용)
+
+**파라미터**:
+- client: Supabase 클라이언트
+- days: 삭제할 기준 일수 (기본값: 7일)
+
+**반환값**: 삭제 결과
+
+**사용 예시**:
+```typescript
+await deleteOldRecords(client, 7);
+// 7일 이상 된 노출 이력 삭제
+```
+
+## 테이블 스키마
+```sql
+CREATE TABLE match_exposure_log (
+  id BIGSERIAL PRIMARY KEY,
+  viewer_id UUID NOT NULL,
+  target_id UUID NOT NULL,
+  exposed_at TIMESTAMPTZ DEFAULT NOW(),
+  context TEXT DEFAULT 'match_list'
+);
+```
+
+## 인덱스
+- idx_exposure_viewer_time: (viewer_id, exposed_at DESC)
+- idx_exposure_viewer_target_time: (viewer_id, target_id, exposed_at DESC)
+
+## RLS 정책
+- 사용자는 자신의 노출 이력만 조회 가능
+- 쓰기는 서비스 롤만 가능 (암묵적 제한)
+
+## 사용 흐름
+1. 매칭 목록 조회 시 findRecentByViewer로 최근 노출 이력 확인
+2. 중복 제외 후 새로운 매칭 결과 생성
+3. bulkInsert로 노출 이력 기록
+4. 주기적으로 deleteOldRecords로 오래된 로그 정리 (Cron)
+
+## 연관 파일
+- src/services/match/getMatchList.service.ts (사용처)
+- supabase/migrations/20260109120001_step2_exposure_log.sql (테이블 생성)
+

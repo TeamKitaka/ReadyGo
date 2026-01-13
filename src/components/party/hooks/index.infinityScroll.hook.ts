@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { PartyCardProps } from '../ui/card/card';
 import { AnimalType } from '@/commons/constants/animal';
 import { useAuth } from '@/commons/providers/auth/auth.provider';
+import { SortOption } from './index.sort.hook';
 
 // API 응답 타입
 interface PartyPost {
@@ -214,10 +215,101 @@ const truncateDescription = (
   return `${description.substring(0, maxLength)}...`;
 };
 
+// 날짜와 시간을 정확하게 파싱하여 Date 객체를 생성하는 헬퍼 함수
+// startDate: "YYYY-MM-DD" 형식
+// startTime: "HH:mm:ss" 형식
+// ISO 형식(YYYY-MM-DDTHH:mm:ss)으로 변환하여 정확한 날짜/시간 비교 가능
+const parseStartDateTime = (
+  startDate: string | undefined,
+  startTime: string | undefined
+): Date | null => {
+  if (!startDate || !startTime) {
+    return null;
+  }
+  try {
+    // ISO 형식으로 변환: "YYYY-MM-DD HH:mm:ss" → "YYYY-MM-DDTHH:mm:ss"
+    const isoString = `${startDate}T${startTime}`;
+    const date = new Date(isoString);
+    // 유효한 날짜인지 확인
+    if (isNaN(date.getTime())) {
+      return null;
+    }
+    return date;
+  } catch {
+    return null;
+  }
+};
+
+// 파티 목록 정렬 함수
+const sortPartyList = (
+  parties: PartyCardProps[],
+  sortOption: SortOption
+): PartyCardProps[] => {
+  const now = new Date();
+
+  // 시작시간이 지난 카드와 지나지 않은 카드 분리
+  const activeParties = parties.filter((p) => {
+    const startDateTime = parseStartDateTime(p.startDate, p.startTime);
+    if (!startDateTime) {
+      return true; // 날짜/시간 정보가 없거나 파싱 실패 시 활성으로 간주
+    }
+    return startDateTime >= now;
+  });
+
+  const expiredParties = parties.filter((p) => {
+    const startDateTime = parseStartDateTime(p.startDate, p.startTime);
+    if (!startDateTime) {
+      return false; // 날짜/시간 정보가 없거나 파싱 실패 시 만료되지 않은 것으로 간주
+    }
+    return startDateTime < now;
+  });
+
+  // 활성 카드 정렬
+  if (sortOption === 'latest') {
+    activeParties.sort((a, b) => {
+      if (!a.createdAt || !b.createdAt) {
+        return 0;
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  } else if (sortOption === 'deadline') {
+    activeParties.sort((a, b) => {
+      const dateA = parseStartDateTime(a.startDate, a.startTime);
+      const dateB = parseStartDateTime(b.startDate, b.startTime);
+      if (!dateA || !dateB) {
+        return 0;
+      }
+      return dateA.getTime() - dateB.getTime();
+    });
+  }
+
+  // 지난 카드도 같은 방식으로 정렬
+  if (sortOption === 'latest') {
+    expiredParties.sort((a, b) => {
+      if (!a.createdAt || !b.createdAt) {
+        return 0;
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  } else if (sortOption === 'deadline') {
+    expiredParties.sort((a, b) => {
+      const dateA = parseStartDateTime(a.startDate, a.startTime);
+      const dateB = parseStartDateTime(b.startDate, b.startTime);
+      if (!dateA || !dateB) {
+        return 0;
+      }
+      return dateA.getTime() - dateB.getTime();
+    });
+  }
+
+  return [...activeParties, ...expiredParties];
+};
+
 export const useInfinitePartyList = (
   genre?: string,
   search?: string,
-  tab?: 'all' | 'participating'
+  tab?: 'all' | 'participating',
+  sort?: SortOption
 ): UseInfinitePartyListReturn => {
   const { user } = useAuth();
   const [data, setData] = useState<PartyCardProps[]>([]);
@@ -264,6 +356,12 @@ export const useInfinitePartyList = (
           user?.id && party.creator_id && user.id === party.creator_id
         );
 
+        // 참가 여부 계산: members 배열에서 현재 사용자가 포함되어 있는지 확인
+        const partyMembers = membersMap.get(party.id) || [];
+        const isParticipant = Boolean(
+          user?.id && partyMembers.some((member) => member.user_id === user.id)
+        );
+
         return {
           title: party.party_title,
           description: truncateDescription(party.description),
@@ -279,6 +377,10 @@ export const useInfinitePartyList = (
           },
           partyId: party.id,
           isLeader,
+          startDate: party.start_date,
+          startTime: party.start_time,
+          createdAt: party.created_at,
+          isParticipant,
         };
       });
     },
@@ -296,7 +398,7 @@ export const useInfinitePartyList = (
     setIsInitialLoad(true);
     setIsLoading(true);
     setIsLoadingMore(false);
-  }, [genre, search, tab]);
+  }, [genre, search, tab, sort]);
 
   // user 변경 시 기존 데이터의 isLeader 값 재계산
   useEffect(() => {
@@ -426,8 +528,11 @@ export const useInfinitePartyList = (
           profiles
         );
 
+        // 정렬 적용
+        const sortedData = sortPartyList(transformedData, sort || 'latest');
+
         // 초기 로드: 6개 미만이 와도 그 데이터는 표시
-        setData(transformedData);
+        setData(sortedData);
         setOffset(INITIAL_LIMIT);
         // 받은 데이터가 limit(6개)보다 적으면 더 이상 데이터가 없다는 의미
         // limit과 같거나 더 많으면 더 불러올 데이터가 있을 수 있음
@@ -450,7 +555,7 @@ export const useInfinitePartyList = (
 
     fetchInitialData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInitialLoad, genre, search, tab]);
+  }, [isInitialLoad, genre, search, tab, sort]);
 
   // 추가 데이터 로드
   const loadMore = useCallback(async () => {
@@ -525,7 +630,11 @@ export const useInfinitePartyList = (
         setHasMore(false);
       } else {
         // 10개 미만이 와도 그 데이터는 표시하고, 더 이상 데이터가 없으면 hasMore를 false로 설정
-        setData((prev) => [...prev, ...transformedData]);
+        // 새로 로드된 데이터를 기존 데이터에 추가한 후 전체 정렬
+        setData((prev) => {
+          const combined = [...prev, ...transformedData];
+          return sortPartyList(combined, sort || 'latest');
+        });
         setOffset((prev) => prev + partyList.length);
         // 받은 데이터가 limit(10개)보다 적으면 더 이상 데이터가 없다는 의미
         // limit과 같거나 더 많으면 더 불러올 데이터가 있을 수 있음
@@ -544,7 +653,7 @@ export const useInfinitePartyList = (
     }
     // transformPartyData는 useCallback으로 감싸져 있고 의존성이 없으므로 안정적
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInitialLoad, isLoadingMore, hasMore, offset, genre, search, tab]);
+  }, [isInitialLoad, isLoadingMore, hasMore, offset, genre, search, tab, sort]);
 
   // reset 함수
   const reset = useCallback(() => {

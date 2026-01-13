@@ -14,7 +14,7 @@ database.types.ts와 본 문서는 항상 동일 커밋에 포함되어야 한�
 # Supabase Schema Analysis
 
 Schema: public  
-Total Tables: 35  
+Total Tables: 38  
 Generated from: database.types.ts
 
 ## Scope - 분석 범위
@@ -45,10 +45,13 @@ Generated from: database.types.ts
 - chat_rooms
 - error_logs
 - event_logs
+- game_start_logs
 - friend_requests
 - friendships
 - match_filters
 - match_recent_views
+- match_results_cache
+- match_exposure_log
 - match_scores
 - notifications
 - party_activity_logs
@@ -75,7 +78,7 @@ Generated from: database.types.ts
 - user_play_schedules
 ```
 
-📌 총 35개 (public schema 기준)
+📌 총 38개 (public schema 기준)
 
 ## Column Definition Rules
 
@@ -134,8 +137,8 @@ Generated from: database.types.ts
 
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
-- **Last Updated At**: 2025-01-07
-- **Document Version**: v1.0.5
+- **Last Updated At**: 2026-01-12
+- **Document Version**: v1.0.6
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
@@ -151,3 +154,5 @@ Generated from: database.types.ts
 |  v1.0.3 | 2025-12-29 | user_play_schedules 테이블 추가                   |
 |  v1.0.4 | 2025-01-13 | chat_blocks 테이블명을 user_blocks로 변경         |
 |  v1.0.5 | 2025-01-07 | steam_user_stats 테이블 추가                      |
+|  v1.0.6 | 2026-01-09 | match_results_cache 테이블 추가 (Step 1 캐싱)     |
+|  v1.0.7 | 2026-01-09 | match_exposure_log 테이블 추가 (Step 2 중복 방지) |

@@ -5,6 +5,7 @@ import * as steamSyncLogRepository from '../../repositories/steamSyncLogReposito
 import * as steamGameRepository from '../../repositories/steamGameRepository.ts';
 import * as steamApiClient from './steamApiClient.ts';
 import * as steamStoreApiClient from './steamStoreApiClient.ts';
+import { updateSteamUserStats } from './updateSteamUserStats.service.ts';
 
 /**
  * syncSteamGames Service
@@ -306,7 +307,19 @@ export const syncSteamGames = async (
     syncedGamesCount: syncedCount,
   });
 
-  // 8. Result 반환
+  // 8. steam_user_stats 업데이트
+  try {
+    await updateSteamUserStats(client, userId);
+    console.log(`[Sync User ${userId}] Steam user stats updated`);
+  } catch (statsError) {
+    // stats 업데이트 실패는 로그만 남기고 동기화는 성공으로 처리
+    console.error(
+      `[Sync User ${userId}] Failed to update steam_user_stats:`,
+      statsError
+    );
+  }
+
+  // 9. Result 반환
   return {
     status: 'success',
     syncedGamesCount: syncedCount,

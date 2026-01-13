@@ -6,6 +6,7 @@ import Avatar from '@/commons/components/avatar';
 import Button from '@/commons/components/button';
 import Tag from '@/commons/components/tag';
 import { AnimalType } from '@/commons/constants/animal';
+import { usePartyNavigation } from '@/hooks/usePartyNavigation';
 
 export interface PartyMember {
   /**
@@ -19,6 +20,10 @@ export interface PartyMember {
 }
 
 export interface PartyCardProps {
+  /**
+   * 파티 게시글 ID
+   */
+  postId: string | number;
   /**
    * 파티 제목
    */
@@ -58,6 +63,7 @@ export interface PartyCardProps {
 }
 
 export default function PartyCard({
+  postId,
   title,
   gameName,
   description,
@@ -68,6 +74,8 @@ export default function PartyCard({
   onJoinClick,
   className = '',
 }: PartyCardProps) {
+  const { navigateToPartyDetail } = usePartyNavigation();
+
   const containerClasses = [styles.container, className]
     .filter(Boolean)
     .join(' ');
@@ -76,6 +84,12 @@ export default function PartyCard({
   const displayMembers = members.slice(0, 3);
   // 나머지 인원
   const remainingMembers = members.length > 3 ? members.length - 3 : 0;
+
+  // 상세보기 버튼 클릭 핸들러
+  const handleDetailClick = () => {
+    onJoinClick?.();
+    navigateToPartyDetail(postId);
+  };
 
   return (
     <div className={containerClasses}>
@@ -135,9 +149,9 @@ export default function PartyCard({
             size="m"
             shape="round"
             className={styles.joinButton}
-            onClick={onJoinClick}
+            onClick={handleDetailClick}
           >
-            참여하기
+            상세보기
           </Button>
         </div>
       </div>

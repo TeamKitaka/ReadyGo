@@ -1,0 +1,193 @@
+/* 매치 리스트 스켈레톤 - 원본 스타일 복사 */
+.skeletonContainer {
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 36px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  height: fit-content;
+}
+
+/* 필터 섹션 */
+.filterSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 48px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* 필터 그룹 (Selectbox들) */
+/* 3열 이상 (1025px ~): 320px 고정 */
+@media (min-width: 1025px) {
+  .filterGroup {
+    width: fit-content;
+    min-width: 286.67px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex: 1;
+  }
+
+  .selectbox {
+    width: 320px;
+    min-width: 320px;
+    max-width: 320px;
+    height: 48px;
+    border-radius: 12px;
+    flex-shrink: 0;
+  }
+
+  .selectboxFirst {
+    min-width: 171.19px;
+  }
+
+  .selectboxSecond {
+    min-width: 103.48px;
+  }
+}
+
+/* 갱신 버튼 스켈레톤 */
+.refreshButton {
+  height: 48px;
+  width: 120px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+/* 반응형 - 2열일 때 필터 레이아웃 변경 */
+@media (max-width: 1024px) {
+  .filterSection {
+    gap: 12px;
+  }
+
+  .filterGroup {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    flex: unset;
+  }
+
+  .selectbox {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    height: 48px;
+    border-radius: 12px;
+  }
+
+  .selectboxFirst {
+    min-width: 171.19px;
+  }
+
+  .selectboxSecond {
+    min-width: 103.48px;
+  }
+
+  .refreshButton {
+    width: 100%;
+  }
+}
+
+/* 매치 카드 그리드 */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(300px, 1fr));
+  gap: 24px;
+  width: 100%;
+}
+
+/* side-panel이 열렸을 때 그리드 (3열 x 4행) */
+.gridWithPanel {
+  grid-template-columns: repeat(3, minmax(300px, 1fr));
+}
+
+/* 반응형 레이아웃 - 대형 데스크탑 (1920px 이상) - 4열 최대 크기 제한 */
+@media (min-width: 1920px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(300px, 396px));
+    max-width: calc(396px * 4 + 24px * 3);
+  }
+
+  .gridWithPanel {
+    grid-template-columns: repeat(3, minmax(300px, 396px));
+    max-width: calc(396px * 3 + 24px * 2);
+  }
+}
+
+/* 반응형 레이아웃 - 중형 데스크탑 (1440px ~ 1919px) - 3열 유연 */
+@media (min-width: 1440px) and (max-width: 1919px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(300px, 1fr));
+  }
+
+  .gridWithPanel {
+    grid-template-columns: repeat(2, minmax(300px, 1fr));
+  }
+}
+
+/* 반응형 레이아웃 - 소형 데스크탑 (1024px ~ 1439px) - 3열 유연 */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(300px, 1fr));
+  }
+
+  .gridWithPanel {
+    grid-template-columns: repeat(2, minmax(300px, 1fr));
+  }
+}
+
+@media (max-width: 1024px) {
+  .grid,
+  .gridWithPanel {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .skeletonContainer {
+    padding: 24px;
+    border-radius: 24px;
+  }
+
+  .filterSection {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .filterGroup {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .selectbox {
+    width: 100%;
+    min-width: unset;
+    max-width: unset;
+  }
+
+  .selectboxFirst {
+    min-width: 171.19px;
+  }
+
+  .selectboxSecond {
+    min-width: 103.48px;
+  }
+
+  .refreshButton {
+    width: 100%;
+  }
+
+  .grid,
+  .gridWithPanel {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}

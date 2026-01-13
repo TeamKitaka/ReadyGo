@@ -1,0 +1,57 @@
+아래의 조건을 모두 적용하여, 아래의 요구사항을 모두 구현할 것.
+구현 결과를 체크리스트로 반환할 것.
+
+==============================================
+
+조건-커서룰) 아래의 커서룰을 적용하여 작업하고, 이 작업이 끝나면 해당 rules 적용 결과를 체크리스트로 반환할 것.
+            - @01-common.mdc
+            - @02-wireframe.mdc
+            - @03-ui.mdc
+
+==============================================
+
+조건-파일경로) 구현될 TSX 파일경로: src/components/match/ui/match-list/matchListSkeleton.tsx
+조건-파일경로) 구현될 CSS 파일경로: src/components/match/ui/match-list/matchListSkeleton.module.css
+
+==============================================
+
+조건-공통목록) 사용할 색상 목록(global.css에 명시된 변수 토큰 활용)
+            - 비슷한 토큰 선택하여 사용(하드코딩 금지)
+
+조건-공통목록) 사용할 타이포그래피 목록(global.css에 명시된 변수 토큰 활용)
+            - 비슷한 토큰 선택하여 사용(하드코딩 금지)
+
+조건-공통목록) 사용할 컴포넌트 목록
+            - MatchCardSkeleton (12개 표시)
+            - shadcn의 Skeleton 컴포넌트 (필터 섹션)
+
+==============================================
+
+핵심요구사항) skeleton list 컴포넌트는 다음의 규칙을 지켜 step-by-step 으로 구현하고, 적용 결과를 체크리스트로 반환할 것.
+            - shadcn의 Skeleton 컴포넌트를 사용하여 구현
+            - 원본 MatchList 컴포넌트의 레이아웃과 스타일을 정확히 복사
+            - 데이터 로딩 중일 때 표시
+            - 총 12개의 MatchCardSkeleton 표시 (3행 x 4열)
+            - side-panel 상태에 따른 그리드 조정 (isSidePanelOpen prop)
+            - 실제 MatchList 컴포넌트의 레이아웃 구조를 반영하여 스켈레톤 구성
+              * 필터 섹션 (Selectbox 2개, 갱신 버튼)
+              * 그리드 영역 (12개의 MatchCardSkeleton)
+            - 필터 섹션 스켈레톤
+              * Selectbox 첫 번째: 기본 320px, 최소 171.19px (placeholder "매칭률 75% 이상" 기반)
+              * Selectbox 두 번째: 기본 320px, 최소 103.48px (placeholder "온라인" 기반)
+              * 갱신 버튼: 120px x 48px
+            - 스켈레톤 컨테이너의 배경색은 실제 리스트와 동일하게 var(--color-bg-primary) 사용
+            - 스켈레톤 컨테이너의 border-radius는 실제 리스트와 동일하게 36px 사용
+            - 스켈레톤 컨테이너의 padding은 실제 리스트와 동일하게 32px 사용
+            - 그리드 레이아웃은 원본과 완전히 동일하게 구현
+              * 기본: repeat(4, minmax(300px, 1fr)), gap 24px
+              * side-panel 열림: repeat(3, minmax(300px, 1fr))
+              * 1920px 이상: 최대 너비 제한 적용
+              * 1440px~1919px: 3열
+              * 1024px~1439px: 3열
+              * 1024px 이하: 2열
+              * 768px 이하: 1열, gap 16px
+            - 모든 반응형 브레이크포인트에서 Selectbox 최소 너비 유지
+
+
+

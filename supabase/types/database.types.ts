@@ -272,6 +272,60 @@ export type Database = {
         }
         Relationships: []
       }
+      game_start_logs: {
+        Row: {
+          actor_id: string
+          context_id: string
+          context_type: string
+          created_at: string
+          game_id: string | null
+          game_name: string | null
+          id: number
+        }
+        Insert: {
+          actor_id: string
+          context_id: string
+          context_type: string
+          created_at?: string
+          game_id?: string | null
+          game_name?: string | null
+          id?: number
+        }
+        Update: {
+          actor_id?: string
+          context_id?: string
+          context_type?: string
+          created_at?: string
+          game_id?: string | null
+          game_name?: string | null
+          id?: number
+        }
+        Relationships: []
+      }
+      match_exposure_log: {
+        Row: {
+          context: string | null
+          exposed_at: string | null
+          id: number
+          target_id: string
+          viewer_id: string
+        }
+        Insert: {
+          context?: string | null
+          exposed_at?: string | null
+          id?: number
+          target_id: string
+          viewer_id: string
+        }
+        Update: {
+          context?: string | null
+          exposed_at?: string | null
+          id?: number
+          target_id?: string
+          viewer_id?: string
+        }
+        Relationships: []
+      }
       match_filters: {
         Row: {
           age_range: string | null
@@ -320,6 +374,36 @@ export type Database = {
         }
         Relationships: []
       }
+      match_results_cache: {
+        Row: {
+          computed_at: string | null
+          context: string
+          reasons: Json
+          score: number
+          tags: Json
+          target_id: string
+          viewer_id: string
+        }
+        Insert: {
+          computed_at?: string | null
+          context?: string
+          reasons: Json
+          score: number
+          tags: Json
+          target_id: string
+          viewer_id: string
+        }
+        Update: {
+          computed_at?: string | null
+          context?: string
+          reasons?: Json
+          score?: number
+          tags?: Json
+          target_id?: string
+          viewer_id?: string
+        }
+        Relationships: []
+      }
       match_scores: {
         Row: {
           calculated_at: string | null
@@ -346,7 +430,10 @@ export type Database = {
       }
       notifications: {
         Row: {
+          actor_id: string | null
           created_at: string | null
+          entity_id: string | null
+          entity_type: string | null
           id: number
           is_read: boolean | null
           message: string | null
@@ -355,7 +442,10 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          actor_id?: string | null
           created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
           id?: number
           is_read?: boolean | null
           message?: string | null
@@ -364,7 +454,10 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          actor_id?: string | null
           created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
           id?: number
           is_read?: boolean | null
           message?: string | null
@@ -441,6 +534,7 @@ export type Database = {
       party_messages: {
         Row: {
           content: string | null
+          content_type: string | null
           created_at: string | null
           id: number
           post_id: number | null
@@ -448,6 +542,7 @@ export type Database = {
         }
         Insert: {
           content?: string | null
+          content_type?: string | null
           created_at?: string | null
           id?: number
           post_id?: number | null
@@ -455,6 +550,7 @@ export type Database = {
         }
         Update: {
           content?: string | null
+          content_type?: string | null
           created_at?: string | null
           id?: number
           post_id?: number | null
@@ -693,24 +789,33 @@ export type Database = {
         Row: {
           active_time_slots: string[]
           avg_weekly_playtime: number
+          genre_playtime_2w_minutes: Json | null
           main_genres: string[]
           play_style: string
+          top_genres_2w: string[]
+          total_playtime_2w_minutes: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           active_time_slots?: string[]
           avg_weekly_playtime?: number
+          genre_playtime_2w_minutes?: Json | null
           main_genres?: string[]
           play_style: string
+          top_genres_2w?: string[]
+          total_playtime_2w_minutes?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           active_time_slots?: string[]
           avg_weekly_playtime?: number
+          genre_playtime_2w_minutes?: Json | null
           main_genres?: string[]
           play_style?: string
+          top_genres_2w?: string[]
+          total_playtime_2w_minutes?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -850,7 +955,7 @@ export type Database = {
           nickname?: string | null
           status_message?: string | null
           steam_id?: string | null
-          temperature_score?: number
+          temperature_score: number
           tier?: string
           updated_at?: string | null
         }

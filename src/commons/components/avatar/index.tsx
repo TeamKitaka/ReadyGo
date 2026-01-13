@@ -54,11 +54,19 @@ export default function Avatar({
     imageSrc = animalAssets.avatar;
   }
 
+  // unknown 아바타인지 확인 (imageUrl 또는 animalType으로 판단)
+  const isUnknownAvatar =
+    imageSrc.includes('unknown.svg') || animalType === AnimalType.unknown;
+
   const wrapperClasses = [styles.wrapper, styles[`size-${size}`], className]
     .filter(Boolean)
     .join(' ');
 
-  const imageContainerClasses = [styles.imageContainer, styles.colorFilter]
+  const imageContainerClasses = [
+    styles.imageContainer,
+    styles.colorFilter,
+    isUnknownAvatar ? styles.unknownAvatar : '',
+  ]
     .filter(Boolean)
     .join(' ');
 

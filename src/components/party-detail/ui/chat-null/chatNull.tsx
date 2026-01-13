@@ -4,11 +4,12 @@ import React from 'react';
 import Icon from '@/commons/components/icon';
 import Input from '@/commons/components/input';
 import styles from './styles.module.css';
+import parentStyles from '../../styles.module.css';
 
 export default function ChatNull() {
   return (
-    <div className={styles.chatArea}>
-      <div className={styles.chatLog}>
+    <div className={parentStyles.chatArea}>
+      <div className={`${parentStyles.chatLog} ${styles.chatLogCentered}`}>
         <div className={styles.chatLogContent}>
           <div className={styles.iconWrapper}>
             <Icon name="message-bubble" size={40} className={styles.icon} />
@@ -21,7 +22,7 @@ export default function ChatNull() {
           </p>
         </div>
       </div>
-      <div className={styles.messageArea}>
+      <div className={parentStyles.messageArea}>
         <Input
           variant="primary"
           state="disabled"

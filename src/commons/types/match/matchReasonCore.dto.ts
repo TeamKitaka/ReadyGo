@@ -21,6 +21,8 @@ import type { TraitKey } from '@/features/match/domain/utils/traitsSimilarity';
  *
  * - COMMON_GAME: 공통 게임 보유
  * - PLAY_TIME: 플레이 시간 유사성
+ * - STEAM_GENRE: Steam 장르 유사성
+ * - STEAM_PLAYSTYLE: Steam 플레이 스타일 호환성
  * - STYLE_SIMILARITY: 플레이 스타일 유사성 (Traits 기반)
  * - PARTY_EXPERIENCE: 파티 경험 유사성
  * - RELIABILITY: 신뢰도 점수
@@ -30,6 +32,8 @@ import type { TraitKey } from '@/features/match/domain/utils/traitsSimilarity';
 export type MatchReasonType =
   | 'COMMON_GAME'
   | 'PLAY_TIME'
+  | 'STEAM_GENRE'
+  | 'STEAM_PLAYSTYLE'
   | 'STYLE_SIMILARITY'
   | 'PARTY_EXPERIENCE'
   | 'RELIABILITY'
@@ -71,6 +75,28 @@ export type MatchReasonDetail =
        * 플레이 시간대(schedule) 기반 계산 결과
        */
       matchScore: number;
+    }
+  | {
+      type: 'STEAM_GENRE';
+      /**
+       * 공통 장르 이름
+       */
+      genre: string;
+      /**
+       * 장르 유사도 (0~100)
+       */
+      similarity: number;
+    }
+  | {
+      type: 'STEAM_PLAYSTYLE';
+      /**
+       * Viewer의 플레이 스타일
+       */
+      viewerStyle: string;
+      /**
+       * Target의 플레이 스타일
+       */
+      targetStyle: string;
     }
   | {
       type: 'STYLE_SIMILARITY';
@@ -134,6 +160,28 @@ export type MatchReasonDetail =
         dayType: string;
         timeSlot: string;
       }>;
+      /**
+       * Viewer의 시간대 타입
+       * UI에서 관계 기반 메시지 생성에 사용
+       */
+      viewerTimeType?:
+        | 'morning'
+        | 'afternoon'
+        | 'evening'
+        | 'lateNight'
+        | 'flexible'
+        | 'weekend';
+      /**
+       * Target의 시간대 타입
+       * UI에서 관계 기반 메시지 생성에 사용
+       */
+      targetTimeType?:
+        | 'morning'
+        | 'afternoon'
+        | 'evening'
+        | 'lateNight'
+        | 'flexible'
+        | 'weekend';
     };
 
 /**

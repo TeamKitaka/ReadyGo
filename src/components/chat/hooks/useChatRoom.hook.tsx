@@ -70,6 +70,8 @@ export interface UseChatRoomReturn {
   isBlocked: boolean; // 차단 상태
   sendMessage: (content: string, contentType?: string) => Promise<void>;
   markAsRead: (messageIds: number[]) => Promise<void>;
+  markAsReadOnScroll: (containerRef: React.RefObject<HTMLDivElement>) => void; // 스크롤 기반 읽음 처리
+  setMessageListContainerRef: (ref: React.RefObject<HTMLDivElement>) => void; // 메시지 리스트 컨테이너 ref 설정
   isLoading: boolean;
   error: string | null;
   isConnected: boolean;
@@ -112,6 +114,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   // postgres_changes 채널 관리
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -126,6 +129,13 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
   const triggerScrollToBottomRef = useRef<(() => void) | null>(null); // 스크롤 트리거 함수 ref
   const shouldAutoScrollRef = useRef(true); // 자동 스크롤 여부 (사용자가 수동 스크롤 시 false)
   const isInitialLoadRef = useRef(false); // 초기 로드 플래그
+  const readTimerRef = useRef<NodeJS.Timeout | null>(null); // 읽음 처리 타이머
+  const hasMarkedAsReadRef = useRef(false); // 이미 읽음 처리했는지 추적
+  const messageListContainerRef =
+    useRef<React.RefObject<HTMLDivElement> | null>(null); // 메시지 리스트 컨테이너 ref
+  const markRoomAsReadRef = useRef<
+    ((targetRoomId: number) => Promise<void>) | null
+  >(null); // 읽음 처리 함수 ref
 
   // onMessage ref 업데이트 (최신 콜백 유지)
   useEffect(() => {
@@ -152,11 +162,29 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         triggerScrollToBottomRef.current?.();
       }
 
-      // 채팅방이 열려있는 상태에서 상대방 메시지가 들어오면 채팅 목록의 안읽은 표시 즉시 제거
-      // (실제 읽음 처리는 markRoomAsRead에서 처리되지만, UI는 즉시 업데이트)
+      // 채팅방이 열려있는 상태에서 상대방 메시지가 들어오면 읽음 처리 고려
+      // 스크롤이 최하단에 있으면 즉시 읽음 처리, 그렇지 않으면 안읽음 표시 유지
       if (message.sender_id !== user?.id && message.room_id) {
-        // 낙관적 업데이트: 채팅 목록의 안읽은 표시 즉시 제거
-        markRoomAsReadOptimistic(message.room_id);
+        // 메시지 리스트 컨테이너가 있고 스크롤이 최하단에 있는지 확인
+        if (messageListContainerRef.current?.current) {
+          const container = messageListContainerRef.current.current;
+          const { scrollTop, scrollHeight, clientHeight } = container;
+          const scrollableHeight = scrollHeight - clientHeight;
+          const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+
+          // 스크롤이 최하단에 있으면 (50px 이내) 즉시 읽음 처리
+          if (scrollableHeight <= 0 || distanceFromBottom <= 50) {
+            if (!hasMarkedAsReadRef.current && markRoomAsReadRef.current) {
+              markRoomAsReadRef.current(message.room_id).catch((error) => {
+                console.error(
+                  'Failed to mark room as read on new message:',
+                  error
+                );
+              });
+            }
+          }
+          // 스크롤이 최하단에 없으면 안읽음 표시 유지 (낙관적 업데이트 하지 않음)
+        }
       }
 
       setMessages((prev) => {
@@ -174,7 +202,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         });
       });
     },
-    [user?.id, markRoomAsReadOptimistic]
+    [user?.id]
   );
 
   /**
@@ -186,6 +214,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       // 채널 참조를 먼저 null로 설정하여 중복 호출 방지
       channelRef.current = null;
       subscribedRoomIdRef.current = null;
+      setIsConnected(false);
       // 채널 제거 (이미 null로 설정했으므로 onClose 콜백에서 다시 cleanupChannel이 호출되지 않음)
       try {
         baseSupabase.removeChannel(channel);
@@ -199,6 +228,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     } else {
       // 채널이 없으면 subscribedRoomIdRef만 초기화
       subscribedRoomIdRef.current = null;
+      setIsConnected(false);
     }
   }, []);
 
@@ -210,6 +240,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     if (!targetRoomId || targetRoomId <= 0) {
       setIsLoading(false);
       setMessages([]);
+      setIsConnected(false);
       return;
     }
 
@@ -271,12 +302,14 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     async (targetRoomId: number) => {
       // roomId가 유효하지 않으면 early return
       if (!targetRoomId || targetRoomId <= 0) {
+        setIsConnected(false);
         cleanupChannel();
         return;
       }
 
       // user.id가 없으면 구독하지 않음
       if (!user?.id) {
+        setIsConnected(false);
         cleanupChannel();
         return;
       }
@@ -292,6 +325,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         // 참조를 먼저 null로 설정
         channelRef.current = null;
         subscribedRoomIdRef.current = null;
+        setIsConnected(false);
         // 채널 제거
         try {
           baseSupabase.removeChannel(oldChannel);
@@ -338,7 +372,11 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
             }
           )
           .subscribe((status) => {
-            if (status === 'CHANNEL_ERROR') {
+            if (status === 'SUBSCRIBED') {
+              setIsConnected(true);
+              setError(null);
+            } else if (status === 'CHANNEL_ERROR') {
+              setIsConnected(false);
               const errorMessage = 'Postgres changes channel error occurred';
               setError(errorMessage);
               console.error('Channel error:', errorMessage);
@@ -349,12 +387,19 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
                 subscribedRoomIdRef.current = null;
               }
             } else if (status === 'CLOSED') {
+              setIsConnected(false);
               // CLOSED 상태는 이미 채널이 닫힌 상태이므로 cleanupChannel을 호출하지 않음
               // cleanupChannel을 호출하면 removeChannel이 다시 호출되어 무한 루프 발생 가능
               if (channelRef.current === channel) {
                 channelRef.current = null;
                 subscribedRoomIdRef.current = null;
               }
+            } else if (status === 'TIMED_OUT') {
+              setIsConnected(false);
+              setError('채널 구독 시간 초과');
+            } else {
+              // 기타 상태 (예: 'JOINING', 'LEAVING' 등)
+              setIsConnected(false);
             }
           });
 
@@ -363,6 +408,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       } catch (error) {
         console.error('Failed to setup postgres_changes subscription:', error);
         setError('구독 설정에 실패했습니다.');
+        setIsConnected(false);
         cleanupChannel();
       }
     },
@@ -448,6 +494,14 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         return;
       }
 
+      // 이미 읽음 처리했으면 중복 호출 방지
+      if (
+        hasMarkedAsReadRef.current &&
+        previousRoomIdRef.current === targetRoomId
+      ) {
+        return;
+      }
+
       try {
         const response = await fetch('/api/chat/message/read', {
           method: 'POST',
@@ -486,12 +540,61 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
 
         // 채팅 목록의 안읽은 표시 즉시 업데이트
         markRoomAsReadOptimistic(targetRoomId);
+
+        // 읽음 처리 완료 표시
+        hasMarkedAsReadRef.current = true;
       } catch (error) {
         console.error('Failed to mark room as read:', error);
         // 백그라운드 처리이므로 사용자에게 에러 표시하지 않음
       }
     },
     [user?.id, markRoomAsReadOptimistic]
+  );
+
+  // markRoomAsRead의 최신 버전을 ref에 저장
+  useEffect(() => {
+    markRoomAsReadRef.current = markRoomAsRead;
+  }, [markRoomAsRead]);
+
+  /**
+   * 스크롤 기반 읽음 처리
+   * 스크롤이 최하단에 도달했을 때 호출
+   */
+  const markAsReadOnScroll = useCallback(
+    (containerRef: React.RefObject<HTMLDivElement>) => {
+      if (!roomId || roomId <= 0 || !user?.id) {
+        return;
+      }
+
+      // 이미 읽음 처리했으면 중복 호출 방지
+      if (hasMarkedAsReadRef.current) {
+        return;
+      }
+
+      // 스크롤이 최하단에 있는지 확인
+      const { scrollTop, scrollHeight, clientHeight } =
+        containerRef.current || {};
+      if (
+        !containerRef.current ||
+        scrollTop === undefined ||
+        scrollHeight === undefined ||
+        clientHeight === undefined
+      ) {
+        return;
+      }
+
+      const scrollableHeight = scrollHeight - clientHeight;
+      const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+
+      // 스크롤 가능한 높이가 없거나 하단에서 50px 이내이면 최하단으로 간주
+      if (scrollableHeight <= 0 || distanceFromBottom <= 50) {
+        // 읽음 처리
+        markRoomAsRead(roomId).catch((error) => {
+          console.error('Failed to mark room as read on scroll:', error);
+        });
+      }
+    },
+    [roomId, user?.id, markRoomAsRead]
   );
 
   /**
@@ -539,28 +642,68 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     [roomId, user?.id]
   );
 
+  // 이전 roomId를 추적하기 위한 ref
+  const previousRoomIdRef = useRef<number | null>(null);
+
   /**
    * roomId 또는 user?.id 변경 시 자동 처리
    */
   useEffect(() => {
     // roomId가 유효하지 않으면 early return
     if (!roomId || roomId <= 0) {
+      // 이전 채팅방이 있었다면 읽음 처리
+      const prevRoomId = previousRoomIdRef.current;
+      if (prevRoomId && prevRoomId > 0 && user?.id) {
+        // 즉시 낙관적 업데이트로 채팅 목록 업데이트
+        markRoomAsReadOptimistic(prevRoomId);
+        // 백그라운드에서 실제 읽음 처리
+        markRoomAsRead(prevRoomId).catch((error) => {
+          console.error('Failed to mark previous room as read:', error);
+        });
+      }
+      previousRoomIdRef.current = null;
       cleanupChannel();
       setMessages([]);
       seenMessageIdsRef.current.clear();
       setIsLoading(false);
+      setIsConnected(false);
       setError(null);
       return;
     }
 
     // user?.id가 없으면 채널 정리만 수행
     if (!user?.id) {
+      previousRoomIdRef.current = null;
       cleanupChannel();
       setMessages([]);
       seenMessageIdsRef.current.clear();
       setIsLoading(false);
+      setIsConnected(false);
       setError(null);
       return;
+    }
+
+    // 이전 채팅방이 있고 현재 채팅방과 다르면 읽음 처리
+    const prevRoomId = previousRoomIdRef.current;
+    if (prevRoomId && prevRoomId !== roomId && prevRoomId > 0) {
+      // 즉시 낙관적 업데이트로 채팅 목록 업데이트 (즉시 반영)
+      markRoomAsReadOptimistic(prevRoomId);
+      // 백그라운드에서 실제 읽음 처리
+      markRoomAsRead(prevRoomId).catch((error) => {
+        console.error('Failed to mark previous room as read:', error);
+      });
+    }
+
+    // 현재 roomId를 이전 roomId로 저장
+    previousRoomIdRef.current = roomId;
+
+    // 읽음 처리 상태 리셋
+    hasMarkedAsReadRef.current = false;
+
+    // 기존 타이머 정리
+    if (readTimerRef.current) {
+      clearTimeout(readTimerRef.current);
+      readTimerRef.current = null;
     }
 
     // 이전 채널 정리
@@ -578,15 +721,21 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     setError(null);
 
     // 초기 메시지 로드
-    loadMessages(roomId).then(async () => {
+    loadMessages(roomId).then(() => {
       // postgres_changes 구독
       subscribeToPostgresChanges(roomId);
-      // 읽음 처리 (await로 에러 확인)
-      try {
-        await markRoomAsRead(roomId);
-      } catch (error) {
-        console.error('Failed to mark room as read:', error);
-      }
+
+      // 타이머 기반 읽음 처리: 채팅방 접속 후 3초 후 읽음 처리
+      readTimerRef.current = setTimeout(() => {
+        if (
+          !hasMarkedAsReadRef.current &&
+          previousRoomIdRef.current === roomId
+        ) {
+          markRoomAsRead(roomId).catch((error) => {
+            console.error('Failed to mark room as read on timer:', error);
+          });
+        }
+      }, 3000); // 3초 후 읽음 처리
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, user?.id]);
@@ -599,10 +748,36 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
   }, [roomId]);
 
   /**
+   * 메시지 리스트 컨테이너 ref 설정 함수
+   */
+  const setMessageListContainerRef = useCallback(
+    (ref: React.RefObject<HTMLDivElement>) => {
+      messageListContainerRef.current = ref;
+    },
+    []
+  );
+
+  /**
    * 컴포넌트 언마운트 시 cleanup
    */
   useEffect(() => {
     return () => {
+      // 타이머 정리
+      if (readTimerRef.current) {
+        clearTimeout(readTimerRef.current);
+        readTimerRef.current = null;
+      }
+
+      // 언마운트 시 현재 채팅방 읽음 처리
+      const currentRoomId = previousRoomIdRef.current;
+      if (currentRoomId && currentRoomId > 0 && user?.id) {
+        // 즉시 낙관적 업데이트로 채팅 목록 업데이트
+        markRoomAsReadOptimistic(currentRoomId);
+        // 백그라운드에서 실제 읽음 처리 (언마운트 후에도 실행 가능하도록)
+        markRoomAsRead(currentRoomId).catch((error) => {
+          console.error('Failed to mark room as read on unmount:', error);
+        });
+      }
       // postgres_changes 채널 정리
       cleanupChannel();
     };
@@ -843,9 +1018,11 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     isBlocked,
     sendMessage,
     markAsRead,
+    markAsReadOnScroll,
+    setMessageListContainerRef,
     isLoading,
     error,
-    isConnected: false, // Realtime 연결 상태는 더 이상 사용하지 않음
+    isConnected,
     scrollToBottom: scrollHook.scrollToBottom,
     scrollToUnreadBoundary: scrollHook.scrollToUnreadBoundary,
     getUnreadBoundaryMessageId: scrollHook.getUnreadBoundaryMessageId,

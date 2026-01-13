@@ -1,0 +1,317 @@
+/* Container - 반응형 디자인 */
+.container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 672px;
+  max-height: 90vh;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-transparent-16);
+  border-radius: 16px;
+  box-shadow:
+    0px 10px 15px -3px var(--color-shadow-subtle),
+    0px 4px 6px -4px var(--color-shadow-subtle);
+  overflow: hidden;
+  box-sizing: border-box;
+  margin: 20px;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .container {
+    max-width: calc(100% - 40px);
+    margin: 20px;
+    max-height: 95vh;
+  }
+}
+
+/* Header */
+.headerArea {
+  width: 100%;
+  height: 48px;
+  background-color: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-transparent-16);
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 16px;
+}
+
+.indicator {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 8px;
+}
+
+.indicatorDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.indicatorDot:nth-child(1) {
+  background-color: var(--color-bg-interactive-primary-pressed);
+  opacity: 0.686;
+}
+
+.indicatorDot:nth-child(2) {
+  background-color: var(--color-bg-interactive-primary-hover);
+}
+
+.indicatorDot:nth-child(3) {
+  background-color: var(--color-bg-interactive-primary);
+}
+
+.headerText {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  font-family: 'NeoDunggeunmo Pro', sans-serif;
+  font-size: 12px;
+  line-height: 12px;
+  color: var(--color-text-interactive-primary);
+  white-space: nowrap;
+}
+
+/* Main Area - 스크롤 가능 */
+.mainArea {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.contentWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 32px;
+  min-height: min-content;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .contentWrapper {
+    gap: 24px;
+    padding: 24px 20px;
+  }
+}
+
+.titleSection {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .titleSection {
+    gap: 16px;
+    padding: 0;
+  }
+}
+
+.titleTextSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.title {
+  font-family: var(--typo-heading-lg-font-family);
+  font-size: var(--typo-heading-lg-font-size);
+  line-height: var(--typo-heading-lg-line-height);
+  font-weight: var(--typo-heading-lg-font-weight);
+  color: var(--color-text-primary);
+  text-align: center;
+  margin: 0;
+  word-break: keep-all;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .title {
+    font-size: var(--typo-heading-md-font-size);
+    line-height: var(--typo-heading-md-line-height);
+  }
+}
+
+.description {
+  font-family: var(--typo-body-lg-font-family);
+  font-size: var(--typo-body-lg-font-size);
+  line-height: var(--typo-body-lg-line-height);
+  font-weight: var(--typo-body-lg-font-weight);
+  color: var(--color-text-interactive-secondary);
+  text-align: center;
+  margin: 0;
+  word-break: keep-all;
+}
+
+/* Options Section */
+.optionsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.optionItem {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 16px;
+  min-height: 56px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .optionItem {
+    padding: 12px;
+    min-height: 48px;
+  }
+}
+
+.checkboxContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.checkbox {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--color-border-secondary);
+  border-radius: 8px;
+  background-color: var(--color-bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+  flex-shrink: 0;
+}
+
+.optionItem:hover {
+  border-color: var(--color-border-interactive-secondary);
+}
+
+.checkboxChecked {
+  background-color: var(--color-bg-interactive-primary);
+  border-color: var(--color-border-interactive-primary);
+  color: var(--color-text-on-interactive-primary);
+}
+
+.checkboxChecked:hover {
+  background-color: var(--color-bg-interactive-primary-hover);
+  border-color: var(--color-border-interactive-primary);
+}
+
+.optionItemSelected {
+  background-color: var(--color-transparent-12);
+  border: 1px solid var(--color-border-interactive-primary);
+  box-shadow:
+    0px 10px 15px -3px var(--color-shadow-bold),
+    0px 4px 6px -4px var(--color-shadow-bold);
+}
+
+.optionItemSelected:hover {
+  border-color: var(--color-border-interactive-primary);
+}
+
+.optionText {
+  font-family: var(--typo-body-lg-font-family);
+  font-size: var(--typo-body-lg-font-size);
+  line-height: var(--typo-body-lg-line-height);
+  font-weight: var(--typo-body-lg-font-weight);
+  color: var(--color-text-tertiary);
+  flex: 1;
+  word-break: keep-all;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .optionText {
+    font-size: var(--typo-body-md-font-size);
+    line-height: var(--typo-body-md-line-height);
+  }
+}
+
+.optionTextSelected {
+  color: var(--color-text-interactive-primary);
+}
+
+/* Input Section */
+.inputSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inputLabel {
+  /* 필요시 스타일 추가 */
+}
+
+/* Footer */
+.buttonArea {
+  width: 100%;
+  min-height: 96px;
+  background-color: var(--color-bg-secondary);
+  border-top: 1px solid var(--color-transparent-16);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 24px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .buttonArea {
+    min-height: 80px;
+    padding: 20px;
+  }
+}
+
+.buttonWrapper {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+}
+
+.cancelButton {
+  flex: 1;
+}
+
+.submitButton {
+  flex: 1;
+}

@@ -1,0 +1,131 @@
+# Get Match List Service 프롬프트
+
+## 개요
+매칭 화면용 매칭 목록 조회 서비스입니다.
+5분 캐시, 실시간 계산, 중복 방지, 온라인 우선 정렬을 모두 지원합니다.
+
+## 책임
+- 매칭 화면용 매칭 목록 조회 (최대 12개)
+- 5분 캐시 + 실시간 계산 하이브리드
+- 중복 방지 (조회 24h + 노출 4h)
+- 온라인 우선 정렬 (Presence 반영)
+
+## 비책임
+- DB 접근 (Repository에서 처리)
+- API 응답 (API Route에서 처리)
+
+## 주요 함수
+
+### getMatchList
+**목적**: 매칭 화면용 매칭 목록 조회
+
+**파라미터**:
+- client: Supabase 클라이언트
+- viewerId: viewer 사용자 ID
+- options: 필터 옵션
+  - minScore?: 최소 매칭 점수 (기본값: 75)
+  - statusFilter?: 상태 필터 ('all' | 'online' | 'offline')
+  - limit?: 결과 개수 (기본값: 12)
+
+**반환값**: 온라인 우선 정렬된 매칭 결과 배열
+
+**처리 흐름**:
+1. 캐시 확인 (5분 TTL, Repository에서 강제)
+2. 캐시가 충분하면 → enrichAndSort 후 반환
+3. 캐시가 부족하면 → 실시간 계산 시작
+4. 후보 조회 (getMatchCandidates)
+5. 중복 제외 (조회 24h + 노출 4h)
+6. 실시간 계산 (최대 20개, 여유분 포함)
+7. 점수 필터링 (minScore 이상만)
+8. 상위 12개 선택
+9. 캐시 저장 (context: 'match')
+10. 노출 이력 기록
+11. enrichAndSort 후 반환
+
+**사용 예시**:
+```typescript
+const results = await getMatchList(client, viewerId, {
+  minScore: 75,
+  statusFilter: 'online',
+  limit: 12,
+});
+```
+
+### enrichAndSort (내부 함수)
+**목적**: 프로필/상태 추가 + 온라인 우선 정렬
+
+**파라미터**:
+- client: Supabase 클라이언트
+- results: 매칭 결과 목록
+- statusFilter?: 상태 필터
+
+**반환값**: 온라인 우선 정렬된 결과
+
+**처리 흐름**:
+1. 프로필 조회 (userProfilesRepo.findByUserIds)
+2. 상태 조회 (userStatusRepo.findByUserIds)
+3. 프로필/상태 매핑
+4. Presence 기반 상태 추가 (getEffectiveStatus)
+5. isOnline 플래그 추가
+6. 상태 필터 적용
+7. 온라인 우선 정렬
+
+**정렬 로직**:
+```typescript
+.sort((a, b) => {
+  if (a.isOnline !== b.isOnline) {
+    return a.isOnline ? -1 : 1; // 온라인 우선
+  }
+  return b.score - a.score; // 같은 상태면 점수순
+})
+```
+
+## 주요 상수
+- DEFAULT_MIN_SCORE: 75 (서버 고정)
+- CACHE_CONTEXT: 'match' (매칭 화면 전용 캐시)
+
+## 중복 방지 로직
+```typescript
+const excludeIds = new Set([
+  ...(recentViews?.map((v) => v.target_user_id) || []),     // 24시간
+  ...(recentExposures?.map((e) => e.target_id) || []),      // 4시간
+]);
+
+const filtered = candidates.filter((c) => !excludeIds.has(c.userId));
+```
+
+**디버그 로그**:
+```typescript
+console.debug('[getMatchList] Excluded IDs:', excludeIds.size);
+```
+
+## 성능 최적화
+- **캐시 적중**: ~100ms (5분 이내 캐시 존재 시)
+- **실시간 계산**: ~500ms (12개 계산 + 중복 제외)
+- **병렬 처리**: Promise.all, Promise.allSettled 활용
+- **여유분 계산**: 20개 계산 후 상위 12개 선택
+
+## 홈 화면과의 차이점
+| 구분 | 홈 화면 (getHomeMatches) | 매칭 화면 (getMatchList) |
+|------|--------------------------|--------------------------|
+| **캐시 TTL** | 무제한 | 5분 (Repository 강제) |
+| **중복 방지** | 없음 | 조회 24h + 노출 4h |
+| **정렬** | 점수순 | 온라인 우선 + 점수순 |
+| **context** | 'home' | 'match' |
+| **개수** | 4개 | 12개 |
+
+## 사용 흐름
+1. 사용자가 매칭 화면 접속
+2. useMatchList Hook에서 API 호출
+3. API Route에서 getMatchList 호출
+4. 5분 캐시 확인 → 있으면 반환
+5. 없으면 실시간 계산 → 캐시 저장 → 반환
+6. 필터 변경 시 재호출
+
+## 연관 파일
+- src/app/api/match/list/route.ts (사용처)
+- src/hooks/useMatchList.ts (최종 사용처)
+- src/repositories/matchResultsCache.repository.ts (캐시 저장소)
+- src/repositories/matchExposureLog.repository.ts (노출 이력)
+- src/repositories/matchRecentViews.repository.ts (조회 이력)
+

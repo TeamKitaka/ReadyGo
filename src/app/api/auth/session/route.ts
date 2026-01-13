@@ -90,8 +90,8 @@ export const POST = async function (request: NextRequest) {
  * GET /api/auth/session
  *
  * Supabase SSR 클라이언트를 사용하여:
- * - 쿠키에서 세션 자동 읽기
- * - access token이 만료되었을 때 refresh token으로 자동 갱신
+ * - getUser()로 서버 검증된 사용자 정보 조회 (보안)
+ * - getSession()으로 토큰 갱신 처리 (만료 시 자동 갱신)
  * - 갱신된 토큰을 HttpOnly 쿠키에 자동 저장
  */
 export const GET = async function () {
@@ -99,21 +99,25 @@ export const GET = async function () {
     // Supabase SSR 클라이언트 생성 (쿠키 자동 관리, 토큰 자동 갱신)
     const supabase = createClient();
 
-    // getSession()을 사용하여 토큰 갱신 처리
-    // getUser()는 토큰 갱신을 하지 않지만, getSession()은 만료 시 자동 갱신 시도
+    // 1. getUser()로 사용자 검증 (보안: 서버에서 직접 검증)
     const {
-      data: { session },
-      error,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (error || !session) {
+    if (userError || !user) {
       return NextResponse.json({ user: null }, { status: 200 });
     }
 
+    // 2. 토큰 갱신을 위해 getSession() 호출 (토큰 갱신만, user는 사용하지 않음)
+    // getUser()는 토큰 갱신을 하지 않지만, getSession()은 만료 시 자동 갱신 시도
+    await supabase.auth.getSession();
+
+    // 3. 검증된 user 사용 (getUser()로 서버에서 검증된 안전한 user 객체)
     return NextResponse.json({
       user: {
-        id: session.user.id,
-        email: session.user.email,
+        id: user.id,
+        email: user.email,
       },
     });
   } catch (error) {

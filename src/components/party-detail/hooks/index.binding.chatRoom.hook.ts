@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import React from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-
+import type { Database } from '@/types/supabase';
 import { supabase as baseSupabase } from '@/lib/supabase/client';
 import { useAuth } from '@/commons/providers/auth/auth.provider';
 import { getAvatarImagePath } from '@/lib/avatar/getAvatarImagePath';
-import type { Database } from '@/types/supabase';
 
 // 타입 정의
 type PartyMessage = Database['public']['Tables']['party_messages']['Row'];
@@ -52,10 +52,18 @@ export interface UseChatRoomProps {
  */
 export interface UseChatRoomReturn {
   formattedMessages: FormattedMessageItem[]; // UI에서 바로 사용 가능한 포맷된 메시지 배열
+  messages: PartyMessage[]; // 원본 메시지 배열 (게임 링크 미리보기용)
   isBlocked: boolean; // 차단 상태, 기본값 false
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, contentType?: string) => Promise<void>;
   isLoading: boolean;
   error: string | null;
+  scrollToBottom: (containerRef: React.RefObject<HTMLDivElement>) => void;
+  shouldShowScrollToBottomButton: (
+    containerRef: React.RefObject<HTMLDivElement>
+  ) => boolean;
+  shouldScrollToBottom: boolean;
+  clearScrollTriggers: () => void;
+  setMessageListContainerRef: (ref: React.RefObject<HTMLDivElement>) => void;
 }
 
 /**
@@ -131,7 +139,7 @@ const isConsecutiveMessage = (
   if (!previousMessage) {
     return false;
   }
-  // party_messages에는 content_type 필드가 없으므로 sender_id만 비교
+  // sender_id만 비교 (content_type은 연속 메시지 판단에 사용하지 않음)
   return currentMessage.sender_id === previousMessage.sender_id;
 };
 
@@ -149,7 +157,7 @@ const formatMessageContent = (message: PartyMessage | null): string => {
     return '메시지가 없습니다';
   }
 
-  // party_messages에는 content_type 필드가 없으므로 content 그대로 반환
+  // content 그대로 반환 (content_type은 UI에서 별도로 처리)
   return content;
 };
 
@@ -180,31 +188,151 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
   const seenMessageIdsRef = useRef<Set<number>>(new Set());
   const isSendingRef = useRef(false); // 중복 전송 방지
 
+  // 스크롤 관련 상태 및 ref
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
+  const messageListContainerRef =
+    useRef<React.RefObject<HTMLDivElement> | null>(null);
+  const shouldAutoScrollRef = useRef(true); // 자동 스크롤 여부 (사용자가 수동 스크롤 시 false)
+  const isInitialLoadRef = useRef(false); // 초기 로드 플래그
+
+  /**
+   * 최하단으로 스크롤
+   */
+  const scrollToBottom = useCallback(
+    (containerRef: React.RefObject<HTMLDivElement>) => {
+      if (!containerRef.current) {
+        return;
+      }
+
+      // DOM 렌더링 완료 후 스크롤
+      requestAnimationFrame(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
+      });
+    },
+    []
+  );
+
+  /**
+   * 최하단 이동 버튼 표시 여부 확인
+   * 스크롤이 전체 길이의 50% 이상 올라갔을 때만 표시
+   */
+  const shouldShowScrollToBottomButton = useCallback(
+    (containerRef: React.RefObject<HTMLDivElement>): boolean => {
+      if (!containerRef.current) {
+        return false;
+      }
+
+      const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+
+      // 스크롤 가능한 전체 높이 계산
+      const scrollableHeight = scrollHeight - clientHeight;
+
+      // 스크롤 가능한 높이가 없으면 버튼 표시 안 함 (모든 메시지가 화면에 보임)
+      if (scrollableHeight <= 0) {
+        return false;
+      }
+
+      // 현재 스크롤 위치가 하단에서 얼마나 떨어져 있는지 계산
+      const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+
+      // 하단까지의 거리가 전체 스크롤 가능한 높이의 50% 이상일 때만 버튼 표시
+      const threshold = scrollableHeight * 0.5;
+      return distanceFromBottom > threshold;
+    },
+    []
+  );
+
+  /**
+   * 스크롤이 최하단에 있는지 확인
+   */
+  const isAtBottom = useCallback(
+    (containerRef: React.RefObject<HTMLDivElement>): boolean => {
+      if (!containerRef.current) {
+        return false;
+      }
+
+      const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+
+      // 스크롤 가능한 전체 높이 계산
+      const scrollableHeight = scrollHeight - clientHeight;
+
+      // 스크롤 가능한 높이가 없으면 최하단으로 간주
+      if (scrollableHeight <= 0) {
+        return true;
+      }
+
+      // 현재 스크롤 위치가 하단에서 얼마나 떨어져 있는지 계산
+      const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+
+      // 하단까지의 거리가 50px 이하이면 최하단으로 간주
+      return distanceFromBottom <= 50;
+    },
+    []
+  );
+
+  /**
+   * 스크롤 트리거 초기화
+   */
+  const clearScrollTriggers = useCallback(() => {
+    setShouldScrollToBottom(false);
+  }, []);
+
+  /**
+   * 메시지 리스트 컨테이너 ref 설정
+   */
+  const setMessageListContainerRef = useCallback(
+    (ref: React.RefObject<HTMLDivElement>) => {
+      messageListContainerRef.current = ref;
+    },
+    []
+  );
+
   /**
    * 새 메시지 처리 (중복 제거 포함)
    */
-  const handleNewMessage = useCallback((message: PartyMessage) => {
-    // 중복 체크 (Set 기반)
-    if (seenMessageIdsRef.current.has(message.id)) {
-      return;
-    }
-    seenMessageIdsRef.current.add(message.id);
+  const handleNewMessage = useCallback(
+    (message: PartyMessage) => {
+      // 중복 체크 (Set 기반)
+      if (seenMessageIdsRef.current.has(message.id)) {
+        return;
+      }
+      seenMessageIdsRef.current.add(message.id);
 
-    setMessages((prev) => {
-      // 이미 존재하는지 다시 확인 (race condition 방지)
-      if (prev.some((m) => m.id === message.id)) {
-        return prev;
+      // 자신이 보낸 메시지이거나 사용자가 최하단에 있을 때 자동 스크롤
+      if (message.sender_id === user?.id) {
+        shouldAutoScrollRef.current = true;
+        setShouldScrollToBottom(true);
+      } else if (shouldAutoScrollRef.current) {
+        // 상대방 메시지이고 자동 스크롤이 활성화되어 있으면 최하단 스크롤
+        if (messageListContainerRef.current?.current) {
+          if (isAtBottom(messageListContainerRef.current)) {
+            setShouldScrollToBottom(true);
+          } else {
+            // 사용자가 위로 스크롤한 경우 자동 스크롤 비활성화
+            shouldAutoScrollRef.current = false;
+          }
+        }
       }
 
-      // created_at 기준으로 정렬된 위치에 삽입
-      const newMessages = [...prev, message];
-      return newMessages.sort((a, b) => {
-        const aTime = a.created_at || '';
-        const bTime = b.created_at || '';
-        return aTime.localeCompare(bTime);
+      setMessages((prev) => {
+        // 이미 존재하는지 다시 확인 (race condition 방지)
+        if (prev.some((m) => m.id === message.id)) {
+          return prev;
+        }
+
+        // created_at 기준으로 정렬된 위치에 삽입
+        const newMessages = [...prev, message];
+        return newMessages.sort((a, b) => {
+          const aTime = a.created_at || '';
+          const bTime = b.created_at || '';
+          return aTime.localeCompare(bTime);
+        });
       });
-    });
-  }, []);
+    },
+    [user?.id, isAtBottom]
+  );
 
   /**
    * postgres_changes 채널 정리 함수
@@ -228,6 +356,67 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     } else {
       // 채널이 없으면 subscribedPostIdRef만 초기화
       subscribedPostIdRef.current = null;
+    }
+  }, []);
+
+  /**
+   * 메시지 발신자 프로필 정보 조회 (파티를 떠난 멤버 포함)
+   */
+  const loadMessageSenderProfiles = useCallback(async (senderIds: string[]) => {
+    if (senderIds.length === 0) {
+      return;
+    }
+
+    try {
+      // 고유한 sender_id만 필터링
+      const uniqueSenderIds = Array.from(new Set(senderIds.filter(Boolean)));
+
+      if (uniqueSenderIds.length === 0) {
+        return;
+      }
+
+      // Supabase 클라이언트를 사용하여 프로필 정보 조회
+      const { data: profiles, error } = await baseSupabase
+        .from('user_profiles')
+        .select('id, nickname, avatar_url, animal_type')
+        .in('id', uniqueSenderIds);
+
+      if (error) {
+        console.error('Failed to load message sender profiles:', error);
+        return;
+      }
+
+      // 기존 프로필 Map에 추가 (기존 프로필은 유지)
+      setPartyMemberProfiles((prev) => {
+        const newMap = new Map(prev);
+
+        (profiles || []).forEach((profile) => {
+          if (!profile.id) {
+            return;
+          }
+
+          // 이미 존재하는 프로필이면 업데이트하지 않음 (파티 멤버 프로필 우선)
+          if (newMap.has(profile.id)) {
+            return;
+          }
+
+          const avatarImagePath = getAvatarImagePath(
+            profile.avatar_url,
+            profile.animal_type
+          );
+
+          newMap.set(profile.id, {
+            userId: profile.id,
+            nickname: profile.nickname || '알 수 없음',
+            avatarImagePath,
+            animalType: profile.animal_type || undefined,
+          });
+        });
+
+        return newMap;
+      });
+    } catch (error) {
+      console.error('Failed to load message sender profiles:', error);
     }
   }, []);
 
@@ -294,53 +483,73 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
   /**
    * 초기 메시지 로드 (API)
    */
-  const loadMessages = useCallback(async (targetPostId: number) => {
-    // postId가 유효하지 않으면 early return
-    if (!targetPostId || targetPostId <= 0) {
-      setIsLoading(false);
-      setMessages([]);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(
-        `/api/party/${targetPostId}/messages?limit=50&offset=0`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || '메시지 로드에 실패했습니다.');
+  const loadMessages = useCallback(
+    async (targetPostId: number) => {
+      // postId가 유효하지 않으면 early return
+      if (!targetPostId || targetPostId <= 0) {
+        setIsLoading(false);
+        setMessages([]);
+        return;
       }
 
-      const result = await response.json();
-      const loadedMessages: PartyMessage[] = result.data || [];
+      setIsLoading(true);
+      setError(null);
 
-      // Repository는 내림차순(최신→과거)으로 반환하므로 reverse 처리 (과거→최신)
-      const reversedMessages = [...loadedMessages].reverse();
+      try {
+        const response = await fetch(
+          `/api/party/${targetPostId}/messages?limit=50&offset=0`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          }
+        );
 
-      // seenMessageIds 초기화 및 업데이트
-      seenMessageIdsRef.current = new Set(reversedMessages.map((m) => m.id));
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || '메시지 로드에 실패했습니다.');
+        }
 
-      setMessages(reversedMessages);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : '메시지 로드에 실패했습니다.';
-      setError(errorMessage);
-      console.error('Failed to load messages:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+        const result = await response.json();
+        const loadedMessages: PartyMessage[] = result.data || [];
+
+        // Repository는 내림차순(최신→과거)으로 반환하므로 reverse 처리 (과거→최신)
+        const reversedMessages = [...loadedMessages].reverse();
+
+        // seenMessageIds 초기화 및 업데이트
+        seenMessageIdsRef.current = new Set(reversedMessages.map((m) => m.id));
+
+        setMessages(reversedMessages);
+
+        // 메시지 발신자 프로필 정보 조회 (파티를 떠난 멤버 포함)
+        const senderIds = reversedMessages
+          .map((m) => m.sender_id)
+          .filter((id): id is string => !!id);
+        if (senderIds.length > 0) {
+          loadMessageSenderProfiles(senderIds).catch((error) => {
+            console.error(
+              'Failed to load message sender profiles after loading messages:',
+              error
+            );
+          });
+        }
+
+        // 초기 로드 완료 후 최하단 스크롤 트리거
+        isInitialLoadRef.current = false;
+        setShouldScrollToBottom(true);
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : '메시지 로드에 실패했습니다.';
+        setError(errorMessage);
+        console.error('Failed to load messages:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [loadMessageSenderProfiles]
+  );
 
   /**
    * postgres_changes 구독
@@ -391,16 +600,54 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
               table: 'party_messages',
               filter: `post_id=eq.${targetPostId}`,
             },
-            (payload) => {
+            async (payload) => {
               try {
                 // payload.new는 이미 PartyMessage 타입
                 const newMessage = payload.new as PartyMessage;
+
+                // 발신자 프로필이 없으면 프로필 정보 조회
+                if (
+                  newMessage.sender_id &&
+                  !partyMemberProfiles.get(newMessage.sender_id)
+                ) {
+                  // 프로필 정보 조회 (비동기로 실행, 블로킹하지 않음)
+                  loadMessageSenderProfiles([newMessage.sender_id]).catch(
+                    (error) => {
+                      console.error(
+                        'Failed to load sender profile after new message:',
+                        error
+                      );
+                    }
+                  );
+                }
 
                 // 중복 체크 및 메시지 추가
                 handleNewMessage(newMessage);
               } catch (error) {
                 console.error(
                   'Error processing postgres_changes event:',
+                  error
+                );
+              }
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'party_members',
+              filter: `post_id=eq.${targetPostId}`,
+            },
+            async (payload) => {
+              try {
+                // 새 멤버가 추가되면 프로필 정보 갱신
+                // eslint-disable-next-line no-console
+                console.log('Party member INSERT event received:', payload);
+                await loadPartyMemberProfiles(targetPostId);
+              } catch (error) {
+                console.error(
+                  'Failed to refresh member profiles after member insert:',
                   error
                 );
               }
@@ -434,14 +681,20 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user?.id, cleanupChannel]
+    [
+      user?.id,
+      cleanupChannel,
+      loadPartyMemberProfiles,
+      loadMessageSenderProfiles,
+      partyMemberProfiles,
+    ]
   );
 
   /**
    * 메시지 전송
    */
   const sendMessage = useCallback(
-    async (content: string): Promise<void> => {
+    async (content: string, contentType: string = 'text'): Promise<void> => {
       // 중복 전송 방지
       if (isSendingRef.current) {
         console.warn(
@@ -471,6 +724,7 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
           credentials: 'include',
           body: JSON.stringify({
             content,
+            contentType,
           }),
         });
 
@@ -532,15 +786,20 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     setIsLoading(true);
     // error 상태 초기화
     setError(null);
+    // 스크롤 관련 상태 초기화
+    isInitialLoadRef.current = false;
+    shouldAutoScrollRef.current = true;
+    setShouldScrollToBottom(false);
 
-    // 파티 멤버 프로필 정보 로드
-    loadPartyMemberProfiles(postId);
-
-    // 초기 메시지 로드
-    loadMessages(postId).then(() => {
-      // postgres_changes 구독
-      subscribeToPostgresChanges(postId);
-    });
+    // 파티 멤버 프로필 정보와 메시지를 모두 로드한 후 구독 시작
+    // 이렇게 하면 새 메시지가 도착하기 전에 프로필 정보가 준비되어
+    // "알 수 없음"으로 표시되는 문제를 방지할 수 있습니다
+    Promise.all([loadPartyMemberProfiles(postId), loadMessages(postId)]).then(
+      () => {
+        // postgres_changes 구독
+        subscribeToPostgresChanges(postId);
+      }
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, user?.id]);
 
@@ -598,12 +857,16 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       }
 
       // 메시지 아이템 추가
-      const isConsecutive = isConsecutiveMessage(message, previousMessage);
+      // 시스템 메시지는 항상 연속 메시지가 아님
+      const isSystemMessage = message.content_type === 'system';
+      const isConsecutive = isSystemMessage
+        ? false
+        : isConsecutiveMessage(message, previousMessage);
       const isOwnMessage = message.sender_id === user.id;
       const formattedTime = formatMessageTime(message.created_at);
       const formattedContent = formatMessageContent(message);
 
-      // 발신자 정보 조회
+      // 발신자 정보 조회 (시스템 메시지는 sender_id가 null이므로 undefined)
       const senderProfile = message.sender_id
         ? partyMemberProfiles.get(message.sender_id)
         : undefined;
@@ -641,9 +904,15 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
 
   return {
     formattedMessages,
+    messages: sortedMessages,
     isBlocked,
     sendMessage,
     isLoading,
     error,
+    scrollToBottom,
+    shouldShowScrollToBottomButton,
+    shouldScrollToBottom,
+    clearScrollTriggers,
+    setMessageListContainerRef,
   };
 };
