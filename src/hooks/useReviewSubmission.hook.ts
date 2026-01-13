@@ -9,7 +9,8 @@ export interface UseReviewSubmissionReturn {
   submitReview: (
     reviewerId: string,
     targetUserId: string,
-    answers: ReviewAnswers
+    answers: ReviewAnswers,
+    reviewRequestId?: number
   ) => Promise<void>;
 }
 
@@ -32,7 +33,8 @@ export const useReviewSubmission = (): UseReviewSubmissionReturn => {
     async (
       reviewerId: string,
       targetUserId: string,
-      answers: ReviewAnswers
+      answers: ReviewAnswers,
+      reviewRequestId?: number
     ) => {
       setIsSubmitting(true);
       setError(null);
@@ -47,6 +49,7 @@ export const useReviewSubmission = (): UseReviewSubmissionReturn => {
           body: JSON.stringify({
             targetUserId,
             answers,
+            ...(reviewRequestId !== undefined && { reviewRequestId }),
           }),
         });
 

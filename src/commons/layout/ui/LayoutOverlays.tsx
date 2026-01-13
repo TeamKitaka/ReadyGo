@@ -14,6 +14,8 @@ import ReviewModal from '@/commons/components/review-modal';
 import { useReviewReceivedModalFromNotification } from '@/hooks/useReviewReceivedModalFromNotification.hook';
 import ReviewReceived from '@/components/review-received';
 import ModalContainer from '@/commons/components/modal-container';
+import { usePartyReviewModal } from '@/hooks/usePartyReviewModal.hook';
+import { PartyReviewModal } from '@/components/party-review-modal';
 
 interface LayoutOverlaysProps {
   currentOverlay: string | null;
@@ -29,6 +31,7 @@ export const LayoutOverlays = ({
   const { notifications, loading, markAsRead } = useNotifications();
   const reviewModal = useReviewModalFromNotification();
   const reviewReceivedModal = useReviewReceivedModalFromNotification();
+  const partyReviewModal = usePartyReviewModal();
   const [friendsInitialTab, setFriendsInitialTab] = useState<
     'list' | 'request'
   >('list');
@@ -107,7 +110,101 @@ export const LayoutOverlays = ({
         (n) => String(n.id) === notification.id
       );
       if (originalNotification) {
-        reviewModal.openModal(originalNotification);
+        // entity_type으로 파티/채팅 분기
+        // 메시지도 확인 (하위 호환성: "함께한 파티원들과의 게임은 어떠셨나요?"이면 파티)
+        const isPartyNotification =
+          originalNotification.entity_type === 'party_post' ||
+          originalNotification.message ===
+            '함께한 파티원들과의 게임은 어떠셨나요?';
+
+        console.log(
+          '[LayoutOverlays] REVIEW_REQUESTED notification:',
+          {
+            entity_type: originalNotification.entity_type,
+            entity_id: originalNotification.entity_id,
+            message: originalNotification.message,
+            isPartyNotification,
+          }
+        );
+
+        if (isPartyNotification) {
+          // 파티 후기 모달 열기
+          // entity_id는 review_request.id이므로, 이를 사용해서 review_request 조회 후 context_id 얻기
+          if (originalNotification.entity_id) {
+            const reviewRequestId = parseInt(originalNotification.entity_id, 10);
+            if (!isNaN(reviewRequestId)) {
+              console.log(
+                '[LayoutOverlays] Fetching review_request:',
+                reviewRequestId
+              );
+              // review_request 조회하여 context_id 얻기 (비동기 처리)
+              fetch(
+                `/api/reviews/requests?review_request_id=${reviewRequestId}`,
+                {
+                  method: 'GET',
+                  credentials: 'include',
+                }
+              )
+                .then((res) => {
+                  console.log(
+                    '[LayoutOverlays] Review request fetch response:',
+                    res.status
+                  );
+                  if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                  }
+                  return res.json();
+                })
+                .then((data) => {
+                  console.log(
+                    '[LayoutOverlays] Review request data:',
+                    data
+                  );
+                  if (data.data && data.data.context_type === 'party') {
+                    const partyId = data.data.context_id;
+                    console.log(
+                      '[LayoutOverlays] Opening party review modal:',
+                      partyId,
+                      reviewRequestId
+                    );
+                    partyReviewModal.openModal(partyId, reviewRequestId);
+                  } else {
+                    console.error(
+                      '[LayoutOverlays] Invalid review_request data or not party context:',
+                      data
+                    );
+                  }
+                })
+                .catch((err) => {
+                  console.error(
+                    '[LayoutOverlays] Failed to fetch review request:',
+                    err
+                  );
+                  // 에러 발생 시에도 사용자에게 알림 (선택적)
+                });
+              // 비동기 처리 중이므로 여기서 return하지 않음
+              // 하지만 파티 후기 모달을 열어야 하므로, 다른 로직으로 넘어가지 않도록 return
+              return;
+            } else {
+              console.error(
+                '[LayoutOverlays] Invalid review_request_id:',
+                originalNotification.entity_id
+              );
+            }
+          } else {
+            console.error(
+              '[LayoutOverlays] No entity_id in notification'
+            );
+          }
+          // entity_id가 없거나 파싱 실패 시에도 return (일반 후기 모달로 넘어가지 않도록)
+          return;
+        } else if (originalNotification.entity_type === 'chat_room') {
+          // 채팅 후기 모달 열기 (기존 로직)
+          reviewModal.openModal(originalNotification);
+        } else {
+          // 기본: 채팅 후기 모달 열기
+          reviewModal.openModal(originalNotification);
+        }
         // 알림 overlay는 유지 (onClose 호출하지 않음)
         return;
       }
@@ -148,6 +245,53 @@ export const LayoutOverlays = ({
     />
   ) : null;
 
+  // PartyReviewModal (1단 모달)
+  const partyReviewModalComponent = partyReviewModal.isOpen ? (
+    <PartyReviewModal
+      isOpen={partyReviewModal.isOpen}
+      onClose={partyReviewModal.closeModal}
+      partyInfo={partyReviewModal.partyInfo}
+      reviewRequests={partyReviewModal.reviewRequests}
+      partyMembers={partyReviewModal.partyMembers}
+      selectedTargetId={partyReviewModal.selectedTargetId}
+      onSelectMember={partyReviewModal.selectMember}
+      onBackToMemberList={partyReviewModal.backToMemberList}
+      highlightReviewRequestId={partyReviewModal.highlightReviewRequestId}
+      isSubmitting={partyReviewModal.isSubmitting}
+    />
+  ) : null;
+
+  // ReviewModal (2단 모달 - 파티 후기 작성용)
+  const partyReviewSubmitModalComponent =
+    partyReviewModal.isOpen && partyReviewModal.selectedTargetId ? (
+      (() => {
+        const selectedRequest = partyReviewModal.reviewRequests.find(
+          (req) =>
+            req.target_id === partyReviewModal.selectedTargetId &&
+            req.status === 'pending'
+        );
+
+        if (!selectedRequest || !selectedRequest.target_user) {
+          return null;
+        }
+
+        return (
+          <ReviewModal
+            isOpen={true}
+            onClose={partyReviewModal.backToMemberList}
+            onSubmit={partyReviewModal.handleReviewSubmit}
+            targetUserNickname={selectedRequest.target_user.nickname}
+            targetUserAvatar={selectedRequest.target_user.avatar_url ?? undefined}
+            targetUserAnimalType={
+              (selectedRequest.target_user.animal_type as
+                | import('@/commons/constants/animal').AnimalType
+                | undefined) ?? undefined
+            }
+          />
+        );
+      })()
+    ) : null;
+
   // ReviewReceived Modal은 Portal을 사용하므로 모든 조건에서 렌더링 가능
   const reviewReceivedModalComponent = reviewReceivedModal.isModalOpen ? (
     <ModalContainer onClose={reviewReceivedModal.closeModal}>
@@ -175,6 +319,8 @@ export const LayoutOverlays = ({
           />
         </OverlayContainer>
         {reviewModalComponent}
+        {partyReviewModalComponent}
+        {partyReviewSubmitModalComponent}
         {reviewReceivedModalComponent}
       </>
     );
@@ -187,6 +333,8 @@ export const LayoutOverlays = ({
           <FriendsContainer initialTab={friendsInitialTab} />
         </OverlayContainer>
         {reviewModalComponent}
+        {partyReviewModalComponent}
+        {partyReviewSubmitModalComponent}
         {reviewReceivedModalComponent}
       </>
     );
@@ -195,6 +343,8 @@ export const LayoutOverlays = ({
   return (
     <>
       {reviewModalComponent}
+      {partyReviewModalComponent}
+      {partyReviewSubmitModalComponent}
       {reviewReceivedModalComponent}
     </>
   );

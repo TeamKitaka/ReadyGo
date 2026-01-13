@@ -35,12 +35,14 @@ import type { ReviewAnswers } from '../temperature/calculateTemperatureFromRevie
  * @param reviewerId - 리뷰 작성자 ID
  * @param targetUserId - 리뷰 대상 사용자 ID
  * @param answers - 후기 답변
+ * @param reviewRequestId - review_request ID (선택적, 제공되면 해당 ID로 직접 업데이트)
  * @returns 생성된 리뷰 정보
  */
 export const submitReview = async (
   reviewerId: string,
   targetUserId: string,
-  answers: ReviewAnswers
+  answers: ReviewAnswers,
+  reviewRequestId?: number
 ) => {
   // 1. 온도 점수 계산 (Yes 개수 × 0.15) → change 값
   const temperatureChange = calculateTemperatureFromReview(answers);
@@ -52,16 +54,25 @@ export const submitReview = async (
     (answers.communication[0] ? 1 : 0) + (answers.communication[1] ? 1 : 0);
 
   // 3. review_requests 조회 및 상태 업데이트
-  const reviewRequest = await reviewRequestsRepository.getReviewRequestByReviewerAndTarget(
-    reviewerId,
-    targetUserId
-  );
-
-  // review_request가 있으면 상태를 completed로 업데이트
-  if (reviewRequest) {
-    await reviewRequestsRepository.updateReviewRequest(reviewRequest.id, {
+  if (reviewRequestId) {
+    // reviewRequestId가 제공되면 해당 ID로 직접 업데이트
+    await reviewRequestsRepository.updateReviewRequest(reviewRequestId, {
       status: 'completed',
     });
+  } else {
+    // 기존 로직: reviewerId와 targetUserId로 찾아서 업데이트
+    const reviewRequest =
+      await reviewRequestsRepository.getReviewRequestByReviewerAndTarget(
+        reviewerId,
+        targetUserId
+      );
+
+    // review_request가 있으면 상태를 completed로 업데이트
+    if (reviewRequest) {
+      await reviewRequestsRepository.updateReviewRequest(reviewRequest.id, {
+        status: 'completed',
+      });
+    }
   }
 
   // 4. reviews 테이블에 리뷰 저장
