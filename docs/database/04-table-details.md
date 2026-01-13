@@ -1,6 +1,6 @@
 # Table Details(ReadyGo)
 
-본 문서는 ReadyGo 서비스의 public schema 전체 테이블(38개)에 대한 상세 정의 문서이다.
+본 문서는 ReadyGo 서비스의 public schema 전체 테이블(41개)에 대한 상세 정의 문서이다.
 
 ### Source of Truth (SSOT)
 
@@ -375,7 +375,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 ### 5️⃣ Steam Domain
 
-#### 22. steam_user_games
+#### 24. steam_user_games
 
 - 유저 게임 기록
 
@@ -390,7 +390,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | last_played      | timestamptz | ⭕       | 마지막 실행 시각 |
 | created_at       | timestamptz | ⭕       | 생성 시각        |
 
-#### 23. steam_game_info
+#### 25. steam_game_info
 
 - 게임 메타
 
@@ -404,7 +404,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | header_image      | text        | ⭕       | 헤더 이미지         |
 | created_at        | timestamptz | ⭕       | 생성 시각           |
 
-#### 24. steam_sync_logs
+#### 26. steam_sync_logs
 
 - 유저 단위 Steam 동기화 세션 로그
 
@@ -416,7 +416,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | synced_games_count | int         | ⭕       | 동기화 게임 수 |
 | synced_at          | timestamptz | ⭕       | 동기화 시각    |
 
-#### 25. steam_game_sync_logs
+#### 27. steam_game_sync_logs
 
 - 게임 단위 Steam 메타 동기화 상세 로그
 
@@ -429,7 +429,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | reason     | text        | ⭕       | 실패 또는 스킵 사유        |
 | created_at | timestamptz | ⭕       | 처리 시각                  |
 
-#### 26. steam_user_stats
+#### 28. steam_user_stats
 
 - 유저별 Steam 플레이 통계 및 성향 분석 데이터
 
@@ -442,13 +442,14 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | active_time_slots         | text[]      | ❌       | 주로 활동하는 시간대 (00-06, 06-12, 12-18, 18-24) |
 | genre_playtime_2w_minutes | jsonb       | ⭕       | 최근 2주간 장르별 플레이 시간 (분 단위)           |
 | total_playtime_2w_minutes | numeric     | ⭕       | 최근 2주간 총 플레이 시간 (분 단위)               |
+| top_genres_2w             | text[]      | ⭕       | 최근 2주간 상위 장르 목록                         |
 | updated_at                | timestamptz | ❌       | 마지막 업데이트 시각                              |
 
 ---
 
 ### 6️⃣ Social / Interaction Domain
 
-#### 27. friend_requests
+#### 29. friend_requests
 
 - 유저 간 친구 요청 상태
 - 요청 생성, 수락, 거절 등 관계 형성 이전 단계 기록
@@ -461,7 +462,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | status      | text        | ⭕       | 요청 상태      |
 | created_at  | timestamptz | ⭕       | 요청 시각      |
 
-#### 28. friendships
+#### 30. friendships
 
 - 친구로 연결된 유저 간의 관계 정보
 - 쌍방 관계를 하나의 레코드로 관리
@@ -474,7 +475,34 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | status     | text        | ⭕       | 관계 상태   |
 | created_at | timestamptz | ⭕       | 생성 시각   |
 
-#### 29. reviews
+#### 31. review_requests
+
+- 게임 시작 후 후기 작성 요청 기록
+- 같은 context(context_type + context_id)에서 game_start_logs를 남긴 사용자들끼리만 후기 요청 생성
+- actor_id = 후기를 받을 사람 (게임 시작을 누른 사람)
+- target_id = 후기를 써야 하는 사람 (후기를 작성하는 사람)
+- UNIQUE constraint: (game_start_log_id, actor_id, target_id)
+- status: 'pending' | 'completed'
+
+| Column            | Type        | Nullable | Description                    |
+| ----------------- | ----------- | -------- | ------------------------------ |
+| id                | bigint      | ❌       | PK                             |
+| game_start_log_id | bigint      | ❌       | 게임 시작 로그 ID (FK)         |
+| context_type      | text        | ❌       | 컨텍스트 타입 (chat, party)    |
+| context_id        | bigint      | ❌       | 컨텍스트 ID (room_id, post_id) |
+| actor_id          | uuid        | ❌       | 후기를 받을 사람 (FK)          |
+| target_id         | uuid        | ❌       | 후기를 작성하는 사람 (FK)      |
+| status            | text        | ❌       | 요청 상태 (pending, completed) |
+| created_at        | timestamptz | ❌       | 요청 생성 시각                 |
+| completed_at      | timestamptz | ⭕       | 후기 작성 완료 시각            |
+
+**Foreign Keys**:
+
+- `actor_id` → `user_profiles.id`
+- `target_id` → `user_profiles.id`
+- `game_start_log_id` → `game_start_logs.id`
+
+#### 32. reviews
 
 - 파티 또는 플레이 이후 유저가 남긴 평가 기록
 - 매너, 협업, 소통 등 점수 및 코멘트 포함
@@ -495,22 +523,23 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 ### 7️⃣ System / Logs Domain
 
-#### 30. game_start_logs
+#### 33. game_start_logs
 
 - 게임 시작 로그 테이블
-- 매칭/파티 등에서 실제 게임 시작 시점의 행동을 기록
+- "이 사용자가 이 맥락(chat/party)에서 실제로 게임을 시작했다"는 개인 확정 로그
+- 같은 context에서 game_start_logs를 남긴 사용자들끼리만 후기 요청 생성
 
 | Column       | Type        | Nullable | Description                        |
 | ------------ | ----------- | -------- | ---------------------------------- |
 | id           | bigint      | ❌       | PK                                 |
 | actor_id     | uuid        | ❌       | 게임 시작을 요청한 유저            |
 | context_type | text        | ❌       | 게임 시작 컨텍스트 (chat, party)   |
-| context_id   | text        | ❌       | 컨텍스트 식별자 (매칭 ID, 파티 ID) |
+| context_id   | text        | ❌       | 컨텍스트 식별자 (room_id, post_id) |
 | game_id      | text        | ⭕       | Steam 게임 ID                      |
 | game_name    | text        | ⭕       | 게임 이름                          |
 | created_at   | timestamptz | ❌       | 게임 시작 기록 시각                |
 
-#### 31. analytics_user_actions
+#### 34. analytics_user_actions
 
 - 행동 로그
 
@@ -522,7 +551,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | target_id  | text        | ⭕       | 행동 대상 식별자   |
 | created_at | timestamptz | ⭕       | 행동 발생 시각     |
 
-#### 32. event_logs
+#### 35. event_logs
 
 - 서비스 이벤트 기록 테이블
 - 유저 행동 또는 시스템 이벤트를 구조적으로 기록
@@ -535,7 +564,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | metadata   | jsonb       | ⭕       | 이벤트 데이터 |
 | created_at | timestamptz | ⭕       | 발생 시각     |
 
-#### 33. error_logs
+#### 36. error_logs
 
 - 시스템 에러 기록 테이블
 - 서버/클라이언트/배치 작업 등에서 발생한 오류를 기록
@@ -548,7 +577,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | stacktrace | text        | ⭕       | 스택 트레이스  |
 | created_at | timestamptz | ⭕       | 발생 시각      |
 
-#### 34. bans
+#### 37. bans
 
 - 유저 제재 정보 테이블
 - 일시적 또는 영구 제재 상태 관리
@@ -561,7 +590,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | expires_at | timestamptz | ⭕       | 제재 만료 시각 |
 | created_at | timestamptz | ⭕       | 제재 생성 시각 |
 
-#### 35. temperature_logs
+#### 38. temperature_logs
 
 - 유저 온도 점수 변경 로그
 - 후기, 신고, 시스템 판단에 따른 점수 변화 기록
@@ -574,7 +603,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | reason     | text        | ⭕       | 변경 사유   |
 | created_at | timestamptz | ⭕       | 발생 시각   |
 
-#### 36. tier_history
+#### 39. tier_history
 
 - 유저 티어 변경 이력 테이블
 - 티어 상승/하락 이력 보존
@@ -587,7 +616,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | current_tier  | text        | ⭕       | 변경 후 티어 |
 | changed_at    | timestamptz | ⭕       | 변경 시각    |
 
-#### 37. notifications
+#### 40. notifications
 
 - 유저에게 전달되는 시스템 알림 테이블
 
@@ -604,7 +633,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | entity_type | text        | ⭕       | 관련 엔티티 타입    |
 | created_at  | timestamptz | ⭕       | 생성 시각           |
 
-#### 38. push_tokens
+#### 41. push_tokens
 
 - 푸시 알림 전송을 위한 디바이스 토큰 관리 테이블
 
@@ -627,8 +656,8 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
-- **Last Updated At**: 2026-01-13
-- **Document Version**: v1.0.17
+- **Last Updated At**: 2026-01-14
+- **Document Version**: v1.0.19
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
@@ -656,3 +685,5 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | v1.0.15 | 2026-01-12 | System/Logs Domain에 game_start_logs 테이블 추가 (게임 시작 로그), 테이블 번호 재정렬 (32~38번)                                                                                                                                        |
 | v1.0.16 | 2026-01-15 | steam_user_stats 테이블 컬럼 추가 (genre_playtime_2w_minutes, total_playtime_2w_minutes) 및 타입 수정, match_exposure_log nullable 수정, game_start_logs 중복 제거 및 타입 수정, steam_game_sync_logs 타입 수정                        |
 | v1.0.17 | 2026-01-13 | party_posts 테이블에 start_at timestamptz 컬럼 추가 (정렬 성능 향상용), 정렬 및 커서 기반 페이징을 위한 인덱스 추가 (idx_party_posts_start_at, idx_party_posts_created_at, idx_party_posts_created_at_id, idx_party_posts_start_at_id) |
+| v1.0.18 | 2026-01-15 | review_requests 테이블 추가 (게임 시작 후 후기 작성 요청 관리)                                                                                                                                                                         |
+| v1.0.19 | 2026-01-14 | review_requests 테이블에 context_id, context_type 컬럼 추가, game_start_logs 테이블 설명 업데이트 (개인 확정 로그 의미 반영)                                                                                                           |

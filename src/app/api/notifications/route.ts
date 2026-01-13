@@ -45,7 +45,7 @@ export const GET = async (_request: NextRequest) => {
 
         const { data: actorProfile } = await supabase
           .from('user_profiles')
-          .select('id, nickname, avatar_url')
+          .select('id, nickname, avatar_url, animal_type')
           .eq('id', notification.actor_id)
           .maybeSingle();
 

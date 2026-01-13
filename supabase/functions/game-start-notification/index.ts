@@ -14,28 +14,14 @@
  * - party_messages 테이블 AFTER INSERT, content_type='game_link'
  *
  * 📌 중복 방지 전략:
- * - 최근 60초 내 처리한 (contextType + contextId + actorId) 조합을 Map에 저장
- * - 메모리 기반 빠른 중복 체크
- * - UNIQUE constraint와 이중 방어
+ * - DB의 UNIQUE constraint (unique_notification_per_entity) 사용
+ * - notifications 테이블의 (user_id, type, entity_type, entity_id) 조합으로 중복 방지
+ * - 메모리 기반 체크 제거 (Edge Function 인스턴스 간 불일치 문제 해결)
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import type { Database } from '../../types/database.types.ts';
 import { createGameStartedNotification } from '../_shared/services/notifications/createGameStartedNotification.service.ts';
-
-// 중복 방지: 최근 60초 내 처리한 조합을 메모리에 저장
-// Map<"contextType:contextId:actorId", timestamp>
-const processedNotifications = new Map<string, number>();
-
-// 주기적으로 60초 이상 지난 항목 정리 (메모리 누수 방지)
-setInterval(() => {
-  const cutoff = Date.now() - 60000; // 60초
-  for (const [key, time] of processedNotifications.entries()) {
-    if (time < cutoff) {
-      processedNotifications.delete(key);
-    }
-  }
-}, 30000); // 30초마다 정리
 
 Deno.serve(async (req) => {
   try {
@@ -131,23 +117,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 중복 체크 키 생성
-    const duplicateKey = `${contextType}:${contextId}:${senderId}`;
-    const now = Date.now();
-    const lastProcessed = processedNotifications.get(duplicateKey);
-
-    if (lastProcessed && now - lastProcessed < 60000) {
-      console.log(
-        `[Game Start Notification] Duplicate detected: ${duplicateKey}, skipping (last processed ${Math.floor((now - lastProcessed) / 1000)}s ago)`
-      );
-      return new Response(JSON.stringify({ success: true, duplicate: true }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+    // 로깅용 키 생성 (중복 체크는 DB UNIQUE constraint로 처리)
+    const logKey = `${contextType}:${contextId}:${senderId}`;
 
     console.log(
-      `[Game Start Notification] Started: ${duplicateKey}, timestamp=${timestamp}`
+      `[Game Start Notification] Started: ${logKey}, message_id=${record.id}, timestamp=${timestamp}`
     );
 
     // Supabase Admin 클라이언트 생성
@@ -230,7 +204,7 @@ Deno.serve(async (req) => {
 
     if (receiverIds.length === 0) {
       console.log(
-        `[Game Start Notification] No receivers (all members are sender or empty room): ${duplicateKey}`
+        `[Game Start Notification] No receivers (all members are sender or empty room): ${logKey}`
       );
       return new Response(
         JSON.stringify({ success: true, message: 'No receivers' }),
@@ -277,7 +251,7 @@ Deno.serve(async (req) => {
 
       if (unreadReceiverIds.length === 0) {
         console.log(
-          `[Game Start Notification] All receivers have read the message: ${duplicateKey}`
+          `[Game Start Notification] All receivers have read the message: ${logKey}`
         );
         return new Response(
           JSON.stringify({ success: true, message: 'All receivers read' }),
@@ -289,27 +263,26 @@ Deno.serve(async (req) => {
       }
 
       // 읽지 않은 사용자에게만 알림 전송
+      // entity_id에 messageId를 포함하여 각 메시지마다 별도 알림 생성
       const result = await createGameStartedNotification(supabase, {
         receiverIds: unreadReceiverIds,
         actorId: senderId,
         contextType,
         contextId: String(contextId), // number → string 변환
+        messageId: messageId,
       });
-
-      // 처리 완료 후 Map에 추가
-      processedNotifications.set(duplicateKey, now);
 
       // 결과 확인
       if (result.error) {
         console.error(
-          `[Game Start Notification] Error: ${duplicateKey}`,
+          `[Game Start Notification] Error: ${logKey}`,
           result.error
         );
         throw result.error;
       }
 
       console.log(
-        `[Game Start Notification] Completed: ${duplicateKey}, notifications created=${result.data?.length || 0}`
+        `[Game Start Notification] Completed: ${logKey}, notifications created=${result.data?.length || 0}`
       );
 
       return new Response(
@@ -325,28 +298,24 @@ Deno.serve(async (req) => {
     }
 
     // 파티 메시지인 경우: 기존 로직 (읽음 확인 없이 바로 알림 전송)
-    // Service 호출
+    // entity_id에 messageId를 포함하여 각 메시지마다 별도 알림 생성
+    const messageId = record.id;
     const result = await createGameStartedNotification(supabase, {
       receiverIds,
       actorId: senderId,
       contextType,
       contextId: String(contextId), // number → string 변환
+      messageId: messageId,
     });
-
-    // 처리 완료 후 Map에 추가
-    processedNotifications.set(duplicateKey, now);
 
     // 결과 확인
     if (result.error) {
-      console.error(
-        `[Game Start Notification] Error: ${duplicateKey}`,
-        result.error
-      );
+      console.error(`[Game Start Notification] Error: ${logKey}`, result.error);
       throw result.error;
     }
 
     console.log(
-      `[Game Start Notification] Completed: ${duplicateKey}, notifications created=${result.data?.length || 0}`
+      `[Game Start Notification] Completed: ${logKey}, notifications created=${result.data?.length || 0}`
     );
 
     return new Response(

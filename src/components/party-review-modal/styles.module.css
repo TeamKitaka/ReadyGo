@@ -1,0 +1,304 @@
+.container {
+  width: 100%;
+  max-width: 672px;
+  background: var(--color-bg-primary);
+  border: 1px solid rgba(95, 252, 226, 0.16);
+  border-radius: 16px;
+  box-shadow:
+    0px 10px 15px -3px rgba(95, 252, 226, 0.05),
+    0px 4px 6px -4px rgba(95, 252, 226, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 헤더 */
+.header {
+  background: var(--color-bg-secondary, #f9fafb);
+  border-bottom: 1px solid rgba(95, 252, 226, 0.1);
+  padding: 16px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.indicator {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 8px;
+}
+
+.indicatorDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 99999px;
+  background: var(--color-teal-500, #5ffce2);
+}
+
+.indicatorDot:nth-child(1) {
+  background: var(--color-teal-800, #36817c);
+  opacity: 0.686;
+}
+
+.indicatorDot:nth-child(2) {
+  background: var(--color-teal-700, #39ac99);
+}
+
+.indicatorDot:nth-child(3) {
+  background: var(--color-teal-500, #5ffce2);
+}
+
+.headerText {
+  font-family: var(--font-code, 'Source Code Pro', 'Courier New', monospace);
+  font-size: 12px;
+  line-height: 12px;
+  color: var(--color-teal-500, #5ffce2);
+  margin-left: auto;
+}
+
+/* 메인 컨텐츠 */
+.mainContent {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-height: 722px;
+  overflow-y: auto;
+}
+
+/* 제목 섹션 */
+.titleSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0 74px;
+}
+
+.title {
+  font-family: var(--typo-heading-lg-font-family);
+  font-size: var(--typo-heading-lg-font-size);
+  font-weight: var(--typo-heading-lg-font-weight);
+  line-height: var(--typo-heading-lg-line-height);
+  color: var(--color-text-primary, #ffffff);
+  text-align: center;
+  margin: 0;
+}
+
+.subtitle {
+  font-family: var(--typo-body-lg-font-family);
+  font-size: var(--typo-body-lg-font-size);
+  font-weight: var(--typo-body-lg-font-weight);
+  line-height: var(--typo-body-lg-line-height);
+  color: var(--color-text-interactive-secondary, #31323a);
+  text-align: center;
+  margin: 0;
+}
+
+/* 파티 정보 섹션 */
+.partyInfoSection {
+  background: var(--color-bg-secondary, #f9fafb);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.partyInfoTitle {
+  font-family: var(--typo-heading-md-font-family);
+  font-size: var(--typo-heading-md-font-size);
+  font-weight: var(--typo-heading-md-font-weight);
+  line-height: var(--typo-heading-md-line-height);
+  color: var(--color-text-primary, #030712);
+  margin: 0;
+}
+
+.partyInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, fit-content(100%));
+  gap: 8px;
+}
+
+.partyInfoItem {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.partyInfoLabelWrapper {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  min-width: 80px;
+}
+
+.partyInfoIcon {
+  flex-shrink: 0;
+  color: var(--color-icon-interactive-primary);
+}
+
+.partyInfoLabel {
+  font-family: var(--typo-body-lg-font-family);
+  font-size: var(--typo-body-lg-font-size);
+  font-weight: var(--typo-body-lg-font-weight);
+  line-height: var(--typo-body-lg-line-height);
+  color: var(--color-text-interactive-secondary, #31323a);
+}
+
+.partyInfoValue {
+  font-family: var(--typo-body-lg-font-family);
+  font-size: var(--typo-body-lg-font-size);
+  font-weight: var(--typo-body-lg-medium-font-weight);
+  line-height: var(--typo-body-lg-medium-line-height);
+  color: var(--color-text-primary, #030712);
+}
+
+/* 파티원 섹션 */
+.membersSection {
+  background: var(--color-bg-secondary, #f9fafb);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 364px;
+  overflow: hidden;
+}
+
+.membersTitle {
+  font-family: var(--typo-heading-md-font-family);
+  font-size: var(--typo-heading-md-font-size);
+  font-weight: var(--typo-heading-md-font-weight);
+  line-height: var(--typo-heading-md-line-height);
+  color: var(--color-text-primary, #030712);
+  margin: 0;
+  height: 30px;
+  display: flex;
+  align-items: center;
+}
+
+.membersList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.memberCard {
+  border: 1px solid var(--color-border-secondary, #f3f4f6);
+  border-radius: 16px;
+  background: var(--color-bg-secondary, #f9fafb);
+  padding: 12px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.memberCard:hover {
+  border: 1px solid var(--color-border-focus-ring, #56e5ce);
+}
+
+.memberAvatar {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--color-border-secondary, #f3f4f6);
+  border-radius: 24px;
+  padding: 2px;
+  background: var(--color-bg-primary, white);
+}
+
+.memberContent {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.memberNameWrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.memberNickname {
+  font-family: var(--typo-body-lg-font-family);
+  font-size: var(--typo-body-lg-font-size);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--typo-body-lg-line-height);
+  color: var(--color-text-primary, #030712);
+}
+
+.memberNickname.selfNickname {
+  color: var(--color-text-disabled, #a9afb9);
+}
+
+/* 하단 버튼 */
+.footer {
+  background: var(--color-bg-secondary, #f9fafb);
+  border-top: 1px solid rgba(95, 252, 226, 0.1);
+  padding: 24px;
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+}
+
+.cancelButton {
+  flex: 1;
+  height: 48px;
+  background: var(--color-bg-interactive-secondary, #353a42) !important;
+  color: var(--color-text-interactive-secondary-pressed, #f3f4f6) !important;
+}
+
+.confirmButton {
+  flex: 1;
+  height: 48px;
+  background: var(--color-bg-interactive-primary, #5ffce2) !important;
+  color: var(--color-text-interactive-inverse, black) !important;
+}
+
+@media (max-width: 768px) {
+  .container {
+    max-width: 100%;
+    border-radius: 0;
+    max-height: 100vh;
+  }
+
+  .mainContent {
+    padding: 16px;
+    max-height: calc(100vh - 200px);
+  }
+
+  .titleSection {
+    padding: 0 16px;
+  }
+
+  .title {
+    font-size: 20px;
+    line-height: 24px;
+  }
+
+  .partyInfoGrid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(5, fit-content(100%));
+  }
+
+  .membersSection {
+    max-height: 300px;
+  }
+}
