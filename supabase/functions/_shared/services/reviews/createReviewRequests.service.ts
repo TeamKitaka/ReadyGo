@@ -48,7 +48,7 @@ export const createReviewRequests = async (
   // 같은 context의 game_start_logs 조회 (게임 시작을 한 사용자들)
   // context_id는 text 타입이므로 문자열로 정확히 비교
   const normalizedContextId = String(input.contextId).trim();
-  
+
   console.log(
     `[Create Review Requests] Fetching game_start_logs: context_type=${input.contextType}, context_id="${normalizedContextId}" (type: ${typeof normalizedContextId})`
   );
@@ -147,20 +147,20 @@ export const createReviewRequests = async (
     console.log(
       `[Create Review Requests] Not enough users (${targetUserIds.length} < 2) for context_type=${input.contextType}, context_id="${normalizedContextId}"`
     );
-    
+
     // 디버깅: 왜 1명만 조회되었는지 확인하기 위해 다양한 방식으로 조회
     // 1. 정확한 일치
     console.log(
       `[Create Review Requests] Exact match query result: ${gameStartLogs?.length || 0} logs`
     );
-    
+
     // 2. 부분 일치 (공백이나 다른 문자가 포함된 경우)
     const { data: similarLogs } = await client
       .from('game_start_logs')
       .select('id, actor_id, context_id, context_type, created_at')
       .eq('context_type', input.contextType)
       .ilike('context_id', `%${normalizedContextId}%`);
-    
+
     console.log(
       `[Create Review Requests] Similar context_id (ILIKE): ${similarLogs?.length || 0} logs`,
       similarLogs?.map((log) => ({
@@ -171,7 +171,7 @@ export const createReviewRequests = async (
         created_at: log.created_at,
       }))
     );
-    
+
     // 3. 숫자로 변환하여 조회 (context_id가 숫자 문자열인 경우)
     const contextIdNum = parseInt(normalizedContextId, 10);
     if (!isNaN(contextIdNum)) {
@@ -179,8 +179,10 @@ export const createReviewRequests = async (
         .from('game_start_logs')
         .select('id, actor_id, context_id, context_type, created_at')
         .eq('context_type', input.contextType)
-        .or(`context_id.eq.${contextIdNum},context_id.eq."${contextIdNum}",context_id.eq."${normalizedContextId}"`);
-      
+        .or(
+          `context_id.eq.${contextIdNum},context_id.eq."${contextIdNum}",context_id.eq."${normalizedContextId}"`
+        );
+
       console.log(
         `[Create Review Requests] Numeric context_id variants: ${numericLogs?.length || 0} logs`,
         numericLogs?.map((log) => ({
@@ -190,7 +192,7 @@ export const createReviewRequests = async (
         }))
       );
     }
-    
+
     // 4. 해당 context_type의 모든 최근 로그 조회 (최근 10개)
     const { data: recentLogs } = await client
       .from('game_start_logs')
@@ -198,7 +200,7 @@ export const createReviewRequests = async (
       .eq('context_type', input.contextType)
       .order('created_at', { ascending: false })
       .limit(10);
-    
+
     console.log(
       `[Create Review Requests] Recent ${input.contextType} logs (last 10):`,
       recentLogs?.map((log) => ({
@@ -208,7 +210,7 @@ export const createReviewRequests = async (
         created_at: log.created_at,
       }))
     );
-    
+
     return [];
   }
 
@@ -272,11 +274,11 @@ export const createReviewRequests = async (
             target_id: targetId,
             status: 'pending' as const,
           };
-          
+
           console.log(
             `[Create Review Requests] Adding review request: context_type=${reviewRequest.context_type}, context_id=${reviewRequest.context_id}, actor_id=${reviewRequest.actor_id}, target_id=${reviewRequest.target_id}`
           );
-          
+
           reviewRequests.push(reviewRequest);
         }
       }

@@ -90,22 +90,6 @@ export default function PartyReviewModal({
     return map;
   }, [partyMembers, partyInfo]);
 
-  // 진행률 계산
-  const progress = useMemo(() => {
-    const completed = reviewRequests.filter(
-      (req) => req.status === 'completed'
-    ).length;
-    const total = reviewRequests.length;
-    return { completed, total };
-  }, [reviewRequests]);
-
-  // 모든 멤버 완료 여부
-  const allCompleted = useMemo(() => {
-    return (
-      reviewRequests.length > 0 &&
-      reviewRequests.every((req) => req.status === 'completed')
-    );
-  }, [reviewRequests]);
 
   // ESC/backdrop 클릭 처리
   const handleBackdropClick = () => {

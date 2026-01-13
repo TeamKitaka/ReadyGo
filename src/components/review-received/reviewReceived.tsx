@@ -3,7 +3,10 @@
 import styles from './styles.module.css';
 import Button from '@/commons/components/button';
 import Avatar from '@/commons/components/avatar';
-import type { ReviewData, ReviewerProfile } from '@/hooks/useReviewReceivedModalFromNotification.hook';
+import type {
+  ReviewData,
+  ReviewerProfile,
+} from '@/hooks/useReviewReceivedModalFromNotification.hook';
 import type { AnimalType } from '@/commons/constants/animal';
 import { getAvatarImagePath } from '@/lib/avatar/getAvatarImagePath';
 
@@ -13,7 +16,11 @@ interface ReviewReceivedProps {
   reviewerProfile: ReviewerProfile | null;
 }
 
-export default function ReviewReceived({ onClose, reviewData, reviewerProfile }: ReviewReceivedProps) {
+export default function ReviewReceived({
+  onClose,
+  reviewData,
+  reviewerProfile,
+}: ReviewReceivedProps) {
   // 체크 항목 텍스트 정의 (ReviewModal의 질문 순서와 동일)
   const reviewQuestionTexts = [
     '매칭 과정에서 예의 바르고 편안한 태도로 대화했어요.', // manner[0]
@@ -25,7 +32,9 @@ export default function ReviewReceived({ onClose, reviewData, reviewerProfile }:
 
   // score 값으로부터 체크된 항목들 추론
   const getCheckedPoints = (): string[] => {
-    if (!reviewData) return [];
+    if (!reviewData) {
+      return [];
+    }
 
     const checkedPoints: string[] = [];
 
@@ -57,7 +66,9 @@ export default function ReviewReceived({ onClose, reviewData, reviewerProfile }:
 
   // 날짜 포맷팅 (YYYY.MM.DD 형식)
   const formatGameDate = (dateString: string | null): string => {
-    if (!dateString) return '';
+    if (!dateString) {
+      return '';
+    }
     const date = new Date(dateString);
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -109,9 +120,7 @@ export default function ReviewReceived({ onClose, reviewData, reviewerProfile }:
             <div className={styles.reviewBox}>
               {comment && (
                 <div className={styles.quoteBox}>
-                  <p className={styles.quoteText}>
-                    &ldquo;{comment}&rdquo;
-                  </p>
+                  <p className={styles.quoteText}>&ldquo;{comment}&rdquo;</p>
                 </div>
               )}
               {checkedPoints.length > 0 && (

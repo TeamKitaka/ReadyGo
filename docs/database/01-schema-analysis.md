@@ -157,4 +157,4 @@ Generated from: database.types.ts
 |  v1.0.5 | 2025-01-07 | steam_user_stats 테이블 추가                      |
 |  v1.0.6 | 2026-01-09 | match_results_cache 테이블 추가 (Step 1 캐싱)     |
 |  v1.0.7 | 2026-01-09 | match_exposure_log 테이블 추가 (Step 2 중복 방지) |
-|  v1.0.8 | 2026-01-15 | review_requests 테이블 추가                        |
+|  v1.0.8 | 2026-01-15 | review_requests 테이블 추가                       |

@@ -49,7 +49,13 @@ Deno.serve(async (req) => {
     }
 
     // 필수 필드 검증 (기본 필드)
-    if (!record || !record.id || !record.actor_id || !record.target_id || !record.game_start_log_id) {
+    if (
+      !record ||
+      !record.id ||
+      !record.actor_id ||
+      !record.target_id ||
+      !record.game_start_log_id
+    ) {
       console.log(
         `[Review Request Notification] Ignored: invalid payload (missing required fields)`
       );
@@ -66,7 +72,7 @@ Deno.serve(async (req) => {
     console.log(
       `[Review Request Notification] Checking context fields: context_type=${record.context_type}, context_id=${record.context_id}`
     );
-    
+
     if (!record.context_type || !record.context_id) {
       console.log(
         `[Review Request Notification] Ignored: missing context_type or context_id`,
@@ -94,7 +100,7 @@ Deno.serve(async (req) => {
         }
       );
     }
-    
+
     console.log(
       `[Review Request Notification] Context validation passed: context_type=${record.context_type}, context_id=${record.context_id}`
     );
@@ -163,4 +169,3 @@ Deno.serve(async (req) => {
     );
   }
 });
-

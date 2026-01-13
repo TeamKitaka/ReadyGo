@@ -4,7 +4,6 @@ import { useState, useCallback } from 'react';
 import { useReviewSubmission } from '@/hooks/useReviewSubmission.hook';
 import { useAuth } from '@/commons/providers/auth/auth.provider';
 import type { ReviewAnswers } from '@/services/temperature/calculateTemperatureFromReview.service';
-import type { AnimalType } from '@/commons/constants/animal';
 
 export interface ReviewRequestWithProfile {
   id: number;
@@ -82,9 +81,7 @@ export const usePartyReviewModal = (): UsePartyReviewModalReturn => {
   const [reviewRequests, setReviewRequests] = useState<
     ReviewRequestWithProfile[]
   >([]);
-  const [selectedTargetId, setSelectedTargetId] = useState<string | null>(
-    null
-  );
+  const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [partyInfo, setPartyInfo] = useState<PartyInfo | null>(null);
@@ -114,7 +111,9 @@ export const usePartyReviewModal = (): UsePartyReviewModalReturn => {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          errorData.error || errorData.detail || 'review_requests 조회에 실패했습니다.'
+          errorData.error ||
+            errorData.detail ||
+            'review_requests 조회에 실패했습니다.'
         );
       }
 
@@ -161,10 +160,12 @@ export const usePartyReviewModal = (): UsePartyReviewModalReturn => {
     }
 
     const result = await response.json();
-    return (result.members || []).map((member: { user_id: string; role: string | null }) => ({
-      user_id: member.user_id,
-      role: member.role,
-    })) as PartyMemberInfo[];
+    return (result.members || []).map(
+      (member: { user_id: string; role: string | null }) => ({
+        user_id: member.user_id,
+        role: member.role,
+      })
+    ) as PartyMemberInfo[];
   }, []);
 
   /**
@@ -211,9 +212,7 @@ export const usePartyReviewModal = (): UsePartyReviewModalReturn => {
         setIsOpen(true);
       } catch (err) {
         const errorMessage =
-          err instanceof Error
-            ? err.message
-            : '데이터 로딩에 실패했습니다.';
+          err instanceof Error ? err.message : '데이터 로딩에 실패했습니다.';
         setError(errorMessage);
         console.error('[usePartyReviewModal] Failed to open modal:', err);
       } finally {
@@ -240,17 +239,20 @@ export const usePartyReviewModal = (): UsePartyReviewModalReturn => {
   /**
    * 멤버 선택 (2단 모달 열기)
    */
-  const selectMember = useCallback((targetId: string) => {
-    // 이미 completed된 멤버는 선택 불가
-    const reviewRequest = reviewRequests.find(
-      (req) => req.target_id === targetId
-    );
-    if (reviewRequest?.status === 'completed') {
-      return;
-    }
+  const selectMember = useCallback(
+    (targetId: string) => {
+      // 이미 completed된 멤버는 선택 불가
+      const reviewRequest = reviewRequests.find(
+        (req) => req.target_id === targetId
+      );
+      if (reviewRequest?.status === 'completed') {
+        return;
+      }
 
-    setSelectedTargetId(targetId);
-  }, [reviewRequests]);
+      setSelectedTargetId(targetId);
+    },
+    [reviewRequests]
+  );
 
   /**
    * 2단 모달에서 1단으로 복귀
@@ -298,10 +300,7 @@ export const usePartyReviewModal = (): UsePartyReviewModalReturn => {
         // 1단으로 복귀
         setSelectedTargetId(null);
       } catch (err) {
-        console.error(
-          '[usePartyReviewModal] Failed to submit review:',
-          err
-        );
+        console.error('[usePartyReviewModal] Failed to submit review:', err);
         throw err;
       }
     },
@@ -326,4 +325,3 @@ export const usePartyReviewModal = (): UsePartyReviewModalReturn => {
     highlightReviewRequestId,
   };
 };
-

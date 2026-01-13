@@ -54,9 +54,15 @@ Deno.serve(async (req) => {
     const { context_type, context_id } = payload;
 
     if (!context_type || !context_id) {
-      console.error('[Create Review Requests] Missing required fields:', { context_type, context_id });
+      console.error('[Create Review Requests] Missing required fields:', {
+        context_type,
+        context_id,
+      });
       return new Response(
-        JSON.stringify({ success: false, error: 'context_type and context_id are required' }),
+        JSON.stringify({
+          success: false,
+          error: 'context_type and context_id are required',
+        }),
         {
           status: 400,
           headers: { 'Content-Type': 'application/json' },

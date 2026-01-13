@@ -102,7 +102,8 @@ export const GET = async (request: NextRequest) => {
       return NextResponse.json(
         {
           error: '필수 파라미터가 없습니다.',
-          detail: 'context_type과 context_id는 필수입니다. (또는 review_request_id)',
+          detail:
+            'context_type과 context_id는 필수입니다. (또는 review_request_id)',
         },
         { status: 400 }
       );

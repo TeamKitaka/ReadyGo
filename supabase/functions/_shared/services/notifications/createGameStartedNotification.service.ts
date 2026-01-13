@@ -37,7 +37,7 @@ export const createGameStartedNotification = async (
 ) => {
   // entity_type 매핑: 'chat' → 'chat_room', 'party' → 'party_post'
   const entityType = input.contextType === 'chat' ? 'chat_room' : 'party_post';
-  
+
   // entity_id에 메시지 ID를 포함하여 각 메시지마다 별도 알림 생성
   // 형식: "room_id:message_id" 또는 "post_id:message_id"
   const entityId = `${input.contextId}:${input.messageId}`;

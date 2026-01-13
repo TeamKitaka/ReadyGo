@@ -310,10 +310,7 @@ Deno.serve(async (req) => {
 
     // 결과 확인
     if (result.error) {
-      console.error(
-        `[Game Start Notification] Error: ${logKey}`,
-        result.error
-      );
+      console.error(`[Game Start Notification] Error: ${logKey}`, result.error);
       throw result.error;
     }
 

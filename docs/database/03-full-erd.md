@@ -203,4 +203,4 @@ erDiagram
 |  v1.0.4 | 2025-01-13 | chat_blocks를 user_blocks로 변경, User/Profile Domain으로 이동                              |
 |  v1.0.5 | 2025-01-15 | user_profiles.temperature_score, temperature_logs.change 컬럼 타입을 int → numeric으로 변경 |
 |  v1.0.6 | 2026-01-09 | Match Domain에 match_results_cache, match_exposure_log 추가 (캐싱 시스템)                   |
-|  v1.0.7 | 2026-01-15 | Social/Interaction Domain에 review_requests 테이블 추가 (게임 시작 후 후기 요청 관리)     |
+|  v1.0.7 | 2026-01-15 | Social/Interaction Domain에 review_requests 테이블 추가 (게임 시작 후 후기 요청 관리)       |
