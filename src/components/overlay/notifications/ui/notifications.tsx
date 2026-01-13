@@ -20,6 +20,7 @@ export interface NotificationItem {
   isRead: boolean;
   entityType?: string;
   entityId?: string;
+  message?: string; // DB에 저장된 메시지 (파티의 경우 "함께한 파티원들과의 게임은 어떠셨나요?" 등)
   onClick?: () => void;
 }
 
@@ -69,6 +70,8 @@ const convertToNotificationItem = (
     isRead: notification.is_read || false,
     entityType: notification.entity_type || undefined,
     entityId: notification.entity_id || undefined,
+    // DB에 저장된 message 필드도 전달 (파티의 경우 "함께한 파티원들과의 게임은 어떠셨나요?" 등)
+    message: notification.message || undefined,
   };
 };
 
@@ -84,8 +87,15 @@ interface NotificationsProps {
 const getNotificationMessage = (
   type: NotificationType,
   nickname: string,
-  entityType?: string
+  entityType?: string,
+  dbMessage?: string // DB에 저장된 메시지 (우선 사용)
 ): string => {
+  // DB에 저장된 메시지가 있으면 우선 사용 (파티의 경우 "함께한 파티원들과의 게임은 어떠셨나요?" 등)
+  if (dbMessage) {
+    return dbMessage;
+  }
+
+  // DB 메시지가 없을 때만 하드코딩된 메시지 사용
   switch (type) {
     case 'REVIEW_RECEIVED':
       return `${nickname}님이 후기를 보냄`;
@@ -168,7 +178,8 @@ const NotificationItemComponent = ({
   const message = getNotificationMessage(
     notification.type,
     notification.nickname,
-    notification.entityType
+    notification.entityType,
+    notification.message // DB에 저장된 메시지 우선 사용
   );
   const iconName = getNotificationIcon(notification.type);
   const colorClass = getNotificationColorClass(notification.type);

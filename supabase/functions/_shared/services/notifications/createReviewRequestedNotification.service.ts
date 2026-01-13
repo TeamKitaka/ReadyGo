@@ -38,9 +38,16 @@ export const createReviewRequestedNotification = async (
   const entityType = input.contextType === 'chat' ? 'chat_room' : 'party_post';
 
   // 알림 메시지 생성
+  console.log(
+    `[createReviewRequestedNotification] Creating notification: context_type=${input.contextType}, actor_id=${input.actorId}, target_id=${input.targetId}`
+  );
+
   let notificationMessage: string | undefined;
   if (input.contextType === 'chat') {
     // 채팅: actor_id의 닉네임 사용
+    console.log(
+      `[createReviewRequestedNotification] Context type is 'chat', using nickname`
+    );
     try {
       const { data: actorProfile, error: profileError } =
         await userProfilesRepository.findByUserId(client, input.actorId);
@@ -61,10 +68,23 @@ export const createReviewRequestedNotification = async (
       );
       notificationMessage = '함께한 멤버와의 게임은 어떠셨나요?';
     }
-  } else {
+  } else if (input.contextType === 'party') {
     // 파티: 일반 메시지
+    console.log(
+      `[createReviewRequestedNotification] Context type is 'party', using party message`
+    );
     notificationMessage = '함께한 파티원들과의 게임은 어떠셨나요?';
+  } else {
+    // 예상치 못한 context_type
+    console.warn(
+      `[createReviewRequestedNotification] Unknown context_type: ${input.contextType}, defaulting to chat message`
+    );
+    notificationMessage = '함께한 멤버와의 게임은 어떠셨나요?';
   }
+
+  console.log(
+    `[createReviewRequestedNotification] Generated message: "${notificationMessage}"`
+  );
 
   // 알림은 target_id (후기를 써야 하는 사람)에게 전송
   return await notificationsRepository.insert(client, {
@@ -76,4 +96,3 @@ export const createReviewRequestedNotification = async (
     message: notificationMessage,
   });
 };
-

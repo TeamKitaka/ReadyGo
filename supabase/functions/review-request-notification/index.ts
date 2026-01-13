@@ -63,9 +63,14 @@ Deno.serve(async (req) => {
     }
 
     // 형태 검증: context_type, context_id 존재 여부 및 값 검증
+    console.log(
+      `[Review Request Notification] Checking context fields: context_type=${record.context_type}, context_id=${record.context_id}`
+    );
+    
     if (!record.context_type || !record.context_id) {
       console.log(
-        `[Review Request Notification] Ignored: missing context_type or context_id`
+        `[Review Request Notification] Ignored: missing context_type or context_id`,
+        { context_type: record.context_type, context_id: record.context_id }
       );
       return new Response(
         JSON.stringify({ success: true, message: 'Missing context fields' }),
@@ -79,7 +84,7 @@ Deno.serve(async (req) => {
     // context_type 값 검증 (chat 또는 party만 허용)
     if (record.context_type !== 'chat' && record.context_type !== 'party') {
       console.log(
-        `[Review Request Notification] Ignored: invalid context_type=${record.context_type}`
+        `[Review Request Notification] Ignored: invalid context_type=${record.context_type} (expected 'chat' or 'party')`
       );
       return new Response(
         JSON.stringify({ success: true, message: 'Invalid context_type' }),
@@ -89,6 +94,10 @@ Deno.serve(async (req) => {
         }
       );
     }
+    
+    console.log(
+      `[Review Request Notification] Context validation passed: context_type=${record.context_type}, context_id=${record.context_id}`
+    );
 
     const reviewRequestId = record.id;
     const actorId = record.actor_id; // 게임 시작을 누른 사람 (후기를 받을 사람)
@@ -97,7 +106,11 @@ Deno.serve(async (req) => {
     const contextId = String(record.context_id); // number를 string으로 변환
 
     console.log(
-      `[Review Request Notification] Started: review_request_id=${reviewRequestId}, actor_id=${actorId}, target_id=${targetId}, context_type=${contextType}, context_id=${contextId}`
+      `[Review Request Notification] Started: review_request_id=${reviewRequestId}, actor_id=${actorId}, target_id=${targetId}, context_type=${contextType} (raw: ${record.context_type}), context_id=${contextId}`
+    );
+    console.log(
+      `[Review Request Notification] Full record:`,
+      JSON.stringify(record, null, 2)
     );
 
     // Supabase Admin 클라이언트 생성

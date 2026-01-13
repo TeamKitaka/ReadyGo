@@ -18,6 +18,8 @@ export type InsertNotificationParams = {
   actor_id?: string;
   entity_type?: NotificationEntityType;
   entity_id?: string;
+  message?: string; // 알림 메시지 (파티의 경우 "함께한 파티원들과의 게임은 어떠셨나요?" 등)
+  title?: string; // 알림 제목 (선택적)
 };
 
 export type BulkInsertNotificationParams = {
@@ -25,6 +27,8 @@ export type BulkInsertNotificationParams = {
   actor_id?: string;
   entity_type?: NotificationEntityType;
   entity_id?: string;
+  message?: string; // 알림 메시지
+  title?: string; // 알림 제목 (선택적)
 };
 
 /**
@@ -48,6 +52,8 @@ export const insert = async (
         actor_id: params.actor_id ?? null,
         entity_type: params.entity_type ?? null,
         entity_id: params.entity_id ?? null,
+        message: params.message ?? null,
+        title: params.title ?? null,
         is_read: false,
       },
       { ignoreDuplicates: true } // UNIQUE constraint 위반 시 무시
@@ -74,6 +80,8 @@ export const bulkInsert = async (
     actor_id: params.actor_id ?? null,
     entity_type: params.entity_type ?? null,
     entity_id: params.entity_id ?? null,
+    message: params.message ?? null,
+    title: params.title ?? null,
     is_read: false,
   }));
 
