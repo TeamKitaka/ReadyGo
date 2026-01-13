@@ -11,6 +11,9 @@ import { useOverlayStore } from '@/stores/overlay.store';
 import { getChatRoomUrl, getPartyDetailUrl } from '@/commons/constants/url';
 import { useReviewModalFromNotification } from '@/hooks/useReviewModalFromNotification.hook';
 import ReviewModal from '@/commons/components/review-modal';
+import { useReviewReceivedModalFromNotification } from '@/hooks/useReviewReceivedModalFromNotification.hook';
+import ReviewReceived from '@/components/review-received';
+import ModalContainer from '@/commons/components/modal-container';
 
 interface LayoutOverlaysProps {
   currentOverlay: string | null;
@@ -25,6 +28,7 @@ export const LayoutOverlays = ({
   const { openFriends } = useOverlayStore();
   const { notifications, loading, markAsRead } = useNotifications();
   const reviewModal = useReviewModalFromNotification();
+  const reviewReceivedModal = useReviewReceivedModalFromNotification();
   const [friendsInitialTab, setFriendsInitialTab] = useState<
     'list' | 'request'
   >('list');
@@ -96,7 +100,7 @@ export const LayoutOverlays = ({
       }
     }
 
-    // 후기 요청 알림: 후기 작성 모달 열기
+    // 후기 요청 알림: 후기 작성 모달 열기 (알림 overlay는 유지)
     if (notification.type === 'REVIEW_REQUESTED') {
       // notifications 배열에서 원본 NotificationWithActor 찾기
       const originalNotification = notifications.find(
@@ -104,7 +108,20 @@ export const LayoutOverlays = ({
       );
       if (originalNotification) {
         reviewModal.openModal(originalNotification);
-        onClose(); // 알림 overlay 닫기
+        // 알림 overlay는 유지 (onClose 호출하지 않음)
+        return;
+      }
+    }
+
+    // 후기 수신 알림: 후기 수신 모달 열기 (알림 overlay는 유지)
+    if (notification.type === 'REVIEW_RECEIVED') {
+      // notifications 배열에서 원본 NotificationWithActor 찾기
+      const originalNotification = notifications.find(
+        (n) => String(n.id) === notification.id
+      );
+      if (originalNotification) {
+        reviewReceivedModal.openModal(originalNotification);
+        // 알림 overlay는 유지 (onClose 호출하지 않음)
         return;
       }
     }
@@ -131,6 +148,17 @@ export const LayoutOverlays = ({
     />
   ) : null;
 
+  // ReviewReceived Modal은 Portal을 사용하므로 모든 조건에서 렌더링 가능
+  const reviewReceivedModalComponent = reviewReceivedModal.isModalOpen ? (
+    <ModalContainer onClose={reviewReceivedModal.closeModal}>
+      <ReviewReceived
+        onClose={reviewReceivedModal.closeModal}
+        reviewData={reviewReceivedModal.reviewData}
+        reviewerProfile={reviewReceivedModal.reviewerProfile}
+      />
+    </ModalContainer>
+  ) : null;
+
   if (currentOverlay === 'notifications') {
     const notificationItems = (notifications || []).map(
       convertToNotificationItem
@@ -147,6 +175,7 @@ export const LayoutOverlays = ({
           />
         </OverlayContainer>
         {reviewModalComponent}
+        {reviewReceivedModalComponent}
       </>
     );
   }
@@ -158,9 +187,15 @@ export const LayoutOverlays = ({
           <FriendsContainer initialTab={friendsInitialTab} />
         </OverlayContainer>
         {reviewModalComponent}
+        {reviewReceivedModalComponent}
       </>
     );
   }
 
-  return reviewModalComponent;
+  return (
+    <>
+      {reviewModalComponent}
+      {reviewReceivedModalComponent}
+    </>
+  );
 };
