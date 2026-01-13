@@ -229,3 +229,47 @@
 .floatButton:hover {
   border-color: var(--color-border-interactive-secondary);
 }
+
+/* 반응형: 1324px 이하 */
+@media (max-width: 1324px) {
+  .contentWrapper {
+    min-width: 610px; /* 카드 최소 너비(546px) + 양쪽 padding(64px)에 맞춰 contentWrapper가 줄어들지 않도록 */
+    margin: 0 auto; /* 화면 가운데 정렬 */
+  }
+
+  .mainArea {
+    grid-template-columns: 1fr; /* 2열 → 1열 */
+    justify-items: center; /* 카드들을 가운데 정렬 */
+  }
+
+  .searchArea {
+    flex-direction: column;
+    height: auto;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .filterSearchWrapper {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .filterSelect {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .searchInput {
+    width: 100%;
+    flex-basis: 100%; /* 검색바를 다음 줄로 강제 이동 */
+  }
+
+  .newPartyButton {
+    width: auto;
+    min-width: 131px;
+  }
+}

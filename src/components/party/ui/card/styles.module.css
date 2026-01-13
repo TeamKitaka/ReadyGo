@@ -1,5 +1,7 @@
 .card {
   width: 100%;
+  min-width: 546px;
+  max-width: 800px;
   height: 358px;
   padding: 24px;
   gap: 32px;
@@ -220,4 +222,12 @@
 /* 지난 시간 표시 스타일 */
 .startTimeExpired {
   color: var(--color-text-danger) !important;
+}
+
+/* 반응형: 1324px 이하에서도 카드 최소/최대 너비 유지 */
+@media (max-width: 1324px) {
+  .card {
+    min-width: 546px; /* 카드가 546px 이하로 줄어들지 않도록 보장 */
+    max-width: 800px; /* 카드 최대 너비 유지 */
+  }
 }
