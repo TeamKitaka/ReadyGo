@@ -184,11 +184,11 @@ export default function Party() {
                     }}
                   />
                 ))}
-                {!hasMore && partyList.length > 0 && (
+                {/* {!hasMore && partyList.length > 0 && (
                   <div className={styles.statusMessage}>
                     마지막 게시물입니다
                   </div>
-                )}
+                )} */}
               </>
             )}
           </div>
