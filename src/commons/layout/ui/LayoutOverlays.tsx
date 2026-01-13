@@ -74,16 +74,20 @@ export const LayoutOverlays = ({
     // 게임 시작 알림: chat_room 또는 party_post로 이동
     if (notification.type === 'GAME_STARTED') {
       if (notification.entityType === 'chat_room' && notification.entityId) {
-        // 채팅방으로 이동
-        router.push(getChatRoomUrl(notification.entityId));
+        // entity_id 형식: "room_id:message_id" 또는 "room_id" (하위 호환)
+        // room_id 추출 (콜론 앞부분)
+        const roomId = notification.entityId.split(':')[0];
+        router.push(getChatRoomUrl(roomId));
         onClose(); // 알림 overlay 닫기
         return;
       } else if (
         notification.entityType === 'party_post' &&
         notification.entityId
       ) {
-        // 파티 상세 페이지로 이동
-        router.push(getPartyDetailUrl(notification.entityId));
+        // entity_id 형식: "post_id:message_id" 또는 "post_id" (하위 호환)
+        // post_id 추출 (콜론 앞부분)
+        const postId = notification.entityId.split(':')[0];
+        router.push(getPartyDetailUrl(postId));
         onClose(); // 알림 overlay 닫기
         return;
       }

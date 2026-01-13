@@ -23,7 +23,7 @@ import {
 
 const CreateGameStartLogSchema = z
   .object({
-    context_type: z.enum(['match', 'party']),
+    context_type: z.enum(['chat', 'party']),
     context_id: z
       .string()
       .min(1, 'context_id는 비어있지 않은 문자열이어야 합니다.'),

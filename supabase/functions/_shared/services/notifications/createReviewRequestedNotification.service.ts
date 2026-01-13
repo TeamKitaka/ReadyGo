@@ -1,0 +1,48 @@
+import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
+import type { Database } from '../../../../types/database.types.ts';
+import * as notificationsRepository from '../../repositories/notifications.repository.ts';
+
+/**
+ * Review Requested Notification Service (Edge Functions용)
+ *
+ * 📌 책임:
+ * - "후기 요청 알림" 생성
+ * - actor_id = 게임 시작을 누른 사람 (후기를 받을 사람)
+ * - target_id = 후기를 써야 하는 사람 (알림 받을 사람)
+ * - entity_id = review_request.id
+ * - 알림 문구: 채팅의 경우 actor_id의 닉네임 사용
+ */
+
+export interface ReviewRequestedNotificationInput {
+  reviewRequestId: number;
+  actorId: string; // 게임 시작을 누른 사람 (후기를 받을 사람)
+  targetId: string; // 후기를 써야 하는 사람 (알림 받을 사람)
+  contextType: 'chat' | 'party';
+  contextId: string; // room_id 또는 post_id
+}
+
+/**
+ * 후기 요청 알림을 생성한다
+ *
+ * @param client - Supabase Admin Client
+ * @param input - 후기 요청 정보
+ * @returns 생성된 알림 정보
+ */
+export const createReviewRequestedNotification = async (
+  client: SupabaseClient<Database>,
+  input: ReviewRequestedNotificationInput
+) => {
+  // entity_type 매핑: 'chat' → 'chat_room', 'party' → 'party_post'
+  // entity_id는 review_request.id를 사용
+  const entityType = input.contextType === 'chat' ? 'chat_room' : 'party_post';
+
+  // 알림은 target_id (후기를 써야 하는 사람)에게 전송
+  return await notificationsRepository.insert(client, {
+    user_id: input.targetId, // 후기를 써야 하는 사람 (알림 받을 사람)
+    type: 'REVIEW_REQUESTED',
+    actor_id: input.actorId, // 게임 시작을 누른 사람 (후기를 받을 사람)
+    entity_type: entityType,
+    entity_id: String(input.reviewRequestId), // review_request.id
+  });
+};
+

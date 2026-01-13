@@ -1,5 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import * as reviewsRepository from '@/repositories/reviews.repository';
+import * as reviewRequestsRepository from '@/repositories/reviewRequests.repository';
+import * as notificationsRepository from '@/repositories/notifications.repository';
 import * as temperatureLogRepository from '@/repositories/temperatureLog.repository';
 import * as userProfilesRepository from '@/repositories/userProfiles.repository';
 import { calculateTemperatureFromReview } from '../temperature/calculateTemperatureFromReview.service';
@@ -49,7 +51,20 @@ export const submitReview = async (
   const scoreCommunication =
     (answers.communication[0] ? 1 : 0) + (answers.communication[1] ? 1 : 0);
 
-  // 3. reviews 테이블에 리뷰 저장
+  // 3. review_requests 조회 및 상태 업데이트
+  const reviewRequest = await reviewRequestsRepository.getReviewRequestByReviewerAndTarget(
+    reviewerId,
+    targetUserId
+  );
+
+  // review_request가 있으면 상태를 completed로 업데이트
+  if (reviewRequest) {
+    await reviewRequestsRepository.updateReviewRequest(reviewRequest.id, {
+      status: 'completed',
+    });
+  }
+
+  // 4. reviews 테이블에 리뷰 저장
   const review = await reviewsRepository.createReview({
     reviewer_id: reviewerId,
     target_user_id: targetUserId,
@@ -59,21 +74,38 @@ export const submitReview = async (
     comment: answers.comment || null,
   });
 
-  // 4. temperature_logs에 change 값 기록
+  // 5. REVIEW_RECEIVED 알림 생성 (후기를 받은 사람에게)
+  try {
+    await notificationsRepository.insert({
+      user_id: targetUserId,
+      type: 'REVIEW_RECEIVED',
+      actor_id: reviewerId,
+      entity_type: 'review',
+      entity_id: String(review.id),
+    });
+  } catch (notificationError) {
+    // 알림 생성 실패는 로그만 남기고 계속 진행
+    console.error(
+      '[SubmitReviewService] Failed to create REVIEW_RECEIVED notification:',
+      notificationError
+    );
+  }
+
+  // 6. temperature_logs에 change 값 기록
   await temperatureLogRepository.createTemperatureLog({
     user_id: targetUserId,
     change: temperatureChange,
     reason: `리뷰: 매너 ${scoreManner}/2, 팀워크 ${scoreTeamwork}/1, 소통 ${scoreCommunication}/2`,
   });
 
-  // 5. user_profiles.temperature_score 업데이트 (기존 점수 + change)
+  // 7. user_profiles.temperature_score 업데이트 (기존 점수 + change)
   await userProfilesRepository.updateTemperatureScore(
     supabaseAdmin,
     targetUserId,
     temperatureChange
   );
 
-  // 6. 업데이트된 temperature_score 조회
+  // 8. 업데이트된 temperature_score 조회
   const updatedTemperatureScore =
     await userProfilesRepository.getTemperatureScore(
       supabaseAdmin,
@@ -86,7 +118,7 @@ export const submitReview = async (
     );
   }
 
-  // 7. 티어 계산 및 업데이트
+  // 9. 티어 계산 및 업데이트
   await updateTierFromTemperature(targetUserId, updatedTemperatureScore);
 
   return review;

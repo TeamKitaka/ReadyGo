@@ -21,6 +21,7 @@ export interface GameStartedNotificationInput {
   actorId: string; // 게임 시작을 누른 사람
   contextType: 'chat' | 'party';
   contextId: string; // room_id 또는 post_id
+  messageId: number; // 메시지 ID (각 메시지마다 별도 알림을 위해 사용)
 }
 
 /**
@@ -36,11 +37,15 @@ export const createGameStartedNotification = async (
 ) => {
   // entity_type 매핑: 'chat' → 'chat_room', 'party' → 'party_post'
   const entityType = input.contextType === 'chat' ? 'chat_room' : 'party_post';
+  
+  // entity_id에 메시지 ID를 포함하여 각 메시지마다 별도 알림 생성
+  // 형식: "room_id:message_id" 또는 "post_id:message_id"
+  const entityId = `${input.contextId}:${input.messageId}`;
 
   return await notificationsRepository.bulkInsert(client, input.receiverIds, {
     type: 'GAME_STARTED',
     actor_id: input.actorId,
     entity_type: entityType,
-    entity_id: input.contextId, // room_id 또는 post_id (문자열)
+    entity_id: entityId,
   });
 };
