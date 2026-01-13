@@ -645,6 +645,8 @@ export type Database = {
         Row: {
           actor_id: string
           completed_at: string | null
+          context_id: number
+          context_type: string
           created_at: string
           game_start_log_id: number
           id: number
@@ -654,6 +656,8 @@ export type Database = {
         Insert: {
           actor_id: string
           completed_at?: string | null
+          context_id: number
+          context_type: string
           created_at?: string
           game_start_log_id: number
           id?: number
@@ -663,6 +667,8 @@ export type Database = {
         Update: {
           actor_id?: string
           completed_at?: string | null
+          context_id?: number
+          context_type?: string
           created_at?: string
           game_start_log_id?: number
           id?: number
@@ -1198,7 +1204,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      process_review_requests: { Args: never; Returns: undefined }
     }
     Enums: {
       user_presence_status: "online" | "away" | "dnd" | "offline"

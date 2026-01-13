@@ -1,6 +1,7 @@
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import type { Database } from '../../../../types/database.types.ts';
 import * as notificationsRepository from '../../repositories/notifications.repository.ts';
+import * as userProfilesRepository from '../../repositories/userProfilesRepository.ts';
 
 /**
  * Review Requested Notification Service (Edge Functions용)
@@ -10,7 +11,7 @@ import * as notificationsRepository from '../../repositories/notifications.repos
  * - actor_id = 게임 시작을 누른 사람 (후기를 받을 사람)
  * - target_id = 후기를 써야 하는 사람 (알림 받을 사람)
  * - entity_id = review_request.id
- * - 알림 문구: 채팅의 경우 actor_id의 닉네임 사용
+ * - 알림 메시지: 채팅의 경우 actor_id의 닉네임 사용, 파티는 일반 메시지
  */
 
 export interface ReviewRequestedNotificationInput {
@@ -36,6 +37,35 @@ export const createReviewRequestedNotification = async (
   // entity_id는 review_request.id를 사용
   const entityType = input.contextType === 'chat' ? 'chat_room' : 'party_post';
 
+  // 알림 메시지 생성
+  let notificationMessage: string | undefined;
+  if (input.contextType === 'chat') {
+    // 채팅: actor_id의 닉네임 사용
+    try {
+      const { data: actorProfile, error: profileError } =
+        await userProfilesRepository.findByUserId(client, input.actorId);
+
+      if (profileError || !actorProfile) {
+        console.error(
+          `[createReviewRequestedNotification] Error fetching actor profile for id=${input.actorId}:`,
+          profileError
+        );
+        notificationMessage = '함께한 멤버와의 게임은 어떠셨나요?';
+      } else {
+        notificationMessage = `${actorProfile.nickname || '알 수 없는 유저'}님과의 게임은 어떠셨나요?`;
+      }
+    } catch (error) {
+      console.error(
+        `[createReviewRequestedNotification] Error fetching actor profile:`,
+        error
+      );
+      notificationMessage = '함께한 멤버와의 게임은 어떠셨나요?';
+    }
+  } else {
+    // 파티: 일반 메시지
+    notificationMessage = '함께한 파티원들과의 게임은 어떠셨나요?';
+  }
+
   // 알림은 target_id (후기를 써야 하는 사람)에게 전송
   return await notificationsRepository.insert(client, {
     user_id: input.targetId, // 후기를 써야 하는 사람 (알림 받을 사람)
@@ -43,6 +73,7 @@ export const createReviewRequestedNotification = async (
     actor_id: input.actorId, // 게임 시작을 누른 사람 (후기를 받을 사람)
     entity_type: entityType,
     entity_id: String(input.reviewRequestId), // review_request.id
+    message: notificationMessage,
   });
 };
 

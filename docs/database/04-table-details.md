@@ -469,17 +469,22 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 #### 29. review_requests
 
 - 게임 시작 후 후기 작성 요청 기록
-- game_start_logs와 연결되어 특정 게임 세션에 대한 후기 요청 관리
-- actor_id가 target_id에게 후기 작성을 요청한 상태 추적
+- 같은 context(context_type + context_id)에서 game_start_logs를 남긴 사용자들끼리만 후기 요청 생성
+- actor_id = 후기를 받을 사람 (게임 시작을 누른 사람)
+- target_id = 후기를 써야 하는 사람 (후기를 작성하는 사람)
+- UNIQUE constraint: (game_start_log_id, actor_id, target_id)
+- status: 'pending' | 'completed'
 
 | Column            | Type        | Nullable | Description                    |
 | ----------------- | ----------- | -------- | ------------------------------ |
 | id                | bigint      | ❌       | PK                             |
-| actor_id          | uuid        | ❌       | 후기 요청한 유저 (FK)          |
-| target_id         | uuid        | ❌       | 후기 작성 대상 유저 (FK)       |
 | game_start_log_id | bigint      | ❌       | 게임 시작 로그 ID (FK)         |
-| status            | text        | ❌       | 요청 상태                      |
-| created_at         | timestamptz | ❌       | 요청 생성 시각                 |
+| context_type      | text        | ❌       | 컨텍스트 타입 (chat, party)    |
+| context_id        | numeric     | ❌       | 컨텍스트 ID (room_id, post_id) |
+| actor_id          | uuid        | ❌       | 후기를 받을 사람 (FK)          |
+| target_id         | uuid        | ❌       | 후기를 작성하는 사람 (FK)      |
+| status            | text        | ❌       | 요청 상태 (pending, completed) |
+| created_at        | timestamptz | ❌       | 요청 생성 시각                 |
 | completed_at      | timestamptz | ⭕       | 후기 작성 완료 시각            |
 
 **Foreign Keys**:
@@ -511,14 +516,15 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 #### 31. game_start_logs
 
 - 게임 시작 로그 테이블
-- 매칭/파티 등에서 실제 게임 시작 시점의 행동을 기록
+- "이 사용자가 이 맥락(chat/party)에서 실제로 게임을 시작했다"는 개인 확정 로그
+- 같은 context에서 game_start_logs를 남긴 사용자들끼리만 후기 요청 생성
 
 | Column       | Type        | Nullable | Description                        |
 | ------------ | ----------- | -------- | ---------------------------------- |
 | id           | bigint      | ❌       | PK                                 |
 | actor_id     | uuid        | ❌       | 게임 시작을 요청한 유저            |
 | context_type | text        | ❌       | 게임 시작 컨텍스트 (chat, party)   |
-| context_id   | text        | ❌       | 컨텍스트 식별자 (매칭 ID, 파티 ID) |
+| context_id   | text        | ❌       | 컨텍스트 식별자 (room_id, post_id) |
 | game_id      | text        | ⭕       | Steam 게임 ID                      |
 | game_name    | text        | ⭕       | 게임 이름                          |
 | created_at   | timestamptz | ❌       | 게임 시작 기록 시각                |
@@ -640,8 +646,8 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
-- **Last Updated At**: 2026-01-15
-- **Document Version**: v1.0.17
+- **Last Updated At**: 2026-01-14
+- **Document Version**: v1.0.18
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
@@ -669,3 +675,4 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | v1.0.15 | 2026-01-12 | System/Logs Domain에 game_start_logs 테이블 추가 (게임 시작 로그), 테이블 번호 재정렬 (32~38번)                                                                                                                 |
 | v1.0.16 | 2026-01-15 | steam_user_stats 테이블 컬럼 추가 (genre_playtime_2w_minutes, total_playtime_2w_minutes) 및 타입 수정, match_exposure_log nullable 수정, game_start_logs 중복 제거 및 타입 수정, steam_game_sync_logs 타입 수정 |
 | v1.0.17 | 2026-01-15 | review_requests 테이블 추가 (게임 시작 후 후기 작성 요청 관리)                                                                                                                              |
+| v1.0.18 | 2026-01-14 | review_requests 테이블에 context_id, context_type 컬럼 추가, game_start_logs 테이블 설명 업데이트 (개인 확정 로그 의미 반영)                                                               |

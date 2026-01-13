@@ -77,10 +77,21 @@ export const createReviewRequests = async (
   // A, B가 있으면: A → B, B → A 생성
   const reviewRequests: Array<{
     game_start_log_id: number;
+    context_type: string;
+    context_id: number;
     actor_id: string; // 후기를 받을 사람
     target_id: string; // 후기를 써야 하는 사람
     status: 'pending';
   }> = [];
+
+  // context_id를 number로 변환 (game_start_logs의 context_id는 string이지만 review_requests는 number)
+  const contextIdNumber = parseInt(input.contextId, 10);
+  if (isNaN(contextIdNumber)) {
+    console.error(
+      `[Create Review Requests] Invalid context_id (cannot convert to number): context_id=${input.contextId}`
+    );
+    throw new Error(`Invalid context_id: ${input.contextId}`);
+  }
 
   // 각 사용자 쌍에 대해 review_requests 생성
   for (let i = 0; i < startedUserIds.length; i++) {
@@ -97,6 +108,8 @@ export const createReviewRequests = async (
         if (gameStartLog) {
           reviewRequests.push({
             game_start_log_id: gameStartLog.id,
+            context_type: input.contextType,
+            context_id: contextIdNumber,
             actor_id: actorId,
             target_id: targetId,
             status: 'pending',

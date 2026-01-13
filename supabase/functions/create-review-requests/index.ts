@@ -18,6 +18,8 @@ import { createReviewRequests } from '../_shared/services/reviews/createReviewRe
 
 Deno.serve(async (req) => {
   try {
+    console.log('[Create Review Requests] Request received:', req.method);
+
     // CORS 처리
     if (req.method === 'OPTIONS') {
       return new Response('ok', {
@@ -31,10 +33,28 @@ Deno.serve(async (req) => {
     }
 
     // Payload 파싱
-    const payload = await req.json();
+    let payload;
+    try {
+      const text = await req.text();
+      console.log('[Create Review Requests] Request body:', text);
+      payload = text ? JSON.parse(text) : {};
+    } catch (parseError) {
+      console.error('[Create Review Requests] JSON parse error:', parseError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid JSON payload' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    console.log('[Create Review Requests] Parsed payload:', payload);
+
     const { context_type, context_id } = payload;
 
     if (!context_type || !context_id) {
+      console.error('[Create Review Requests] Missing required fields:', { context_type, context_id });
       return new Response(
         JSON.stringify({ success: false, error: 'context_type and context_id are required' }),
         {

@@ -48,10 +48,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 필수 필드 검증
+    // 필수 필드 검증 (기본 필드)
     if (!record || !record.id || !record.actor_id || !record.target_id || !record.game_start_log_id) {
       console.log(
-        `[Review Request Notification] Ignored: invalid payload`
+        `[Review Request Notification] Ignored: invalid payload (missing required fields)`
       );
       return new Response(
         JSON.stringify({ success: true, message: 'Invalid payload' }),
@@ -62,39 +62,24 @@ Deno.serve(async (req) => {
       );
     }
 
-    const reviewRequestId = record.id;
-    const actorId = record.actor_id; // 게임 시작을 누른 사람 (후기를 받을 사람)
-    const targetId = record.target_id; // 후기를 써야 하는 사람
-    const gameStartLogId = record.game_start_log_id;
-
-    console.log(
-      `[Review Request Notification] Started: review_request_id=${reviewRequestId}, actor_id=${actorId}, target_id=${targetId}`
-    );
-
-    // Supabase Admin 클라이언트 생성
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
-
-    // game_start_log 조회 (context_type, context_id 필요)
-    const { data: gameStartLog, error: logError } = await supabase
-      .from('game_start_logs')
-      .select('context_type, context_id')
-      .eq('id', gameStartLogId)
-      .single();
-
-    if (logError || !gameStartLog) {
-      console.error(
-        `[Review Request Notification] Error fetching game_start_log:`,
-        logError
+    // 형태 검증: context_type, context_id 존재 여부 및 값 검증
+    if (!record.context_type || !record.context_id) {
+      console.log(
+        `[Review Request Notification] Ignored: missing context_type or context_id`
       );
-      throw logError || new Error('Game start log not found');
+      return new Response(
+        JSON.stringify({ success: true, message: 'Missing context fields' }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
-    // context_type 검증
-    if (gameStartLog.context_type !== 'chat' && gameStartLog.context_type !== 'party') {
+    // context_type 값 검증 (chat 또는 party만 허용)
+    if (record.context_type !== 'chat' && record.context_type !== 'party') {
       console.log(
-        `[Review Request Notification] Ignored: invalid context_type=${gameStartLog.context_type}`
+        `[Review Request Notification] Ignored: invalid context_type=${record.context_type}`
       );
       return new Response(
         JSON.stringify({ success: true, message: 'Invalid context_type' }),
@@ -105,13 +90,28 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Service 호출
+    const reviewRequestId = record.id;
+    const actorId = record.actor_id; // 게임 시작을 누른 사람 (후기를 받을 사람)
+    const targetId = record.target_id; // 후기를 써야 하는 사람
+    const contextType = record.context_type as 'chat' | 'party';
+    const contextId = String(record.context_id); // number를 string으로 변환
+
+    console.log(
+      `[Review Request Notification] Started: review_request_id=${reviewRequestId}, actor_id=${actorId}, target_id=${targetId}, context_type=${contextType}, context_id=${contextId}`
+    );
+
+    // Supabase Admin 클라이언트 생성
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
+
+    // Service 호출 (형태 검증 완료, record에서 직접 사용)
     const result = await createReviewRequestedNotification(supabase, {
       reviewRequestId,
       actorId,
       targetId,
-      contextType: gameStartLog.context_type as 'chat' | 'party',
-      contextId: gameStartLog.context_id,
+      contextType,
+      contextId,
     });
 
     // 결과 확인
