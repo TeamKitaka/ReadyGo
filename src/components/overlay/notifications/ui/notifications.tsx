@@ -83,7 +83,8 @@ interface NotificationsProps {
 // 알림 타입별 메시지 생성
 const getNotificationMessage = (
   type: NotificationType,
-  nickname: string
+  nickname: string,
+  entityType?: string
 ): string => {
   switch (type) {
     case 'REVIEW_RECEIVED':
@@ -97,6 +98,13 @@ const getNotificationMessage = (
     case 'CHAT_RECEIVED':
       return `${nickname}님이 메시지를 보냄`;
     case 'GAME_STARTED':
+      // entity_type에 따라 다른 메시지 표시
+      if (entityType === 'party_post') {
+        return '파티에서 게임이 시작되었어요';
+      } else if (entityType === 'chat_room') {
+        return `${nickname}님이 게임 시작 링크를 보냈어요`;
+      }
+      // 기본값 (fallback)
       return `${nickname}님과 게임이 시작되었습니다`;
     case 'PARTY_INVITED':
       return `${nickname}님이 파티에 초대함`;
@@ -159,7 +167,8 @@ const NotificationItemComponent = ({
 }) => {
   const message = getNotificationMessage(
     notification.type,
-    notification.nickname
+    notification.nickname,
+    notification.entityType
   );
   const iconName = getNotificationIcon(notification.type);
   const colorClass = getNotificationColorClass(notification.type);

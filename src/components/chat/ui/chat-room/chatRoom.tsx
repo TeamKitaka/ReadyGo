@@ -432,7 +432,7 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
                               onConfirm: async () => {
                                 // 게임 시작 로그 생성
                                 await createGameStartLog({
-                                  contextType: 'match',
+                                  contextType: 'chat',
                                   contextId: roomIdNumber.toString(),
                                   gameId: gameAppId.toString(),
                                   gameName: gameInfo?.name ?? undefined,
@@ -528,7 +528,7 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
                               onConfirm: async () => {
                                 // 게임 시작 로그 생성
                                 await createGameStartLog({
-                                  contextType: 'match',
+                                  contextType: 'chat',
                                   contextId: roomIdNumber.toString(),
                                   gameId: gameAppId.toString(),
                                   gameName: gameInfo?.name ?? undefined,

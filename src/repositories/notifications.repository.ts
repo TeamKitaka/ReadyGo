@@ -11,7 +11,9 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
  * 책임: notifications 테이블 접근 전담
  *
  * INSERT: Edge Functions에서만 사용 (supabaseAdmin)
+ * - insert, bulkInsert: supabaseAdmin 사용 (RLS 우회)
  * SELECT/UPDATE: 클라이언트에서 사용 (SupabaseClient)
+ * - findByUser, markAsRead, markAllAsRead: SupabaseClient 사용
  */
 
 export type NotificationRow =
@@ -36,9 +38,11 @@ export type BulkInsertNotificationParams = {
  * 단일 알림을 생성한다
  * - Edge Functions에서만 호출
  * - supabaseAdmin 사용 (RLS 우회)
- * - ignoreDuplicates: UNIQUE constraint 위반 시 무시
  * - DB 접근만 수행, 에러 처리는 상위 레이어에서 담당
  * - Supabase 응답 구조를 그대로 반환
+ *
+ * ⚠️ 참고: Supabase 버전(Edge Functions)은 ignoreDuplicates 옵션 사용,
+ *          src 버전은 supabaseAdmin 직접 사용 (동일한 목적, 다른 구현)
  */
 export const insert = async (params: InsertNotificationParams) => {
   return await supabaseAdmin

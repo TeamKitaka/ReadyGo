@@ -496,7 +496,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | ------------ | ----------- | -------- | ---------------------------------- |
 | id           | bigint      | ❌       | PK                                 |
 | actor_id     | uuid        | ❌       | 게임 시작을 요청한 유저            |
-| context_type | text        | ❌       | 게임 시작 컨텍스트 (match, party)  |
+| context_type | text        | ❌       | 게임 시작 컨텍스트 (chat, party)   |
 | context_id   | text        | ❌       | 컨텍스트 식별자 (매칭 ID, 파티 ID) |
 | game_id      | text        | ⭕       | Steam 게임 ID                      |
 | game_name    | text        | ⭕       | 게임 이름                          |
