@@ -1,5 +1,7 @@
 .card {
-  width: 624px;
+  width: 100%;
+  min-width: 546px;
+  max-width: 800px;
   height: 358px;
   padding: 24px;
   gap: 32px;
@@ -222,28 +224,10 @@
   color: var(--color-text-danger) !important;
 }
 
-/* 반응형 디자인 - 웹 (1448px 이하) */
-@media (max-width: 1448px) {
+/* 반응형: 1324px 이하에서도 카드 최소/최대 너비 유지 */
+@media (max-width: 1324px) {
   .card {
-    width: 100%;
-    max-width: 624px;
-    height: 358px;
-    flex-shrink: 0;
-    box-sizing: border-box;
-  }
-}
-
-/* 반응형 디자인 - 모바일 (768px 이하) */
-@media (max-width: 768px) {
-  .card {
-    width: 100%;
-    height: auto;
-    padding: 20px;
-    gap: 24px;
-  }
-
-  .categoryGrid {
-    grid-template-columns: 1fr;
-    gap: 8px;
+    min-width: 546px; /* 카드가 546px 이하로 줄어들지 않도록 보장 */
+    max-width: 800px; /* 카드 최대 너비 유지 */
   }
 }

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { Database } from '@/types/supabase';
+import { calculateStartAt } from '@/lib/utils/party';
+import { getPartyPosts } from '@/repositories/partyPosts.repository';
+import type { SortOption } from '@/repositories/partyPosts.repository';
 
 type PartyPost = Database['public']['Tables']['party_posts']['Row'];
 type PartyMember = Database['public']['Tables']['party_members']['Row'];
@@ -33,6 +36,7 @@ export const GET = async (request: NextRequest) => {
     const { searchParams } = new URL(request.url);
     const limitParam = searchParams.get('limit');
     const offsetParam = searchParams.get('offset');
+    const sortParam = searchParams.get('sort'); // 정렬 파라미터
     const genreParam = searchParams.get('genre'); // 장르 필터 파라미터
     const searchParam = searchParams.get('search'); // 검색어 파라미터
     const tabParam = searchParams.get('tab'); // 탭 파라미터 ('all' | 'participating')
@@ -40,6 +44,8 @@ export const GET = async (request: NextRequest) => {
     // limit 기본값 10, offset 기본값 0
     const limit = limitParam ? parseInt(limitParam, 10) : 10;
     const offset = offsetParam ? parseInt(offsetParam, 10) : 0;
+    const sortOption: SortOption =
+      sortParam === 'deadline' ? 'deadline' : 'latest';
     const tab = tabParam === 'participating' ? 'participating' : 'all';
 
     // 현재 로그인한 유저 정보 (이미 인증 체크 완료)
@@ -74,38 +80,43 @@ export const GET = async (request: NextRequest) => {
         return NextResponse.json({ data: [], members: [], profiles: [] });
       }
 
-      // 해당 post_id에 해당하는 party_posts 조회
-      const { data: posts, error: partyError } = await supabase
-        .from('party_posts')
-        .select('*')
-        .in('id', postIds)
-        .order('created_at', { ascending: false });
-
-      if (partyError) {
+      // 참여 중인 파티는 전체 데이터를 가져와야 필터링 가능
+      // Repository를 사용하되, 큰 limit으로 설정하여 모든 참여 파티를 가져옴
+      // (필터링 후 페이징을 위해 충분한 데이터 필요)
+      try {
+        allPartyPosts = await getPartyPosts({
+          limit: 1000, // 충분히 큰 값
+          offset: 0,
+          sortOption,
+        });
+        // 참여한 post_id만 필터링
+        allPartyPosts = allPartyPosts.filter((post) =>
+          postIds.includes(post.id)
+        );
+      } catch (error) {
+        console.error('파티 게시물 조회 실패:', error);
         return NextResponse.json(
-          { error: partyError.message },
+          { error: '파티 게시물 조회에 실패했습니다.' },
           { status: 500 }
         );
       }
-
-      allPartyPosts = posts || [];
     } else {
-      // 전체 파티 탭: 모든 party_posts 조회
-      const partyQuery = supabase
-        .from('party_posts')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      const { data: posts, error: partyError } = await partyQuery;
-
-      if (partyError) {
+      // 전체 파티 탭: Repository를 사용하여 정렬된 페이징 결과 가져오기
+      // 하지만 필터링을 위해 충분한 데이터를 가져와야 함
+      // 필터링 후 페이징을 위해 limit을 크게 설정
+      try {
+        allPartyPosts = await getPartyPosts({
+          limit: 1000, // 필터링 후 페이징을 위해 충분히 큰 값
+          offset: 0,
+          sortOption,
+        });
+      } catch (error) {
+        console.error('파티 게시물 조회 실패:', error);
         return NextResponse.json(
-          { error: partyError.message },
+          { error: '파티 게시물 조회에 실패했습니다.' },
           { status: 500 }
         );
       }
-
-      allPartyPosts = posts || [];
     }
 
     if (!allPartyPosts || allPartyPosts.length === 0) {
@@ -196,15 +207,8 @@ export const GET = async (request: NextRequest) => {
       });
     }
 
-    // 4단계: 정렬 및 페이징
-    // created_at 기준으로 다시 정렬 (필터링 후에도 정렬 유지)
-    filteredPartyPosts.sort((a, b) => {
-      const dateA = new Date(a.created_at).getTime();
-      const dateB = new Date(b.created_at).getTime();
-      return dateB - dateA; // 내림차순
-    });
-
-    // 페이징 적용
+    // 4단계: 페이징
+    // 정렬은 이미 Repository에서 수행되었으므로, 필터링 후 페이징만 적용
     const paginatedPosts = filteredPartyPosts.slice(offset, offset + limit);
 
     // 5단계: party_members 및 user_profiles 조회
@@ -318,6 +322,9 @@ export const POST = async (request: NextRequest) => {
       );
     }
 
+    // start_at 계산
+    const startAt = calculateStartAt(startDate, startTime);
+
     // 파티 생성
     // 주의: party_posts 테이블에 status 컬럼이 없으므로 status 필드 제거
     const { data: insertData, error: insertError } = await supabase
@@ -328,6 +335,7 @@ export const POST = async (request: NextRequest) => {
         party_title: partyTitle,
         start_date: startDate,
         start_time: startTime,
+        start_at: startAt,
         description,
         max_members: maxMembers,
         control_level: controlLevel,

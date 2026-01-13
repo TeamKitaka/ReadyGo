@@ -577,6 +577,7 @@ export type Database = {
           id: number
           max_members: number
           party_title: string
+          start_at: string
           start_date: string
           start_time: string
           tags: Json | null
@@ -592,6 +593,7 @@ export type Database = {
           id?: number
           max_members: number
           party_title: string
+          start_at: string
           start_date: string
           start_time: string
           tags?: Json | null
@@ -607,6 +609,7 @@ export type Database = {
           id?: number
           max_members?: number
           party_title?: string
+          start_at?: string
           start_date?: string
           start_time?: string
           tags?: Json | null
@@ -792,7 +795,7 @@ export type Database = {
           genre_playtime_2w_minutes: Json | null
           main_genres: string[]
           play_style: string
-          top_genres_2w: string[]
+          top_genres_2w: string[] | null
           total_playtime_2w_minutes: number | null
           updated_at: string
           user_id: string
@@ -803,7 +806,7 @@ export type Database = {
           genre_playtime_2w_minutes?: Json | null
           main_genres?: string[]
           play_style: string
-          top_genres_2w?: string[]
+          top_genres_2w?: string[] | null
           total_playtime_2w_minutes?: number | null
           updated_at?: string
           user_id: string
@@ -814,7 +817,7 @@ export type Database = {
           genre_playtime_2w_minutes?: Json | null
           main_genres?: string[]
           play_style?: string
-          top_genres_2w?: string[]
+          top_genres_2w?: string[] | null
           total_playtime_2w_minutes?: number | null
           updated_at?: string
           user_id?: string

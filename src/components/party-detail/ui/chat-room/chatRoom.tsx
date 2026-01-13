@@ -244,11 +244,6 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                 return null;
               }
 
-              // 시스템 메시지는 나중에 별도로 렌더링
-              if (item.message.content_type === 'system') {
-                return null;
-              }
-
               // 객체 구조 분해
               const {
                 message,
@@ -259,6 +254,28 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                 senderNickname,
                 senderAnimalType,
               } = item;
+
+              // 시스템 메시지 렌더링 (중앙 정렬)
+              const isSystemMessage = message.content_type === 'system';
+              if (isSystemMessage) {
+                return (
+                  <div
+                    key={`system-message-${message.id}-${index}`}
+                    className={styles.messageGroup}
+                  >
+                    <div className={styles.messageRow}>
+                      <div className={styles.systemMessageContainer}>
+                        <div
+                          className={styles.systemMessageContent}
+                          aria-label={`시스템 메시지: ${formattedContent || ''}`}
+                        >
+                          {formattedContent || ''}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
 
               // 게임 링크인지 확인
               const isGameLinkMessage = message.content_type === 'game_link';
@@ -454,24 +471,6 @@ export default function ChatRoom({ isExpired = false }: ChatRoomProps) {
                   </div>
                 </div>
               );
-            })}
-            {/* 시스템 메시지 렌더링 (일반 메시지 뒤에 표시) */}
-            {formattedMessages.map((item, index) => {
-              if (
-                item.type === 'message' &&
-                item.message?.content_type === 'system'
-              ) {
-                return (
-                  <div
-                    key={`system-message-${item.message.id}-${index}`}
-                    className={styles.dateDivider}
-                    aria-label={`시스템 메시지: ${item.formattedContent || ''}`}
-                  >
-                    {item.formattedContent || ''}
-                  </div>
-                );
-              }
-              return null;
             })}
           </div>
         </div>

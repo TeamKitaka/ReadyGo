@@ -89,7 +89,7 @@ export default function PartyDetail() {
     openModal({
       variant: 'dual',
       title: '게임을 시작하시겠습니까?',
-      description: `${data.game_title} 게임 링크를 채팅방에 전송합니다.`,
+      description: `${data.game_title}\n게임 링크를 채팅방에 전송합니다.`,
       onConfirm: async () => {
         try {
           // 1. game_title로 app_id 검색
