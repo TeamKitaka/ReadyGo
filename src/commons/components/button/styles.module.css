@@ -63,7 +63,7 @@
 /* Primary Variant */
 .variant-primary {
   background-color: var(--color-bg-interactive-primary);
-  color: var(--color-text-interactive-inverse);
+  color: var(--color-base-black);
 }
 
 .variant-primary:hover:not(:disabled),
