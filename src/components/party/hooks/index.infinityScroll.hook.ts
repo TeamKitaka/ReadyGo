@@ -240,69 +240,25 @@ const parseStartDateTime = (
   }
 };
 
-// 파티 목록 정렬 함수
+// 파티 목록 활성/만료 분리 함수
 const sortPartyList = (
   parties: PartyCardProps[],
-  sortOption: SortOption
+  _sortOption: SortOption
 ): PartyCardProps[] => {
   const now = new Date();
 
-  // 시작시간이 지난 카드와 지나지 않은 카드 분리
-  const activeParties = parties.filter((p) => {
+  // 최신순/마감임박순 정렬 시: 시작시간이 지난 게시글 완전히 제외
+  // 서버에서 이미 필터링 및 정렬이 완료되었으므로, 클라이언트에서는 추가 필터링만 수행
+  return parties.filter((p) => {
     const startDateTime = parseStartDateTime(p.startDate, p.startTime);
     if (!startDateTime) {
-      return true; // 날짜/시간 정보가 없거나 파싱 실패 시 활성으로 간주
+      // 날짜/시간 정보가 없거나 파싱 실패 시 제외
+      return false;
     }
+    // 시작시간이 현재 시각 이후(또는 같음)인 것만 표시
+    // 현재 시각이 15시라면 15시 이전의 글은 제외, 15시 이후(또는 15시 정각)만 표시
     return startDateTime >= now;
   });
-
-  const expiredParties = parties.filter((p) => {
-    const startDateTime = parseStartDateTime(p.startDate, p.startTime);
-    if (!startDateTime) {
-      return false; // 날짜/시간 정보가 없거나 파싱 실패 시 만료되지 않은 것으로 간주
-    }
-    return startDateTime < now;
-  });
-
-  // 활성 카드 정렬
-  if (sortOption === 'latest') {
-    activeParties.sort((a, b) => {
-      if (!a.createdAt || !b.createdAt) {
-        return 0;
-      }
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-  } else if (sortOption === 'deadline') {
-    activeParties.sort((a, b) => {
-      const dateA = parseStartDateTime(a.startDate, a.startTime);
-      const dateB = parseStartDateTime(b.startDate, b.startTime);
-      if (!dateA || !dateB) {
-        return 0;
-      }
-      return dateA.getTime() - dateB.getTime();
-    });
-  }
-
-  // 지난 카드도 같은 방식으로 정렬
-  if (sortOption === 'latest') {
-    expiredParties.sort((a, b) => {
-      if (!a.createdAt || !b.createdAt) {
-        return 0;
-      }
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-  } else if (sortOption === 'deadline') {
-    expiredParties.sort((a, b) => {
-      const dateA = parseStartDateTime(a.startDate, a.startTime);
-      const dateB = parseStartDateTime(b.startDate, b.startTime);
-      if (!dateA || !dateB) {
-        return 0;
-      }
-      return dateA.getTime() - dateB.getTime();
-    });
-  }
-
-  return [...activeParties, ...expiredParties];
 };
 
 export const useInfinitePartyList = (
@@ -460,6 +416,9 @@ export const useInfinitePartyList = (
           limit: String(INITIAL_LIMIT),
           offset: '0',
         });
+        if (sort) {
+          params.append('sort', sort);
+        }
         if (genre && genre !== 'all') {
           params.append('genre', genre);
         }
@@ -528,11 +487,12 @@ export const useInfinitePartyList = (
           profiles
         );
 
-        // 정렬 적용
-        const sortedData = sortPartyList(transformedData, sort || 'latest');
+        // 서버에서 이미 정렬된 데이터를 받으므로 클라이언트 측 정렬 불필요
+        // 활성/만료 분리는 여전히 필요하므로 sortPartyList 사용 (정렬은 이미 서버에서 수행됨)
+        const separatedData = sortPartyList(transformedData, sort || 'latest');
 
         // 초기 로드: 6개 미만이 와도 그 데이터는 표시
-        setData(sortedData);
+        setData(separatedData);
         setOffset(INITIAL_LIMIT);
         // 받은 데이터가 limit(6개)보다 적으면 더 이상 데이터가 없다는 의미
         // limit과 같거나 더 많으면 더 불러올 데이터가 있을 수 있음
@@ -573,6 +533,9 @@ export const useInfinitePartyList = (
         limit: String(SCROLL_LIMIT),
         offset: String(offset),
       });
+      if (sort) {
+        params.append('sort', sort);
+      }
       if (genre && genre !== 'all') {
         params.append('genre', genre);
       }
