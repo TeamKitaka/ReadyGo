@@ -59,6 +59,7 @@ Generated from: database.types.ts
 - party_messages
 - party_posts
 - push_tokens
+- review_requests
 - reviews
 - steam_game_info
 - steam_game_sync_logs
@@ -78,7 +79,7 @@ Generated from: database.types.ts
 - user_play_schedules
 ```
 
-📌 총 38개 (public schema 기준)
+📌 총 39개 (public schema 기준)
 
 ## Column Definition Rules
 
@@ -137,8 +138,8 @@ Generated from: database.types.ts
 
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
-- **Last Updated At**: 2026-01-12
-- **Document Version**: v1.0.6
+- **Last Updated At**: 2026-01-15
+- **Document Version**: v1.0.8
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
@@ -156,3 +157,4 @@ Generated from: database.types.ts
 |  v1.0.5 | 2025-01-07 | steam_user_stats 테이블 추가                      |
 |  v1.0.6 | 2026-01-09 | match_results_cache 테이블 추가 (Step 1 캐싱)     |
 |  v1.0.7 | 2026-01-09 | match_exposure_log 테이블 추가 (Step 2 중복 방지) |
+|  v1.0.8 | 2026-01-15 | review_requests 테이블 추가                        |

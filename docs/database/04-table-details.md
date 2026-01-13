@@ -1,6 +1,6 @@
 # Table Details(ReadyGo)
 
-본 문서는 ReadyGo 서비스의 public schema 전체 테이블(38개)에 대한 상세 정의 문서이다.
+본 문서는 ReadyGo 서비스의 public schema 전체 테이블(39개)에 대한 상세 정의 문서이다.
 
 ### Source of Truth (SSOT)
 
@@ -466,7 +466,28 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | status     | text        | ⭕       | 관계 상태   |
 | created_at | timestamptz | ⭕       | 생성 시각   |
 
-#### 29. reviews
+#### 29. review_requests
+
+- 게임 시작 후 후기 작성 요청 기록
+- game_start_logs와 연결되어 특정 게임 세션에 대한 후기 요청 관리
+- actor_id가 target_id에게 후기 작성을 요청한 상태 추적
+
+| Column            | Type        | Nullable | Description                    |
+| ----------------- | ----------- | -------- | ------------------------------ |
+| id                | bigint      | ❌       | PK                             |
+| actor_id          | uuid        | ❌       | 후기 요청한 유저 (FK)          |
+| target_id         | uuid        | ❌       | 후기 작성 대상 유저 (FK)       |
+| game_start_log_id | bigint      | ❌       | 게임 시작 로그 ID (FK)         |
+| status            | text        | ❌       | 요청 상태                      |
+| created_at         | timestamptz | ❌       | 요청 생성 시각                 |
+| completed_at      | timestamptz | ⭕       | 후기 작성 완료 시각            |
+
+**Foreign Keys**:
+- `actor_id` → `user_profiles.id`
+- `target_id` → `user_profiles.id`
+- `game_start_log_id` → `game_start_logs.id`
+
+#### 30. reviews
 
 - 파티 또는 플레이 이후 유저가 남긴 평가 기록
 - 매너, 협업, 소통 등 점수 및 코멘트 포함
@@ -487,7 +508,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 
 ### 7️⃣ System / Logs Domain
 
-#### 30. game_start_logs
+#### 31. game_start_logs
 
 - 게임 시작 로그 테이블
 - 매칭/파티 등에서 실제 게임 시작 시점의 행동을 기록
@@ -502,7 +523,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | game_name    | text        | ⭕       | 게임 이름                          |
 | created_at   | timestamptz | ❌       | 게임 시작 기록 시각                |
 
-#### 31. analytics_user_actions
+#### 32. analytics_user_actions
 
 - 행동 로그
 
@@ -514,7 +535,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | target_id  | text        | ⭕       | 행동 대상 식별자   |
 | created_at | timestamptz | ⭕       | 행동 발생 시각     |
 
-#### 32. event_logs
+#### 33. event_logs
 
 - 서비스 이벤트 기록 테이블
 - 유저 행동 또는 시스템 이벤트를 구조적으로 기록
@@ -527,7 +548,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | metadata   | jsonb       | ⭕       | 이벤트 데이터 |
 | created_at | timestamptz | ⭕       | 발생 시각     |
 
-#### 33. error_logs
+#### 34. error_logs
 
 - 시스템 에러 기록 테이블
 - 서버/클라이언트/배치 작업 등에서 발생한 오류를 기록
@@ -540,7 +561,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | stacktrace | text        | ⭕       | 스택 트레이스  |
 | created_at | timestamptz | ⭕       | 발생 시각      |
 
-#### 34. bans
+#### 35. bans
 
 - 유저 제재 정보 테이블
 - 일시적 또는 영구 제재 상태 관리
@@ -553,7 +574,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | expires_at | timestamptz | ⭕       | 제재 만료 시각 |
 | created_at | timestamptz | ⭕       | 제재 생성 시각 |
 
-#### 35. temperature_logs
+#### 36. temperature_logs
 
 - 유저 온도 점수 변경 로그
 - 후기, 신고, 시스템 판단에 따른 점수 변화 기록
@@ -566,7 +587,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | reason     | text        | ⭕       | 변경 사유   |
 | created_at | timestamptz | ⭕       | 발생 시각   |
 
-#### 36. tier_history
+#### 37. tier_history
 
 - 유저 티어 변경 이력 테이블
 - 티어 상승/하락 이력 보존
@@ -579,7 +600,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | current_tier  | text        | ⭕       | 변경 후 티어 |
 | changed_at    | timestamptz | ⭕       | 변경 시각    |
 
-#### 37. notifications
+#### 38. notifications
 
 - 유저에게 전달되는 시스템 알림 테이블
 
@@ -596,7 +617,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | entity_type | text        | ⭕       | 관련 엔티티 타입    |
 | created_at  | timestamptz | ⭕       | 생성 시각           |
 
-#### 38. push_tokens
+#### 39. push_tokens
 
 - 푸시 알림 전송을 위한 디바이스 토큰 관리 테이블
 
@@ -620,7 +641,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
 - **Last Updated At**: 2026-01-15
-- **Document Version**: v1.0.16
+- **Document Version**: v1.0.17
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
@@ -647,3 +668,4 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | v1.0.14 | 2026-01-11 | notifications 테이블에 actor_id, entity_id, entity_type 컬럼 추가                                                                                                                                               |
 | v1.0.15 | 2026-01-12 | System/Logs Domain에 game_start_logs 테이블 추가 (게임 시작 로그), 테이블 번호 재정렬 (32~38번)                                                                                                                 |
 | v1.0.16 | 2026-01-15 | steam_user_stats 테이블 컬럼 추가 (genre_playtime_2w_minutes, total_playtime_2w_minutes) 및 타입 수정, match_exposure_log nullable 수정, game_start_logs 중복 제거 및 타입 수정, steam_game_sync_logs 타입 수정 |
+| v1.0.17 | 2026-01-15 | review_requests 테이블 추가 (게임 시작 후 후기 작성 요청 관리)                                                                                                                              |

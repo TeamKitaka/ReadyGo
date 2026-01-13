@@ -109,6 +109,9 @@ erDiagram
 erDiagram
   user_profiles ||--o{ friend_requests : sends
   user_profiles ||--o{ friendships : connects
+  user_profiles ||--o{ review_requests : requests_review
+  user_profiles ||--o{ review_requests : receives_request
+  game_start_logs ||--o{ review_requests : triggers
   user_profiles ||--o{ reviews : writes
   user_profiles ||--o{ notifications : receives
 ```
@@ -146,8 +149,8 @@ erDiagram
 
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
-- **Last Updated At**: 2026-01-12
-- **Document Version**: v1.0.5
+- **Last Updated At**: 2026-01-15
+- **Document Version**: v1.0.6
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
@@ -163,3 +166,4 @@ erDiagram
 |  v1.0.3 | 2025-12-29 | user_play_schedules 테이블 추가에 따른 ERD 수정                |
 |  v1.0.4 | 2025-01-13 | chat_blocks를 user_blocks로 변경, User/Profile Domain으로 이동 |
 |  v1.0.5 | 2026-01-09 | Match Domain에 match_results_cache 추가 (캐싱 시스템)          |
+|  v1.0.6 | 2026-01-15 | Social/Interaction Domain에 review_requests 테이블 추가        |
