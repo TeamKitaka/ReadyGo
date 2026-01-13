@@ -9,6 +9,8 @@ import { FriendsContainer } from '@/components/overlay/friends';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useOverlayStore } from '@/stores/overlay.store';
 import { getChatRoomUrl, getPartyDetailUrl } from '@/commons/constants/url';
+import { useReviewModalFromNotification } from '@/hooks/useReviewModalFromNotification.hook';
+import ReviewModal from '@/commons/components/review-modal';
 
 interface LayoutOverlaysProps {
   currentOverlay: string | null;
@@ -22,6 +24,7 @@ export const LayoutOverlays = ({
   const router = useRouter();
   const { openFriends } = useOverlayStore();
   const { notifications, loading, markAsRead } = useNotifications();
+  const reviewModal = useReviewModalFromNotification();
   const [friendsInitialTab, setFriendsInitialTab] = useState<
     'list' | 'request'
   >('list');
@@ -93,8 +96,18 @@ export const LayoutOverlays = ({
       }
     }
 
-    // TODO: 다른 entity_type들 처리
-    // - review: 후기 페이지로 이동
+    // 후기 요청 알림: 후기 작성 모달 열기
+    if (notification.type === 'REVIEW_REQUESTED') {
+      // notifications 배열에서 원본 NotificationWithActor 찾기
+      const originalNotification = notifications.find(
+        (n) => String(n.id) === notification.id
+      );
+      if (originalNotification) {
+        reviewModal.openModal(originalNotification);
+        onClose(); // 알림 overlay 닫기
+        return;
+      }
+    }
 
     if (notification.onClick) {
       notification.onClick();
@@ -106,30 +119,48 @@ export const LayoutOverlays = ({
     markAsRead();
   };
 
+  // ReviewModal은 Portal을 사용하므로 모든 조건에서 렌더링 가능
+  const reviewModalComponent = reviewModal.targetUser ? (
+    <ReviewModal
+      isOpen={reviewModal.isModalOpen}
+      onClose={reviewModal.closeModal}
+      onSubmit={reviewModal.handleReviewSubmit}
+      targetUserNickname={reviewModal.targetUser.nickname}
+      targetUserAvatar={reviewModal.targetUser.avatar}
+      targetUserAnimalType={reviewModal.targetUser.animalType}
+    />
+  ) : null;
+
   if (currentOverlay === 'notifications') {
     const notificationItems = (notifications || []).map(
       convertToNotificationItem
     );
 
     return (
-      <OverlayContainer onClose={onClose}>
-        <Notifications
-          notifications={notificationItems}
-          loading={loading}
-          onMarkAllAsRead={handleMarkAllAsRead}
-          onNotificationClick={handleNotificationClick}
-        />
-      </OverlayContainer>
+      <>
+        <OverlayContainer onClose={onClose}>
+          <Notifications
+            notifications={notificationItems}
+            loading={loading}
+            onMarkAllAsRead={handleMarkAllAsRead}
+            onNotificationClick={handleNotificationClick}
+          />
+        </OverlayContainer>
+        {reviewModalComponent}
+      </>
     );
   }
 
   if (currentOverlay === 'friends') {
     return (
-      <OverlayContainer onClose={onClose}>
-        <FriendsContainer initialTab={friendsInitialTab} />
-      </OverlayContainer>
+      <>
+        <OverlayContainer onClose={onClose}>
+          <FriendsContainer initialTab={friendsInitialTab} />
+        </OverlayContainer>
+        {reviewModalComponent}
+      </>
     );
   }
 
-  return null;
+  return reviewModalComponent;
 };
