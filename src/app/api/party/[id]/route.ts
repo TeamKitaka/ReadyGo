@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { calculateStartAt } from '@/lib/utils/party';
+import { getPartyPost } from '@/repositories/partyPosts.repository';
 
 /**
  * 단일 파티 조회
@@ -235,6 +237,17 @@ export const PATCH = async (
         updateData[field] = body[field];
       }
     });
+
+    // start_date 또는 start_time이 변경되면 start_at 재계산
+    if (body.start_date !== undefined || body.start_time !== undefined) {
+      // 기존 데이터 조회
+      const existing = await getPartyPost(id);
+      if (existing) {
+        const finalStartDate = body.start_date ?? existing.start_date;
+        const finalStartTime = body.start_time ?? existing.start_time;
+        updateData.start_at = calculateStartAt(finalStartDate, finalStartTime);
+      }
+    }
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(

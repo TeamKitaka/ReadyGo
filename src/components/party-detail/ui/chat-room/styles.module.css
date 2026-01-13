@@ -190,3 +190,25 @@
   justify-content: center;
   gap: 8px;
 }
+
+/* 시스템 메시지 스타일 */
+.systemMessageContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px 0;
+}
+
+.systemMessageContent {
+  display: inline-flex;
+  padding: 8px 16px;
+  border-radius: 16px;
+  background: var(--color-bg-tertiary);
+  font-family: var(--typo-body-sm-medium-font-family);
+  font-size: var(--typo-body-sm-medium-font-size);
+  line-height: var(--typo-body-sm-line-height);
+  font-weight: var(--typo-body-sm-medium-font-weight);
+  color: var(--color-text-interactive-secondary);
+  text-align: center;
+}

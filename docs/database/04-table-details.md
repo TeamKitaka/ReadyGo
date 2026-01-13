@@ -220,6 +220,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | party_title   | text        | ❌       | 파티 제목                                        |
 | start_date    | date        | ❌       | 시작일                                           |
 | start_time    | time        | ❌       | 시작 시간                                        |
+| start_at      | timestamptz | ❌       | 파티 시작 일시 (start_date + start_time 조합)    |
 | description   | text        | ❌       | 모집 설명                                        |
 | max_members   | int4        | ❌       | 파티 최대 인원                                   |
 | control_level | text        | ❌       | 컨트롤 수준                                      |
@@ -227,6 +228,13 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | voice_chat    | text        | ⭕       | 보이스챗 사용 여부(required \| optional \| null) |
 | tags          | jsonb       | ⭕       | 태그 배열(string[] 권장)                         |
 | created_at    | timestamptz | ❌       | 생성 시각                                        |
+
+**인덱스**:
+
+- `idx_party_posts_start_at`: (start_at) - 마감임박순 정렬용
+- `idx_party_posts_created_at`: (created_at) - 최신순 정렬용
+- `idx_party_posts_created_at_id`: (created_at DESC, id DESC) - 최신순 커서 기반 페이징용
+- `idx_party_posts_start_at_id`: (start_at ASC, id ASC) - 마감임박순 커서 기반 페이징용
 
 #### 16. party_members
 
@@ -647,7 +655,7 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 - **Author**: ReadyGo / Eunkyoung Kim(김은경)
 - **Created At**: 2025-12-24
 - **Last Updated At**: 2026-01-14
-- **Document Version**: v1.0.18
+- **Document Version**: v1.0.19
 - **Status**: Active
 - **Source of Truth**:
   - Supabase Production Database
@@ -674,5 +682,6 @@ ERD 구조는 02-domain-erd.md, 03-full-erd.md를 참고한다.
 | v1.0.14 | 2026-01-11 | notifications 테이블에 actor_id, entity_id, entity_type 컬럼 추가                                                                                                                                               |
 | v1.0.15 | 2026-01-12 | System/Logs Domain에 game_start_logs 테이블 추가 (게임 시작 로그), 테이블 번호 재정렬 (32~38번)                                                                                                                 |
 | v1.0.16 | 2026-01-15 | steam_user_stats 테이블 컬럼 추가 (genre_playtime_2w_minutes, total_playtime_2w_minutes) 및 타입 수정, match_exposure_log nullable 수정, game_start_logs 중복 제거 및 타입 수정, steam_game_sync_logs 타입 수정 |
-| v1.0.17 | 2026-01-15 | review_requests 테이블 추가 (게임 시작 후 후기 작성 요청 관리)                                                                                                                              |
-| v1.0.18 | 2026-01-14 | review_requests 테이블에 context_id, context_type 컬럼 추가, game_start_logs 테이블 설명 업데이트 (개인 확정 로그 의미 반영)                                                               |
+| v1.0.17 | 2026-01-13 | party_posts 테이블에 start_at timestamptz 컬럼 추가 (정렬 성능 향상용), 정렬 및 커서 기반 페이징을 위한 인덱스 추가 (idx_party_posts_start_at, idx_party_posts_created_at, idx_party_posts_created_at_id, idx_party_posts_start_at_id) |
+| v1.0.18 | 2026-01-15 | review_requests 테이블 추가 (게임 시작 후 후기 작성 요청 관리)                                                                                                                              |
+| v1.0.19 | 2026-01-14 | review_requests 테이블에 context_id, context_type 컬럼 추가, game_start_logs 테이블 설명 업데이트 (개인 확정 로그 의미 반영)                                                               |
