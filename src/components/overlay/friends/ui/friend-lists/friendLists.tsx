@@ -8,6 +8,9 @@ import Icon from '@/commons/components/icon';
 import { useFriendList } from '@/hooks/useFriendList';
 import { useChatList } from '@/components/chat/hooks';
 import { useAuthStore } from '@/stores/auth.store';
+import { getEffectiveStatus } from '@/stores/user-status.store';
+import { getAvatarImagePath } from '@/lib/avatar/getAvatarImagePath';
+import { usePresenceStore } from '@/stores/presence.store';
 
 export default function FriendLists() {
   const router = useRouter();
@@ -15,6 +18,8 @@ export default function FriendLists() {
   const { friends, loading, error } = useFriendList();
   const { chatRooms } = useChatList();
   const myUserId = useAuthStore((state) => state.user?.id);
+  // presence 상태 변경 시 리렌더링되도록 구독
+  const presenceUserIds = usePresenceStore((state) => state.presenceUserIds);
 
   const handleMessage = async (userId: string) => {
     if (!myUserId || !userId || isCreatingChat) {
@@ -72,7 +77,7 @@ export default function FriendLists() {
   };
 
   // 상태 텍스트 변환 함수
-  const getStatusText = (status: string | null): string => {
+  const getStatusText = (status: 'online' | 'offline' | 'away' | 'dnd'): string => {
     switch (status) {
       case 'online':
         return '온라인';
@@ -85,21 +90,6 @@ export default function FriendLists() {
       default:
         return '오프라인';
     }
-  };
-
-  // 상태를 Avatar 컴포넌트가 받는 형식으로 변환
-  const getStatusForAvatar = (
-    status: string | null
-  ): 'online' | 'offline' | 'away' | 'dnd' => {
-    if (
-      status === 'online' ||
-      status === 'offline' ||
-      status === 'away' ||
-      status === 'dnd'
-    ) {
-      return status;
-    }
-    return 'offline';
   };
 
   // 로딩 상태
@@ -149,8 +139,13 @@ export default function FriendLists() {
         <div className={styles.listContainer}>
           {friends.map((friend) => {
             const nickname = friend.profile?.nickname || '알 수 없음';
-            const status = friend.status?.status || null;
-            const statusForAvatar = getStatusForAvatar(status);
+            // presence 기반 상태 계산
+            const effectiveStatus = getEffectiveStatus(friend.user_id);
+            // 아바타 이미지 경로 계산
+            const avatarImagePath = getAvatarImagePath(
+              friend.profile?.avatar_url,
+              friend.profile?.animal_type
+            );
 
             return (
               <div key={friend.user_id} className={styles.friendItem}>
@@ -158,7 +153,8 @@ export default function FriendLists() {
                   <div className={styles.avatarWrapper}>
                     <Avatar
                       size="s"
-                      status={statusForAvatar}
+                      imageUrl={avatarImagePath}
+                      status={effectiveStatus}
                       showStatus={true}
                     />
                   </div>
@@ -168,7 +164,7 @@ export default function FriendLists() {
                     </div>
                     <div className={styles.statusContainer}>
                       <p className={styles.statusText}>
-                        {getStatusText(status)}
+                        {getStatusText(effectiveStatus)}
                       </p>
                     </div>
                   </div>
