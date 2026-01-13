@@ -134,6 +134,10 @@
   font-weight: var(--typo-body-lg-font-weight);
 }
 
+.listContainer > p {
+  padding: 24px 0;
+}
+
 .friendItem {
   display: flex;
   align-items: center;

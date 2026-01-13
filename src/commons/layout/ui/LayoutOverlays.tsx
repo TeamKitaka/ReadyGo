@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import OverlayContainer from '@/commons/components/overlay';
 import Notifications from '@/components/overlay/notifications/ui';
 import { convertToNotificationItem } from '@/components/overlay/notifications/ui';
 import { FriendsContainer } from '@/components/overlay/friends';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useOverlayStore } from '@/stores/overlay.store';
+import { getChatRoomUrl, getPartyDetailUrl } from '@/commons/constants/url';
 
 interface LayoutOverlaysProps {
   currentOverlay: string | null;
@@ -17,6 +19,7 @@ export const LayoutOverlays = ({
   currentOverlay,
   onClose,
 }: LayoutOverlaysProps) => {
+  const router = useRouter();
   const { openFriends } = useOverlayStore();
   const { notifications, loading, markAsRead } = useNotifications();
   const [friendsInitialTab, setFriendsInitialTab] = useState<
@@ -50,9 +53,8 @@ export const LayoutOverlays = ({
     // 알림 읽음 처리
     markAsRead(Number(notification.id));
 
-    // entity_type에 따라 다른 동작 수행
-    if (notification.entityType === 'friend_request') {
-      // 친구 요청 알림: friends overlay를 열고 친구 요청 탭 활성화
+    // 친구 요청 알림: friends overlay를 열고 친구 요청 탭 활성화
+    if (notification.type === 'FRIEND_REQUESTED') {
       setFriendsInitialTab('request');
       setShouldResetFriendsTab(false); // 알림에서 온 경우 리셋하지 않음
       // openFriends()를 호출하면 currentOverlay가 'friends'로 변경되므로
@@ -61,11 +63,34 @@ export const LayoutOverlays = ({
       return;
     }
 
+    // 친구 수락 알림: friends overlay를 열고 친구 목록 탭 활성화
+    if (notification.type === 'FRIEND_ACCEPTED') {
+      setFriendsInitialTab('list');
+      setShouldResetFriendsTab(false); // 알림에서 온 경우 리셋하지 않음
+      openFriends();
+      return;
+    }
+
+    // 게임 시작 알림: chat_room 또는 party_post로 이동
+    if (notification.type === 'GAME_STARTED') {
+      if (notification.entityType === 'chat_room' && notification.entityId) {
+        // 채팅방으로 이동
+        router.push(getChatRoomUrl(notification.entityId));
+        onClose(); // 알림 overlay 닫기
+        return;
+      } else if (
+        notification.entityType === 'party_post' &&
+        notification.entityId
+      ) {
+        // 파티 상세 페이지로 이동
+        router.push(getPartyDetailUrl(notification.entityId));
+        onClose(); // 알림 overlay 닫기
+        return;
+      }
+    }
+
     // TODO: 다른 entity_type들 처리
-    // - chat_room: 채팅 페이지로 이동
-    // - party_post: 파티 상세 페이지로 이동
     // - review: 후기 페이지로 이동
-    // - game_start: 게임 시작 페이지로 이동
 
     if (notification.onClick) {
       notification.onClick();
