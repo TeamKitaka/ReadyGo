@@ -290,3 +290,4 @@
                 - "메시지가 없습니다"를 unread-divider 스타일로 표시
                 - roomCreatedAt을 useChatRoom hook에서 제공
 
+
