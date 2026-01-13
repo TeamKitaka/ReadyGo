@@ -19,6 +19,7 @@ import { useGameStartLog } from '@/hooks/useGameStartLog';
 import { useModal } from '@/commons/providers/modal/modal.provider';
 import GameLinkPreview from '@/commons/components/game-link-preview';
 import { useSteamProfileShare } from '@/hooks/useSteamProfileShare';
+import SteamProfileLinkPreview from '@/commons/components/steam-profile-link-preview';
 
 interface ChatRoomProps {
   roomId?: string;
@@ -76,6 +77,17 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
     sendMessage,
     isBlocked,
   });
+
+  /**
+   * Steam 프로필 URL에서 steam_id 추출
+   */
+  const extractSteamId = useCallback((url: string | null): string | null => {
+    if (!url) {
+      return null;
+    }
+    const match = url.match(/steamcommunity\.com\/profiles\/(\d+)/);
+    return match ? match[1] : null;
+  }, []);
 
   // 플로팅 버튼 표시 여부
   const [showScrollToBottomButton, setShowScrollToBottomButton] =
@@ -380,6 +392,9 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
             // 프로필 링크인지 확인
             const isProfileLinkMessage =
               message.content_type === 'profile_link';
+            const steamId = isProfileLinkMessage
+              ? extractSteamId(message.content)
+              : null;
 
             if (isOwnMessage) {
               return (
@@ -426,6 +441,24 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
                                 window.location.href = `steam://run/${gameAppId}`;
                               },
                             });
+                          }}
+                        />
+                      </>
+                    ) : isProfileLinkMessage && steamId ? (
+                      <>
+                        {isGroupEnd && (
+                          <div className={styles.messageTime}>
+                            {formattedTime}
+                          </div>
+                        )}
+                        <SteamProfileLinkPreview
+                          steamId={steamId}
+                          nickname={_currentUserNickname}
+                          onProfileView={() => {
+                            window.open(
+                              `https://steamcommunity.com/profiles/${steamId}/`,
+                              '_blank'
+                            );
                           }}
                         />
                       </>
@@ -504,6 +537,24 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
                                 window.location.href = `steam://run/${gameAppId}`;
                               },
                             });
+                          }}
+                        />
+                        {isGroupEnd && (
+                          <div className={styles.messageTime}>
+                            {formattedTime}
+                          </div>
+                        )}
+                      </>
+                    ) : isProfileLinkMessage && steamId ? (
+                      <>
+                        <SteamProfileLinkPreview
+                          steamId={steamId}
+                          nickname={displayNickname}
+                          onProfileView={() => {
+                            window.open(
+                              `https://steamcommunity.com/profiles/${steamId}/`,
+                              '_blank'
+                            );
                           }}
                         />
                         {isGroupEnd && (
