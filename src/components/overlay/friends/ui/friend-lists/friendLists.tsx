@@ -19,7 +19,7 @@ export default function FriendLists() {
   const { chatRooms } = useChatList();
   const myUserId = useAuthStore((state) => state.user?.id);
   // presence 상태 변경 시 리렌더링되도록 구독
-  const presenceUserIds = usePresenceStore((state) => state.presenceUserIds);
+  usePresenceStore((state) => state.presenceUserIds);
 
   const handleMessage = async (userId: string) => {
     if (!myUserId || !userId || isCreatingChat) {
@@ -77,7 +77,9 @@ export default function FriendLists() {
   };
 
   // 상태 텍스트 변환 함수
-  const getStatusText = (status: 'online' | 'offline' | 'away' | 'dnd'): string => {
+  const getStatusText = (
+    status: 'online' | 'offline' | 'away' | 'dnd'
+  ): string => {
     switch (status) {
       case 'online':
         return '온라인';

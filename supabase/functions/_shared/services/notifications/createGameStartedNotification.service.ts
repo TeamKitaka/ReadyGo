@@ -35,8 +35,7 @@ export const createGameStartedNotification = async (
   input: GameStartedNotificationInput
 ) => {
   // entity_type 매핑: 'chat' → 'chat_room', 'party' → 'party_post'
-  const entityType =
-    input.contextType === 'chat' ? 'chat_room' : 'party_post';
+  const entityType = input.contextType === 'chat' ? 'chat_room' : 'party_post';
 
   return await notificationsRepository.bulkInsert(client, input.receiverIds, {
     type: 'GAME_STARTED',
@@ -45,4 +44,3 @@ export const createGameStartedNotification = async (
     entity_id: input.contextId, // room_id 또는 post_id (문자열)
   });
 };
-

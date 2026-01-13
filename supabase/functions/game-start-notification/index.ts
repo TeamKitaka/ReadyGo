@@ -265,11 +265,15 @@ Deno.serve(async (req) => {
 
       // 읽은 사용자들
       const readUserIds = new Set(
-        (readRecords || []).map((r) => r.user_id).filter((id): id is string => id !== null)
+        (readRecords || [])
+          .map((r) => r.user_id)
+          .filter((id): id is string => id !== null)
       );
 
       // 읽지 않은 사용자만 필터링
-      const unreadReceiverIds = receiverIds.filter((id) => !readUserIds.has(id));
+      const unreadReceiverIds = receiverIds.filter(
+        (id) => !readUserIds.has(id)
+      );
 
       if (unreadReceiverIds.length === 0) {
         console.log(
@@ -368,4 +372,3 @@ Deno.serve(async (req) => {
     );
   }
 });
-
