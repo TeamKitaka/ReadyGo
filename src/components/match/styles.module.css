@@ -5,7 +5,6 @@
   align-items: center;
   width: 100%;
   height: 100%;
-  padding: 16px;
 }
 
 /* Cold Start: 중앙 정렬 */
@@ -29,10 +28,10 @@
 
 /* 제목 스타일 */
 .title {
-  font-family: var(--typo-heading-2xl-font-family);
-  font-size: var(--typo-heading-2xl-font-size);
-  font-weight: var(--typo-heading-2xl-font-weight);
-  line-height: var(--typo-heading-2xl-line-height);
+  font-family: var(--typo-heading-xl-font-family);
+  font-size: var(--typo-heading-xl-font-size);
+  font-weight: var(--typo-heading-xl-font-weight);
+  line-height: var(--typo-heading-xl-line-height);
   color: var(--color-text-primary);
   margin: 0;
   white-space: nowrap;
@@ -40,10 +39,10 @@
 
 /* 부제목 스타일 */
 .subtitle {
-  font-family: var(--typo-heading-md-font-family);
-  font-size: var(--typo-heading-md-font-size);
-  font-weight: var(--typo-heading-md-font-weight);
-  line-height: var(--typo-heading-md-line-height);
+  font-family: var(--typo-heading-sm-font-family);
+  font-size: var(--typo-heading-sm-font-size);
+  font-weight: var(--typo-heading-sm-font-weight);
+  line-height: var(--typo-heading-sm-line-height);
   color: var(--color-text-interactive-secondary);
   margin: 0;
   text-align: left;
