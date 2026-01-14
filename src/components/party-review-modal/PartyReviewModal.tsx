@@ -90,7 +90,6 @@ export default function PartyReviewModal({
     return map;
   }, [partyMembers, partyInfo]);
 
-
   // ESC/backdrop 클릭 처리
   const handleBackdropClick = () => {
     if (isSubmitting) {
