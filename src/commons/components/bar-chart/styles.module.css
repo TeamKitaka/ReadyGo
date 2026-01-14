@@ -21,6 +21,8 @@
   line-height: 18px;
   color: var(--color-text-interactive-secondary);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   flex-shrink: 0;
 }
 

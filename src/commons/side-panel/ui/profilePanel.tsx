@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import styles from './styles.module.css';
 import AnimalCard from '../../components/animal-card';
 import RadarChart from '../../components/radar-chart';
+import BarChart from '../../components/bar-chart';
 import ModalContainer from '../../components/modal-container';
 import Modal from '../../components/modal';
 import { useProfileByUserId } from '@/hooks/useProfileByUserId';
@@ -377,15 +378,21 @@ export default function ProfilePanel({
             )}
           </div>
 
-          {/* 최근 플레이 패턴 섹션 - 현재 ViewModel에 없으므로 숨김 */}
-          {/* <div className={styles.playPatternSection}>
-          <div className={styles.sectionHeader}>
-            <h4 className={styles.sectionTitle}>최근 플레이 패턴</h4>
-          </div>
-          <div className={styles.barChartWrapper}>
-            <BarChart data={[]} size="s" showValues={true} />
-          </div>
-        </div> */}
+          {/* 최근 플레이 패턴 섹션 */}
+          {viewModel.barChartData && viewModel.barChartData.length > 0 && (
+            <div className={styles.playPatternSection}>
+              <div className={styles.sectionHeader}>
+                <h4 className={styles.sectionTitle}>최근 플레이 패턴</h4>
+              </div>
+              <div className={styles.barChartWrapper}>
+                <BarChart
+                  data={viewModel.barChartData}
+                  size="s"
+                  showValues={true}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

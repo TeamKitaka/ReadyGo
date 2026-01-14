@@ -138,11 +138,35 @@ export const getUserProfileByUserId = async (
 
   // 5-3. steam_user_stats 조립
   if (steamStatsRow) {
+    // genre_playtime_2w_minutes 타입 변환: Json → Record<string, number> | null
+    let genrePlaytime2wMinutes: Record<string, number> | null = null;
+    if (steamStatsRow.genre_playtime_2w_minutes) {
+      try {
+        // Json 타입이 이미 객체인 경우 그대로 사용, 아니면 파싱
+        if (
+          typeof steamStatsRow.genre_playtime_2w_minutes === 'object' &&
+          steamStatsRow.genre_playtime_2w_minutes !== null &&
+          !Array.isArray(steamStatsRow.genre_playtime_2w_minutes)
+        ) {
+          genrePlaytime2wMinutes =
+            steamStatsRow.genre_playtime_2w_minutes as Record<
+              string,
+              number
+            >;
+        }
+      } catch (error) {
+        console.warn(
+          `[getUserProfileByUserId] Failed to parse genre_playtime_2w_minutes: ${error}`
+        );
+      }
+    }
+
     steamStats = {
       playStyle: steamStatsRow.play_style as 'casual' | 'regular' | 'hardcore',
       avgWeeklyPlaytime: steamStatsRow.avg_weekly_playtime || 0,
       mainGenres: steamStatsRow.main_genres || [],
       activeTimeSlots: steamStatsRow.active_time_slots || [],
+      genrePlaytime2wMinutes,
     };
   }
 

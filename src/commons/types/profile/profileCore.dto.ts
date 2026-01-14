@@ -41,12 +41,14 @@ export interface PlayScheduleItem {
  * - avg_weekly_playtime: 주당 평균 플레이타임 (시간 단위)
  * - main_genres: 주요 장르 목록 (상위 3개)
  * - active_time_slots: 활동 시간대 목록 (예: ['18-24', '00-06'])
+ * - genre_playtime_2w_minutes: 최근 2주간 장르별 플레이 시간 (분 단위)
  */
 export interface SteamStatsDTO {
   playStyle: 'casual' | 'regular' | 'hardcore';
   avgWeeklyPlaytime: number;
   mainGenres: string[];
   activeTimeSlots: string[];
+  genrePlaytime2wMinutes?: Record<string, number> | null;
 }
 
 /**
