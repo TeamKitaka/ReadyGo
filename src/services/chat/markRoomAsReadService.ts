@@ -33,9 +33,27 @@ export const markRoomAsReadService = async (
   try {
     await chatRepository.markRoomAsRead(client, roomId, userId);
   } catch (error) {
-    throw new ChatUpdateError(
-      'read_status',
-      error instanceof Error ? error.message : 'Unknown error'
-    );
+    // 에러 상세 정보 로깅
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
+    const errorDetails =
+      error && typeof error === 'object' && 'details' in error
+        ? (error as { details?: string }).details
+        : undefined;
+    const errorCode =
+      error && typeof error === 'object' && 'code' in error
+        ? (error as { code?: string }).code
+        : undefined;
+
+    console.error('[markRoomAsReadService] Error:', {
+      message: errorMessage,
+      details: errorDetails,
+      code: errorCode,
+      roomId,
+      userId,
+      error,
+    });
+
+    throw new ChatUpdateError('read_status', errorMessage || 'Unknown error');
   }
 };
