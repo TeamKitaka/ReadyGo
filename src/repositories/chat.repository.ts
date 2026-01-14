@@ -551,25 +551,60 @@ export const markMessagesAsRead = async (
     return;
   }
 
-  const now = new Date().toISOString();
-  const readsData = validMessageIds.map((messageId) => ({
-    message_id: messageId,
-    user_id: userId,
-    read_at: now,
-  }));
-
-  // upsert를 사용하여 중복 생성 방지
-  // UNIQUE 제약조건 (message_id, user_id)이 데이터베이스에 설정되어 있음
-  // 이미 읽음 처리된 메시지는 자동으로 업데이트됨
-  const { error: upsertError } = await client
+  // 이미 읽음 처리된 메시지 ID 조회 (중복 방지)
+  const { data: existingReads, error: existingReadsError } = await client
     .from('chat_message_reads')
-    .upsert(readsData, {
-      onConflict: 'message_id,user_id',
-      ignoreDuplicates: false,
-    });
+    .select('message_id')
+    .eq('user_id', userId)
+    .in('message_id', validMessageIds);
 
-  if (upsertError) {
-    throw upsertError;
+  if (existingReadsError) {
+    console.error('[markMessagesAsRead] Error checking existing reads:', {
+      message: existingReadsError.message,
+      details: existingReadsError.details,
+      hint: existingReadsError.hint,
+      code: existingReadsError.code,
+      roomId,
+      userId,
+    });
+    throw existingReadsError;
+  }
+
+  const existingMessageIds = new Set(
+    (existingReads || []).map((r) => r.message_id)
+  );
+
+  // 새로 읽음 처리할 메시지 ID만 필터링
+  const newMessageIds = validMessageIds.filter(
+    (id) => !existingMessageIds.has(id)
+  );
+
+  if (newMessageIds.length > 0) {
+    const now = new Date().toISOString();
+    const readsData = newMessageIds.map((messageId) => ({
+      message_id: messageId,
+      user_id: userId,
+      read_at: now,
+    }));
+
+    // INSERT만 수행 (RLS 정책이 INSERT만 허용하는 경우 대비)
+    const { error: insertError } = await client
+      .from('chat_message_reads')
+      .insert(readsData);
+
+    if (insertError) {
+      console.error('[markMessagesAsRead] Insert error:', {
+        message: insertError.message,
+        details: insertError.details,
+        hint: insertError.hint,
+        code: insertError.code,
+        roomId,
+        userId,
+        messageIds: newMessageIds,
+        readsDataCount: readsData.length,
+      });
+      throw insertError;
+    }
   }
 
   // chat_message_reads에 INSERT된 후 chat_messages.is_read를 true로 업데이트
@@ -712,5 +747,24 @@ export const markRoomAsRead = async (
   }
 
   // markMessagesAsRead 함수를 활용하여 일괄 읽음 처리
-  await markMessagesAsRead(client, roomId, userId, unreadMessageIds);
+  try {
+    await markMessagesAsRead(client, roomId, userId, unreadMessageIds);
+  } catch (error) {
+    console.error('[markRoomAsRead] Error calling markMessagesAsRead:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      details:
+        error && typeof error === 'object' && 'details' in error
+          ? (error as { details?: string }).details
+          : undefined,
+      code:
+        error && typeof error === 'object' && 'code' in error
+          ? (error as { code?: string }).code
+          : undefined,
+      roomId,
+      userId,
+      unreadMessageIdsCount: unreadMessageIds.length,
+      error,
+    });
+    throw error;
+  }
 };

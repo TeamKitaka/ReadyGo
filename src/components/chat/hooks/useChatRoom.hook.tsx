@@ -136,6 +136,8 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
   const markRoomAsReadRef = useRef<
     ((targetRoomId: number) => Promise<void>) | null
   >(null); // 읽음 처리 함수 ref
+  const retryCountRef = useRef<number>(0); // 재시도 횟수 추적
+  const retryTimerRef = useRef<NodeJS.Timeout | null>(null); // 재시도 타이머
 
   // onMessage ref 업데이트 (최신 콜백 유지)
   useEffect(() => {
@@ -230,6 +232,14 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       subscribedRoomIdRef.current = null;
       setIsConnected(false);
     }
+
+    // 재시도 타이머 정리
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    // 재시도 횟수 리셋
+    retryCountRef.current = 0;
   }, []);
 
   /**
@@ -345,12 +355,17 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
               event: 'INSERT',
               schema: 'public',
               table: 'chat_messages',
-              filter: `room_id=eq.${targetRoomId}`,
+              // filter 제거: RLS 정책으로 자동 필터링되며, 클라이언트에서도 room_id 확인
             },
             (payload) => {
               try {
                 // payload.new는 이미 ChatMessage 타입
                 const newMessage = payload.new as ChatMessage;
+
+                // 클라이언트에서 room_id 필터링 (RLS 정책과 함께 이중 체크)
+                if (newMessage.room_id !== targetRoomId) {
+                  return; // 다른 채팅방의 메시지는 무시
+                }
 
                 // 중복 체크 및 메시지 추가
                 handleNewMessage(newMessage);
@@ -371,20 +386,57 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
               }
             }
           )
-          .subscribe((status) => {
+          .subscribe((status, err) => {
             if (status === 'SUBSCRIBED') {
               setIsConnected(true);
               setError(null);
+              // 구독 성공 시 재시도 횟수 리셋
+              retryCountRef.current = 0;
+              // 재시도 타이머 정리
+              if (retryTimerRef.current) {
+                clearTimeout(retryTimerRef.current);
+                retryTimerRef.current = null;
+              }
             } else if (status === 'CHANNEL_ERROR') {
               setIsConnected(false);
-              const errorMessage = 'Postgres changes channel error occurred';
+              const errorMessage =
+                err?.message || 'Postgres changes channel error occurred';
               setError(errorMessage);
-              console.error('Channel error:', errorMessage);
+              console.error('Channel error:', errorMessage, err);
+
               // cleanupChannel을 호출하지 않고, 채널 참조만 정리
               // removeChannel을 호출하면 CLOSED 이벤트가 다시 발생할 수 있음
               if (channelRef.current === channel) {
                 channelRef.current = null;
                 subscribedRoomIdRef.current = null;
+              }
+
+              // 재시도 로직 (최대 3회)
+              const maxRetries = 3;
+              if (retryCountRef.current < maxRetries) {
+                retryCountRef.current += 1;
+                const retryDelay = Math.min(
+                  1000 * Math.pow(2, retryCountRef.current - 1),
+                  5000
+                ); // 지수 백오프, 최대 5초
+                // eslint-disable-next-line no-console
+                console.log(
+                  `Realtime 구독 재시도 (${retryCountRef.current}/${maxRetries}) - ${retryDelay}ms 후`
+                );
+
+                retryTimerRef.current = setTimeout(() => {
+                  if (
+                    subscribedRoomIdRef.current !== targetRoomId ||
+                    !channelRef.current
+                  ) {
+                    // roomId가 변경되었거나 채널이 정리된 경우에만 재시도
+                    subscribeToPostgresChanges(targetRoomId);
+                  }
+                }, retryDelay);
+              } else {
+                // eslint-disable-next-line no-console
+                console.error('Realtime 구독 실패: 최대 재시도 횟수 초과');
+                retryCountRef.current = 0; // 재시도 횟수 리셋
               }
             } else if (status === 'CLOSED') {
               setIsConnected(false);
@@ -397,6 +449,34 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
             } else if (status === 'TIMED_OUT') {
               setIsConnected(false);
               setError('채널 구독 시간 초과');
+
+              // 재시도 로직 (최대 3회)
+              const maxRetries = 3;
+              if (retryCountRef.current < maxRetries) {
+                retryCountRef.current += 1;
+                const retryDelay = Math.min(
+                  1000 * Math.pow(2, retryCountRef.current - 1),
+                  5000
+                ); // 지수 백오프, 최대 5초
+                // eslint-disable-next-line no-console
+                console.log(
+                  `Realtime 구독 재시도 (${retryCountRef.current}/${maxRetries}) - ${retryDelay}ms 후`
+                );
+
+                retryTimerRef.current = setTimeout(() => {
+                  if (
+                    subscribedRoomIdRef.current !== targetRoomId ||
+                    !channelRef.current
+                  ) {
+                    // roomId가 변경되었거나 채널이 정리된 경우에만 재시도
+                    subscribeToPostgresChanges(targetRoomId);
+                  }
+                }, retryDelay);
+              } else {
+                // eslint-disable-next-line no-console
+                console.error('Realtime 구독 실패: 최대 재시도 횟수 초과');
+                retryCountRef.current = 0; // 재시도 횟수 리셋
+              }
             } else {
               // 기타 상태 (예: 'JOINING', 'LEAVING' 등)
               setIsConnected(false);
@@ -706,6 +786,14 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       readTimerRef.current = null;
     }
 
+    // 재시도 타이머 정리
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    // 재시도 횟수 리셋
+    retryCountRef.current = 0;
+
     // 이전 채널 정리
     cleanupChannel();
     // messages 배열 초기화
@@ -766,6 +854,12 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       if (readTimerRef.current) {
         clearTimeout(readTimerRef.current);
         readTimerRef.current = null;
+      }
+
+      // 재시도 타이머 정리
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
       }
 
       // 언마운트 시 현재 채팅방 읽음 처리
