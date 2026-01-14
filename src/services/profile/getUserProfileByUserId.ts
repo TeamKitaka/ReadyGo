@@ -149,10 +149,7 @@ export const getUserProfileByUserId = async (
           !Array.isArray(steamStatsRow.genre_playtime_2w_minutes)
         ) {
           genrePlaytime2wMinutes =
-            steamStatsRow.genre_playtime_2w_minutes as Record<
-              string,
-              number
-            >;
+            steamStatsRow.genre_playtime_2w_minutes as Record<string, number>;
         }
       } catch (error) {
         console.warn(
