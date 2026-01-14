@@ -7,7 +7,6 @@ import PartySection from './ui/party-section/partySection';
 import ProfileSection from './ui/profile-section/profileSection';
 import StartSection from './ui/start-section/startSection';
 import { AnimalType } from '@/commons/constants/animal';
-import { BarChartDataItem } from '@/commons/components/bar-chart';
 import { useGoogleOAuth } from '@/components/auth/hooks/useGoogleOAuth.hook';
 import { useKakaoOAuth } from '@/components/auth/hooks/useKakaoOAuth.hook';
 import { useSidePanelStore } from '@/stores/sidePanel.store';
@@ -22,14 +21,6 @@ import {
 } from '@/features/profile/domain/toSteamStatsText';
 import { toGameStyleFromTraits } from '@/features/profile/domain/toGameStyleFromTraits';
 import { toActiveTimeText } from '@/features/profile/domain/toActiveTimeText';
-
-// 임시 Bar Chart 데이터 (최근 플레이 패턴)
-const mockBarData: BarChartDataItem[] = [
-  { label: 'FPS', value: 23.6 },
-  { label: '생존', value: 18.2 },
-  { label: '모험', value: 12.5 },
-  { label: '캐주얼', value: 8.7 },
-];
 
 export default function Home() {
   // OAuth 콜백 처리를 위한 Hook 호출
@@ -179,7 +170,7 @@ export default function Home() {
                 weeklyAverage={profileTexts.weeklyAverage}
                 perfectMatchTypes={profileViewModel.perfectMatchTypes}
                 radarData={profileViewModel.radarData || []}
-                barData={mockBarData}
+                barData={profileViewModel.barChartData || []}
                 className={styles.profileSection}
               />
             )}

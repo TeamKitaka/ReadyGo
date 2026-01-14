@@ -31,6 +31,7 @@ export type IconName =
   | 'joystick-alt'
   | 'lightbulb'
   | 'lock'
+  | 'logo'
   | 'log-out'
   | 'mail-open'
   | 'match'
@@ -569,6 +570,23 @@ const icons: Record<IconName, React.FC<{ className?: string }>> = {
     >
       <path
         d="M6 22H18C19.1 22 20 21.1 20 20V11C20 9.9 19.1 9 18 9H17V7C17 4.24 14.76 2 12 2C9.24 2 7 4.24 7 7V9H6C4.9 9 4 9.9 4 11V20C4 21.1 4.9 22 6 22ZM9 7C9 5.35 10.35 4 12 4C13.65 4 15 5.35 15 7V9H9V7ZM6 11H18V20H6V11Z"
+        fill="currentColor"
+      />
+    </svg>
+  ),
+  logo: ({ className }) => (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 400 400"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M295.153 56.8878H318.865V80.4592H342.577V176.429H318.865V200H295.153V223.571H271.441V247.143H295.153V270.714H318.865V294.286H342.577V317.857H366.288V341.429H390V365H249.423V341.429H225.712V317.857H202V294.286H178.288V270.714H154.577V247.143H130.865V365H14V35H295.153V56.8878ZM95.2973 88.8776V117.5H66.5045V156.224H95.2973V184.847H134.252V156.224H163.045V117.5H134.252V88.8776H95.2973ZM190.144 146.122V184.847H229.099V146.122H190.144ZM237.568 88.8776V127.602H276.523V88.8776H237.568Z"
         fill="currentColor"
       />
     </svg>

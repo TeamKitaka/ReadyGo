@@ -82,19 +82,21 @@ export default function ProfileSection({
           </div>
 
           {/* Bar Chart Section */}
-          <div className={styles.chartSection}>
-            <div className={styles.chartHeader}>
-              <h4 className={styles.chartTitle}>최근 플레이 패턴</h4>
+          {barData && barData.length > 0 && (
+            <div className={styles.chartSection}>
+              <div className={styles.chartHeader}>
+                <h4 className={styles.chartTitle}>최근 플레이 패턴</h4>
+              </div>
+              <div className={styles.barChartWrapper}>
+                <BarChart
+                  data={barData}
+                  size="s"
+                  showValues={true}
+                  className={styles.barChart}
+                />
+              </div>
             </div>
-            <div className={styles.barChartWrapper}>
-              <BarChart
-                data={barData}
-                size="s"
-                showValues={true}
-                className={styles.barChart}
-              />
-            </div>
-          </div>
+          )}
         </div>
       )}
     </div>

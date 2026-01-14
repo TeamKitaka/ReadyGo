@@ -14,6 +14,7 @@
 import type { ProfileCoreDTO } from '@/commons/types/profile/profileCore.dto';
 import type { ProfileViewModel } from './ProfileViewModel';
 import { toRadarData } from '@/features/profile/domain/toRadarData';
+import { toBarChartData } from '@/features/profile/domain/toBarChartData';
 import { toActiveTimeText } from '@/features/profile/domain/toActiveTimeText';
 import { toAnimalTypeMeta } from '@/features/profile/domain/toAnimalTypeMeta';
 import { toPerfectMatchTypes } from '@/features/profile/domain/toPerfectMatchTypes';
@@ -77,6 +78,9 @@ export const toProfileViewModel = (
 ): ProfileViewModel => {
   // 기존 domain 변환 함수를 사용하여 UI 데이터 생성
   const radarData = toRadarData(coreDTO.traits);
+  const barChartData = toBarChartData(
+    coreDTO.steamStats?.genrePlaytime2wMinutes
+  );
   const activeTimeText = toActiveTimeText(coreDTO.schedule);
   const animalMeta = toAnimalTypeMeta(coreDTO.animalType);
   const perfectMatchTypes = toPerfectMatchTypes(coreDTO.animalType);
@@ -97,6 +101,7 @@ export const toProfileViewModel = (
 
     // 변환된 UI 데이터
     radarData,
+    barChartData,
     activeTimeText,
     animalMeta,
     perfectMatchTypes,

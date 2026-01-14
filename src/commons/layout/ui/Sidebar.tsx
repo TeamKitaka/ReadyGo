@@ -28,7 +28,7 @@ export const Sidebar = ({
     <aside className={styles.sidebar}>
       {/* Logo */}
       <div className={styles.logo}>
-        <Icon name="readygo-fox" size={40} className={styles.logoIcon} />
+        <Icon name="logo" size={40} className={styles.logoIcon} />
       </div>
 
       <div className={styles.sidebarContent}>

@@ -117,7 +117,6 @@ export const LayoutOverlays = ({
           originalNotification.message ===
             '함께한 파티원들과의 게임은 어떠셨나요?';
 
-
         if (isPartyNotification) {
           // 파티 후기 모달 열기
           // entity_id는 review_request.id이므로, 이를 사용해서 review_request 조회 후 context_id 얻기
