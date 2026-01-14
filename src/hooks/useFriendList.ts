@@ -99,15 +99,21 @@ export const useFriendList = () => {
             // eslint-disable-next-line no-console
             console.log('[useFriendList] Realtime event:', payload);
 
-            const friendship =
-              payload.new || payload.old || ({} as FriendshipRow);
+            const friendship = payload.new || payload.old;
+
+            // friendship이 없으면 무시
+            if (!friendship) {
+              return;
+            }
+
+            const friendshipRow = friendship as FriendshipRow;
 
             // JavaScript에서 필터링: user_a 또는 user_b가 현재 사용자이고 status가 accepted인지 확인
             const isRelevant =
-              (friendship.user_a === user.id ||
-                friendship.user_b === user.id) &&
+              (friendshipRow.user_a === user.id ||
+                friendshipRow.user_b === user.id) &&
               (payload.eventType === 'DELETE' ||
-                (payload.new as FriendshipRow)?.status === 'accepted');
+                friendshipRow.status === 'accepted');
 
             if (!isRelevant) {
               return;

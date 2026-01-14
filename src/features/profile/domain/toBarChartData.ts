@@ -38,7 +38,7 @@ const GENRE_NAME_MAP: Record<string, string> = {
   FreeToPlay: '무료',
   'Early Access': '얼리액세스',
   EarlyAccess: '얼리액세스',
-  
+
   // 게임플레이 장르
   Puzzle: '퍼즐',
   Platformer: '플랫포머',
@@ -68,7 +68,7 @@ const GENRE_NAME_MAP: Record<string, string> = {
   Metroidvania: '메트로배니아',
   'Visual Novel': '비주얼 노벨',
   VisualNovel: '비주얼 노벨',
-  
+
   // 테마/설정 장르
   Anime: '애니메',
   'Sci-fi': 'SF',
@@ -91,22 +91,22 @@ const GENRE_NAME_MAP: Record<string, string> = {
   WorldWarII: '2차 세계대전',
   'World War I': '1차 세계대전',
   WorldWarI: '1차 세계대전',
-  
+
   // 게임 모드/특성
   'Single Player': '싱글플레이어',
   SinglePlayer: '싱글플레이어',
-  'Multiplayer': '멀티플레이어',
+  Multiplayer: '멀티플레이어',
   'Co-op': '협동',
   CoOp: '협동',
-  'Cooperative': '협동',
-  'Competitive': '경쟁',
+  Cooperative: '협동',
+  Competitive: '경쟁',
   'Online Co-Op': '온라인 협동',
   'Online PvP': '온라인 PvP',
   'Local Co-Op': '로컬 협동',
   'Local Multiplayer': '로컬 멀티플레이어',
   'Split Screen': '스플릿 스크린',
   SplitScreen: '스플릿 스크린',
-  
+
   // 약어/고유명사는 그대로 유지
   FPS: 'FPS',
   MMO: 'MMO',
@@ -156,7 +156,10 @@ export const toBarChartData = (
   genrePlaytime2wMinutes: Record<string, number> | null | undefined
 ): BarChartDataItem[] => {
   // null/undefined 또는 빈 객체인 경우 빈 배열 반환
-  if (!genrePlaytime2wMinutes || Object.keys(genrePlaytime2wMinutes).length === 0) {
+  if (
+    !genrePlaytime2wMinutes ||
+    Object.keys(genrePlaytime2wMinutes).length === 0
+  ) {
     return [];
   }
 
@@ -172,4 +175,3 @@ export const toBarChartData = (
     value: Number((minutes / 60).toFixed(1)), // 분을 시간으로 변환, 소수점 첫째 자리까지
   }));
 };
-
