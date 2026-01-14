@@ -50,8 +50,16 @@
 
 .gameTag {
   flex-shrink: 0;
-  min-width: fit-content;
-  max-width: 200px; /* 게임 이름이 너무 길 경우 제한 */
+  max-width: 150px; /* 게임 이름이 너무 길 경우 제한 */
+  overflow: hidden;
+}
+
+.gameTag > span {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 /* ===== 설명 텍스트 ===== */

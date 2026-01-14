@@ -12,37 +12,38 @@
 }
 
 .titleArea {
-  width: 1336px;
+  width: 100%;
+  max-width: 1336px;
   display: flex;
   flex-direction: column;
-  /* align-items: flex-start; */
   justify-content: center;
-  gap: 16px;
+  gap: 8px;
   box-sizing: border-box;
 }
 
 .title {
   margin: 0;
   padding: 0;
-  font-family: var(--typo-heading-2xl-font-family);
-  font-size: var(--typo-heading-2xl-font-size);
-  line-height: var(--typo-heading-2xl-line-height);
-  font-weight: var(--typo-heading-2xl-font-weight);
+  font-family: var(--typo-heading-xl-font-family);
+  font-size: var(--typo-heading-xl-font-size);
+  line-height: var(--typo-heading-xl-line-height);
+  font-weight: var(--typo-heading-xl-font-weight);
   color: var(--color-text-primary);
 }
 
 .subtitle {
   margin: 0;
   padding: 0;
-  font-family: var(--typo-body-lg-font-family);
-  font-size: var(--typo-body-lg-font-size);
-  line-height: var(--typo-body-lg-line-height);
-  font-weight: var(--typo-body-lg-font-weight);
-  color: var(--color-text-secondary);
+  font-family: var(--typo-heading-sm-font-family);
+  font-size: var(--typo-heading-sm-font-size);
+  line-height: var(--typo-heading-sm-line-height);
+  font-weight: var(--typo-heading-sm-font-weight);
+  color: var(--color-text-interactive-secondary);
 }
 
 .contentWrapper {
-  width: 1336px;
+  width: 100%;
+  max-width: 1336px;
   height: 100%;
   min-height: 1258px;
   padding: 32px;
@@ -56,7 +57,7 @@
 }
 
 .searchArea {
-  width: 1272px;
+  width: 100%;
   height: 48px;
   display: flex;
   justify-content: space-between;
@@ -84,7 +85,6 @@
 }
 
 .searchInput {
-  display: none;
   width: 100%;
 }
 
@@ -101,7 +101,7 @@
 }
 
 .tabArea {
-  width: 1272px;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -176,12 +176,12 @@
 }
 
 .mainArea {
-  width: 1272px;
   height: auto;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
   box-sizing: border-box;
+  margin: 0 auto;
 }
 
 .statusMessage {
@@ -230,134 +230,46 @@
   border-color: var(--color-border-interactive-secondary);
 }
 
-/* 반응형 디자인 - 웹 (1448px 이하) */
-@media (max-width: 1448px) {
-  .container {
-    padding: 24px;
-  }
-
-  .titleArea {
-    width: 100%;
-    max-width: 100%;
-  }
-
+/* 반응형: 1324px 이하 */
+@media (max-width: 1324px) {
   .contentWrapper {
-    width: 100%;
-    max-width: 100%;
-    padding: 24px;
+    min-width: 610px; /* 카드 최소 너비(546px) + 양쪽 padding(64px)에 맞춰 contentWrapper가 줄어들지 않도록 */
+    margin: 0 auto; /* 화면 가운데 정렬 */
+  }
+
+  .mainArea {
+    grid-template-columns: 1fr; /* 2열 → 1열 */
+    justify-items: center; /* 카드들을 가운데 정렬 */
   }
 
   .searchArea {
-    width: 100%;
-    height: auto;
     flex-direction: column;
+    height: auto;
+    align-items: stretch;
     gap: 16px;
   }
 
   .filterSearchWrapper {
     width: 100%;
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .filterSelect {
-    width: 240px;
-    flex-shrink: 0;
-  }
-
-  .searchInput {
-    display: block;
-    width: 100%;
-  }
-
-  .newPartyButton {
-    width: 131px;
-    flex-shrink: 0;
-    margin-left: auto;
-  }
-
-  .tabArea {
-    width: 100%;
-    flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 0;
-  }
-
-  .mainArea {
-    width: 100%;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .sortArea {
-    flex-wrap: nowrap;
-    white-space: nowrap;
-  }
-}
-
-/* 반응형 디자인 - 모바일 (768px 이하) */
-@media (max-width: 768px) {
-  .container {
-    padding: 16px;
-    gap: 24px;
-  }
-
-  .contentWrapper {
-    padding: 20px;
-    border-radius: 24px;
-  }
-
-  .searchArea {
-    gap: 12px;
-  }
-
-  .filterSearchWrapper {
-    flex-direction: column;
     gap: 12px;
   }
 
   .filterSelect {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
   }
 
   .searchInput {
-    order: 0;
-    flex: 0 0 auto;
+    width: 100%;
+    flex-basis: 100%; /* 검색바를 다음 줄로 강제 이동 */
   }
 
   .newPartyButton {
-    width: 100%;
-    order: 0;
-  }
-
-  .tabArea {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .sortArea {
-    flex-wrap: nowrap;
-    white-space: nowrap;
-  }
-
-  .floatButton {
-    right: 16px;
-    bottom: 16px;
-  }
-}
-
-/* 화면 540px 이하 - 반응형 무시하고 고정 */
-@media (max-width: 540px) {
-  .mainArea {
-    align-items: center;
-  }
-
-  .sortArea {
-    flex-wrap: nowrap;
-    white-space: nowrap;
+    width: auto;
+    min-width: 131px;
   }
 }

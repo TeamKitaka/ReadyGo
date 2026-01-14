@@ -66,6 +66,7 @@
   color: var(--color-text-secondary);
   text-align: center;
   margin: 0;
+  white-space: pre-line;
 }
 
 /* Button Group */

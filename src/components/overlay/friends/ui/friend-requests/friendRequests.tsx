@@ -6,6 +6,7 @@ import Avatar from '@/commons/components/avatar';
 import Icon from '@/commons/components/icon';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { useFriendActions } from '@/hooks/useFriendActions';
+import { getAvatarImagePath } from '@/lib/avatar/getAvatarImagePath';
 
 export default function FriendRequests() {
   const {
@@ -124,12 +125,22 @@ export default function FriendRequests() {
             const nickname = senderProfile?.nickname || '알 수 없음';
             // user_status는 별도로 조회하지 않으므로 기본값 사용
             const status: 'online' | 'offline' | 'away' | 'dnd' = 'offline';
+            // 아바타 이미지 경로 계산
+            const avatarImagePath = getAvatarImagePath(
+              senderProfile?.avatar_url,
+              senderProfile?.animal_type
+            );
 
             return (
               <div key={request.id} className={styles.requestItem}>
                 <div className={styles.userInfo}>
                   <div className={styles.avatarWrapper}>
-                    <Avatar size="s" status={status} showStatus={false} />
+                    <Avatar
+                      size="s"
+                      imageUrl={avatarImagePath}
+                      status={status}
+                      showStatus={false}
+                    />
                   </div>
                   <div className={styles.textInfo}>
                     <div className={styles.nicknameContainer}>

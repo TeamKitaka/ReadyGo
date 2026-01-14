@@ -21,6 +21,7 @@ import type { AnimalType } from '@/commons/constants/animal/animal.enum';
 import type { TraitVector } from '@/commons/constants/animal/animal.vector';
 import type { TierType } from '@/commons/constants/tierType.enum';
 import type { RadarChartData } from '@/commons/components/radar-chart';
+import type { BarChartDataItem } from '@/commons/components/bar-chart';
 import type { SteamStatsDTO } from '@/commons/types/profile/profileCore.dto';
 
 /**
@@ -83,6 +84,12 @@ export interface ProfileViewModel {
    * 레이더 차트 데이터 (변환된 UI 데이터)
    */
   radarData?: RadarChartData[];
+
+  /**
+   * 바 차트 데이터 (변환된 UI 데이터)
+   * 최근 2주간 장르별 플레이 패턴
+   */
+  barChartData?: BarChartDataItem[];
 
   /**
    * 활동 시간 텍스트 (변환된 UI 텍스트)

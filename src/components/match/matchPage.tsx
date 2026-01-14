@@ -31,7 +31,7 @@ export default function Match() {
 
   // localStorage에서 닫기 상태 확인
   useEffect(() => {
-    const dismissed = localStorage.getItem('steam-alert-dismissed');
+    const dismissed = sessionStorage.getItem('steam-alert-dismissed');
     if (dismissed === 'true') {
       setIsSteamAlertDismissed(true);
     }
@@ -39,7 +39,7 @@ export default function Match() {
 
   // 스팀 알림 배너 닫기 핸들러
   const handleSteamAlertClose = () => {
-    localStorage.setItem('steam-alert-dismissed', 'true');
+    sessionStorage.setItem('steam-alert-dismissed', 'true');
     setIsSteamAlertDismissed(true);
   };
 
@@ -219,21 +219,21 @@ export default function Match() {
       {/* Cold Start가 아닐 때만 나머지 UI 표시 */}
       {!shouldShowTraitsAlert && (
         <>
-          {/* 스팀 연동 알림 배너 (2순위) */}
-          {shouldShowSteamAlert && (
-            <SteamAlert
-              onConnect={handleSteamLink}
-              onClose={handleSteamAlertClose}
-              className={styles.steamAlertContainer}
-            />
-          )}
-
           <div className={styles.content}>
             {/* 헤더 섹션 */}
             <div className={styles.header}>
               <h1 className={styles.title}>매칭 찾기</h1>
               <p className={styles.subtitle}>너랑 딱 맞는 게임 친구를 찾아봐</p>
             </div>
+
+            {/* 스팀 연동 알림 배너 (2순위) */}
+            {shouldShowSteamAlert && (
+              <SteamAlert
+                onConnect={handleSteamLink}
+                onClose={handleSteamAlertClose}
+                className={styles.steamAlertContainer}
+              />
+            )}
 
             {/* 로딩 상태 */}
             {loading && <MatchListSkeleton isSidePanelOpen={isOpen} />}

@@ -577,6 +577,7 @@ export type Database = {
           id: number
           max_members: number
           party_title: string
+          start_at: string
           start_date: string
           start_time: string
           tags: Json | null
@@ -592,6 +593,7 @@ export type Database = {
           id?: number
           max_members: number
           party_title: string
+          start_at: string
           start_date: string
           start_time: string
           tags?: Json | null
@@ -607,6 +609,7 @@ export type Database = {
           id?: number
           max_members?: number
           party_title?: string
+          start_at?: string
           start_date?: string
           start_time?: string
           tags?: Json | null
@@ -637,6 +640,64 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      review_requests: {
+        Row: {
+          actor_id: string
+          completed_at: string | null
+          context_id: number
+          context_type: string
+          created_at: string
+          game_start_log_id: number
+          id: number
+          status: string
+          target_id: string
+        }
+        Insert: {
+          actor_id: string
+          completed_at?: string | null
+          context_id: number
+          context_type: string
+          created_at?: string
+          game_start_log_id: number
+          id?: number
+          status?: string
+          target_id: string
+        }
+        Update: {
+          actor_id?: string
+          completed_at?: string | null
+          context_id?: number
+          context_type?: string
+          created_at?: string
+          game_start_log_id?: number
+          id?: number
+          status?: string
+          target_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_requests_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_requests_game_start_log_id_fkey"
+            columns: ["game_start_log_id"]
+            isOneToOne: false
+            referencedRelation: "game_start_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_requests_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
@@ -792,7 +853,7 @@ export type Database = {
           genre_playtime_2w_minutes: Json | null
           main_genres: string[]
           play_style: string
-          top_genres_2w: string[]
+          top_genres_2w: string[] | null
           total_playtime_2w_minutes: number | null
           updated_at: string
           user_id: string
@@ -803,7 +864,7 @@ export type Database = {
           genre_playtime_2w_minutes?: Json | null
           main_genres?: string[]
           play_style: string
-          top_genres_2w?: string[]
+          top_genres_2w?: string[] | null
           total_playtime_2w_minutes?: number | null
           updated_at?: string
           user_id: string
@@ -814,7 +875,7 @@ export type Database = {
           genre_playtime_2w_minutes?: Json | null
           main_genres?: string[]
           play_style?: string
-          top_genres_2w?: string[]
+          top_genres_2w?: string[] | null
           total_playtime_2w_minutes?: number | null
           updated_at?: string
           user_id?: string
@@ -1143,7 +1204,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      process_review_requests: { Args: never; Returns: undefined }
     }
     Enums: {
       user_presence_status: "online" | "away" | "dnd" | "offline"

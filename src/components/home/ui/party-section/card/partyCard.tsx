@@ -99,9 +99,11 @@ export default function PartyCard({
           <div className={styles.titleSection}>
             <h3 className={styles.title}>{title}</h3>
           </div>
-          <div className={styles.gameTag}>
-            <Tag style="duotone">{gameName}</Tag>
-          </div>
+          {/* <div className={styles.gameTag}> */}
+          <Tag style="duotone" className={styles.gameTag}>
+            {gameName}
+          </Tag>
+          {/* </div> */}
         </div>
 
         {/* 설명 */}

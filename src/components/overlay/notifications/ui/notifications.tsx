@@ -20,6 +20,7 @@ export interface NotificationItem {
   isRead: boolean;
   entityType?: string;
   entityId?: string;
+  message?: string; // DB에 저장된 메시지 (파티의 경우 "함께한 파티원들과의 게임은 어떠셨나요?" 등)
   onClick?: () => void;
 }
 
@@ -69,6 +70,8 @@ const convertToNotificationItem = (
     isRead: notification.is_read || false,
     entityType: notification.entity_type || undefined,
     entityId: notification.entity_id || undefined,
+    // DB에 저장된 message 필드도 전달 (파티의 경우 "함께한 파티원들과의 게임은 어떠셨나요?" 등)
+    message: notification.message || undefined,
   };
 };
 
@@ -83,8 +86,16 @@ interface NotificationsProps {
 // 알림 타입별 메시지 생성
 const getNotificationMessage = (
   type: NotificationType,
-  nickname: string
+  nickname: string,
+  entityType?: string,
+  dbMessage?: string // DB에 저장된 메시지 (우선 사용)
 ): string => {
+  // DB에 저장된 메시지가 있으면 우선 사용 (파티의 경우 "함께한 파티원들과의 게임은 어떠셨나요?" 등)
+  if (dbMessage) {
+    return dbMessage;
+  }
+
+  // DB 메시지가 없을 때만 하드코딩된 메시지 사용
   switch (type) {
     case 'REVIEW_RECEIVED':
       return `${nickname}님이 후기를 보냄`;
@@ -97,6 +108,13 @@ const getNotificationMessage = (
     case 'CHAT_RECEIVED':
       return `${nickname}님이 메시지를 보냄`;
     case 'GAME_STARTED':
+      // entity_type에 따라 다른 메시지 표시
+      if (entityType === 'party_post') {
+        return '파티에서 게임이 시작되었어요';
+      } else if (entityType === 'chat_room') {
+        return `${nickname}님이 게임 시작 링크를 보냈어요`;
+      }
+      // 기본값 (fallback)
       return `${nickname}님과 게임이 시작되었습니다`;
     case 'PARTY_INVITED':
       return `${nickname}님이 파티에 초대함`;
@@ -159,7 +177,9 @@ const NotificationItemComponent = ({
 }) => {
   const message = getNotificationMessage(
     notification.type,
-    notification.nickname
+    notification.nickname,
+    notification.entityType,
+    notification.message // DB에 저장된 메시지 우선 사용
   );
   const iconName = getNotificationIcon(notification.type);
   const colorClass = getNotificationColorClass(notification.type);

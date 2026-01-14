@@ -28,6 +28,7 @@ const SubmitReviewSchema = z
   .object({
     targetUserId: z.string().uuid('Invalid targetUserId format'),
     answers: ReviewAnswersSchema,
+    reviewRequestId: z.number().int().positive().optional(),
     reviewerId: z.undefined().optional(),
   })
   .strict()
@@ -101,11 +102,16 @@ export const POST = async (request: NextRequest) => {
       );
     }
 
-    const { targetUserId, answers } = validationResult.data;
+    const { targetUserId, answers, reviewRequestId } = validationResult.data;
     const reviewerId = user.id;
 
     // Service 호출
-    const review = await submitReview(reviewerId, targetUserId, answers);
+    const review = await submitReview(
+      reviewerId,
+      targetUserId,
+      answers,
+      reviewRequestId
+    );
 
     return NextResponse.json(
       {

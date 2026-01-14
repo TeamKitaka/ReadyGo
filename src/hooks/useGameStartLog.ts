@@ -15,7 +15,7 @@ export const useGameStartLog = () => {
    */
   const createGameStartLog = useCallback(
     async (params: {
-      contextType: 'match' | 'party';
+      contextType: 'chat' | 'party';
       contextId: string;
       gameId?: string;
       gameName?: string;

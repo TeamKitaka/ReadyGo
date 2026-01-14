@@ -6,13 +6,14 @@ import {
 import type {
   PartyPost,
   GetPartyPostsOptions,
+  SortOption,
 } from '@/repositories/partyPosts.repository';
 
 /**
  * 파티 게시물 목록 조회 Service
  *
  * 책임:
- * - 입력 검증 (limit, offset, creatorId, gameTitle, status)
+ * - 입력 검증 (limit, offset, sortOption, creatorId, gameTitle, status)
  * - Repository 에러 처리
  *
  * 비책임:
@@ -40,6 +41,16 @@ export const getPartyPostsService = async (
       options.offset < 0
     ) {
       throw new ChatValidationError('offset은 0 이상의 숫자여야 합니다.');
+    }
+  }
+
+  // sortOption 검증
+  if (options?.sortOption !== undefined) {
+    const validSortOptions: SortOption[] = ['latest', 'deadline'];
+    if (!validSortOptions.includes(options.sortOption)) {
+      throw new ChatValidationError(
+        `sortOption은 'latest' 또는 'deadline'이어야 합니다.`
+      );
     }
   }
 
