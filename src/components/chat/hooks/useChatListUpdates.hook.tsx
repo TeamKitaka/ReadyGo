@@ -4,7 +4,8 @@ import { useCallback, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 
 import { useAuth } from '@/commons/providers/auth/auth.provider';
-import type { ChatMessage, ChatRoomListItem } from '@/types/chat';
+import type { ChatMessage } from '@/types/chat';
+import type { ChatRoomListItem } from '@/repositories/chat.repository';
 
 /**
  * Hook 파라미터 타입
@@ -22,17 +23,15 @@ export interface UseChatListUpdatesProps {
 export interface UseChatListUpdatesReturn {
   markRoomAsReadOptimistic: (roomId: number) => void;
   getOptimisticUnreadCount: (roomId: number) => number | null;
-  scheduleMessageUpdate: (
-    newMessage: {
-      id?: number;
-      room_id?: number;
-      sender_id?: string;
-      content?: string | null;
-      content_type?: string;
-      created_at?: string;
-      is_read?: boolean;
-    }
-  ) => void;
+  scheduleMessageUpdate: (newMessage: {
+    id?: number;
+    room_id?: number;
+    sender_id?: string;
+    content?: string | null;
+    content_type?: string;
+    created_at?: string;
+    is_read?: boolean;
+  }) => void;
   processPendingMessageUpdates: () => void;
   messageUpdateTimerRef: React.MutableRefObject<NodeJS.Timeout | null>;
   pendingMessageUpdatesRef: React.MutableRefObject<
@@ -63,12 +62,7 @@ export interface UseChatListUpdatesReturn {
 export const useChatListUpdates = (
   props: UseChatListUpdatesProps
 ): UseChatListUpdatesReturn => {
-  const {
-    optimisticReadRoomsRef,
-    chatRoomsRef,
-    setChatRooms,
-    refresh,
-  } = props;
+  const { optimisticReadRoomsRef, chatRoomsRef, setChatRooms, refresh } = props;
   const { user } = useAuth();
   const pathname = usePathname();
 
@@ -94,18 +88,21 @@ export const useChatListUpdates = (
   /**
    * 낙관적 업데이트: 특정 채팅방의 unreadCount를 즉시 0으로 설정
    */
-  const markRoomAsReadOptimistic = useCallback((roomId: number) => {
-    // 낙관적으로 읽음 처리된 채팅방 ID 저장
-    optimisticReadRoomsRef.current.add(roomId);
+  const markRoomAsReadOptimistic = useCallback(
+    (roomId: number) => {
+      // 낙관적으로 읽음 처리된 채팅방 ID 저장
+      optimisticReadRoomsRef.current.add(roomId);
 
-    setChatRooms((prev) => {
-      const updated = prev.map((room) =>
-        room.room.id === roomId ? { ...room, unreadCount: 0 } : room
-      );
-      chatRoomsRef.current = updated; // ref 업데이트
-      return updated;
-    });
-  }, [optimisticReadRoomsRef, chatRoomsRef, setChatRooms]);
+      setChatRooms((prev) => {
+        const updated = prev.map((room) =>
+          room.room.id === roomId ? { ...room, unreadCount: 0 } : room
+        );
+        chatRoomsRef.current = updated; // ref 업데이트
+        return updated;
+      });
+    },
+    [optimisticReadRoomsRef, chatRoomsRef, setChatRooms]
+  );
 
   /**
    * 낙관적 unreadCount 조회: refresh 후에도 낙관적으로 읽음 처리된 채팅방은 0 반환
