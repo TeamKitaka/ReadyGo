@@ -98,7 +98,7 @@ export const useNotifications = () => {
             event: '*',
             schema: 'public',
             table: 'notifications',
-            filter: `user_id=eq.${user.id}`,
+            // filter 제거: RLS 정책으로 자동 필터링됨
           },
           (payload) => {
             // eslint-disable-next-line no-console

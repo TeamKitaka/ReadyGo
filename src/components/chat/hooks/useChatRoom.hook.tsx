@@ -358,7 +358,8 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
               event: 'INSERT',
               schema: 'public',
               table: 'chat_messages',
-              // filter 제거: RLS 정책으로 자동 필터링되며, 클라이언트에서도 room_id 확인
+              filter: `room_id=eq.${targetRoomId}`,
+              // RLS 정책과 함께 filter 사용 (특정 roomId 구독)
             },
             (payload) => {
               try {
@@ -367,14 +368,6 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
                 // #endregion
                 // payload.new는 이미 ChatMessage 타입
                 const newMessage = payload.new as ChatMessage;
-
-                // 클라이언트에서 room_id 필터링 (RLS 정책과 함께 이중 체크)
-                if (newMessage.room_id !== targetRoomId) {
-                  // #region agent log
-                  fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:366',message:'Message filtered out (different room_id)',data:{targetRoomId,messageRoomId:newMessage.room_id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-                  // #endregion
-                  return; // 다른 채팅방의 메시지는 무시
-                }
 
                 // 중복 체크 및 메시지 추가
                 handleNewMessage(newMessage);
