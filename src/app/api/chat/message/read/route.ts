@@ -6,8 +6,21 @@ import {
   ChatUpdateError,
   ChatValidationError,
 } from '@/commons/errors/chat/chatErrors';
+import { appendFile } from 'fs/promises';
+import { join } from 'path';
 
 export const dynamic = 'force-dynamic';
+
+// #region agent log helper
+const logToFile = async (data: object) => {
+  try {
+    const logPath = join(process.cwd(), '.cursor', 'debug.log');
+    await appendFile(logPath, JSON.stringify(data) + '\n');
+  } catch (err) {
+    // Ignore log errors
+  }
+};
+// #endregion
 
 /**
  * POST /api/chat/message/read
@@ -25,6 +38,9 @@ export const dynamic = 'force-dynamic';
  */
 export const POST = async (request: NextRequest) => {
   try {
+    // #region agent log
+    await logToFile({location:'api/chat/message/read/route.ts:26',message:'POST /api/chat/message/read: starting',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'});
+    // #endregion
     // 1. 인증된 클라이언트 생성
     const supabase = createClient();
     const {
@@ -33,6 +49,9 @@ export const POST = async (request: NextRequest) => {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
+      // #region agent log
+      await logToFile({location:'api/chat/message/read/route.ts:35',message:'POST /api/chat/message/read: auth failed',data:{authError:authError?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'});
+      // #endregion
       return NextResponse.json(
         {
           message: 'Unauthorized',
@@ -49,18 +68,40 @@ export const POST = async (request: NextRequest) => {
     const body = await request.json();
     const { roomId, messageIds } = body;
 
+    // #region agent log
+    await logToFile({location:'api/chat/message/read/route.ts:50',message:'POST /api/chat/message/read: parsed body',data:{roomId,userId,hasMessageIds:!!messageIds,messageIdsCount:Array.isArray(messageIds)?messageIds.length:0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'});
+    // #endregion
+
     // 5. Service 호출
     // messageIds가 제공된 경우: 특정 메시지들만 읽음 처리
     if (messageIds && Array.isArray(messageIds)) {
+      // #region agent log
+      await logToFile({location:'api/chat/message/read/route.ts:54',message:'POST /api/chat/message/read: calling markMessagesAsReadService',data:{roomId,userId,messageIdsCount:messageIds.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'});
+      // #endregion
       await markMessagesAsReadService(supabase, roomId, userId, messageIds);
+      // #region agent log
+      await logToFile({location:'api/chat/message/read/route.ts:56',message:'POST /api/chat/message/read: markMessagesAsReadService completed',data:{roomId,userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'});
+      // #endregion
     } else {
       // messageIds가 없는 경우: 해당 채팅방의 모든 메시지를 읽음 처리
+      // #region agent log
+      await logToFile({location:'api/chat/message/read/route.ts:58',message:'POST /api/chat/message/read: calling markRoomAsReadService',data:{roomId,userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'});
+      // #endregion
       await markRoomAsReadService(supabase, roomId, userId);
+      // #region agent log
+      await logToFile({location:'api/chat/message/read/route.ts:60',message:'POST /api/chat/message/read: markRoomAsReadService completed',data:{roomId,userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'});
+      // #endregion
     }
 
     // 6. 정상 응답
+    // #region agent log
+    await logToFile({location:'api/chat/message/read/route.ts:62',message:'POST /api/chat/message/read: success',data:{roomId,userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'});
+    // #endregion
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
+    // #region agent log
+    await logToFile({location:'api/chat/message/read/route.ts:63',message:'POST /api/chat/message/read: error caught',data:{error:error instanceof Error?error.message:String(error),errorType:error instanceof ChatValidationError?'ChatValidationError':error instanceof ChatUpdateError?'ChatUpdateError':'Unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'});
+    // #endregion
     // 7. Service 에러 매핑
 
     // 7-1. ChatValidationError → 400
