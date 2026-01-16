@@ -114,35 +114,35 @@ export const useChatRoomScroll = (
           }
 
           // unread-divider 요소 찾기
-        const unreadDividerElement = containerRef.current.querySelector(
-          '[data-unread-divider="true"]'
-        );
-
-        if (unreadDividerElement) {
-          // divider 요소로 스크롤 (약간의 여백을 두고)
-          unreadDividerElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-          });
-          return;
-        }
-
-        // divider를 찾지 못하면 메시지로 fallback
-        const unreadMessageId = getUnreadBoundaryMessageId();
-        if (unreadMessageId) {
-          const messageElement = containerRef.current.querySelector(
-            `[data-message-id="${unreadMessageId}"]`
+          const unreadDividerElement = containerRef.current.querySelector(
+            '[data-unread-divider="true"]'
           );
 
-          if (messageElement) {
-            // 메시지 요소로 스크롤 (약간의 여백을 두고)
-            messageElement.scrollIntoView({
+          if (unreadDividerElement) {
+            // divider 요소로 스크롤 (약간의 여백을 두고)
+            unreadDividerElement.scrollIntoView({
               behavior: 'smooth',
               block: 'start',
             });
             return;
           }
-        }
+
+          // divider를 찾지 못하면 메시지로 fallback
+          const unreadMessageId = getUnreadBoundaryMessageId();
+          if (unreadMessageId) {
+            const messageElement = containerRef.current.querySelector(
+              `[data-message-id="${unreadMessageId}"]`
+            );
+
+            if (messageElement) {
+              // 메시지 요소로 스크롤 (약간의 여백을 두고)
+              messageElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+              });
+              return;
+            }
+          }
 
           // 요소를 찾지 못하면 재시도 또는 최하단으로 스크롤
           if (attempts < 10) {

@@ -812,6 +812,11 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     // error 상태 초기화
     setError(null);
 
+    // 인증 완료 확인
+    if (!user?.id) {
+      return;
+    }
+
     // 초기 메시지 로드
     loadMessages(roomId).then(() => {
       // postgres_changes 구독

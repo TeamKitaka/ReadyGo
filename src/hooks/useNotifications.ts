@@ -166,13 +166,18 @@ export const useNotifications = () => {
 
   // 초기 마운트 시 fetch 및 Realtime 구독
   useEffect(() => {
+    // 인증 완료 후에만 실행
+    if (!user?.id) {
+      return;
+    }
+
     fetchNotifications();
     subscribeToRealtime();
 
     return () => {
       cleanupChannel();
     };
-  }, [fetchNotifications, subscribeToRealtime, cleanupChannel]);
+  }, [user?.id, fetchNotifications, subscribeToRealtime, cleanupChannel]);
 
   // 읽지 않은 알림 개수
   const unreadCount = (notifications || []).filter((n) => !n.is_read).length;

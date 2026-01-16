@@ -507,28 +507,6 @@ export const getChatMessages = async (
     is_read: message.sender_id === userId || readMessageIds.has(message.id),
   })) as ChatMessage[];
 
-  // content_type별 읽음 상태 로깅 (디버깅용)
-  const readStatusByType = messagesWithReadStatus.reduce(
-    (acc, msg) => {
-      const type = msg.content_type || 'null';
-      if (!acc[type]) {
-        acc[type] = { total: 0, read: 0 };
-      }
-      acc[type].total += 1;
-      if (msg.is_read) {
-        acc[type].read += 1;
-      }
-      return acc;
-    },
-    {} as Record<string, { total: number; read: number }>
-  );
-
-  console.log('[getChatMessages] Read status by content_type:', {
-    roomId,
-    userId,
-    totalCount: messagesWithReadStatus.length,
-    readStatusByType,
-  });
 
   return messagesWithReadStatus;
 };
@@ -847,18 +825,6 @@ export const markRoomAsRead = async (
     return;
   }
 
-  // content_type별 메시지 수 로깅 (디버깅용)
-  const contentTypeCounts = allMessages.reduce((acc, msg) => {
-    const type = msg.content_type || 'null';
-    acc[type] = (acc[type] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-  console.log('[markRoomAsRead] Messages by content_type:', {
-    roomId,
-    userId,
-    totalCount: allMessages.length,
-    contentTypeCounts,
-  });
 
   const allMessageIds = allMessages
     .map((m) => (m as { id: number }).id)
@@ -890,27 +856,6 @@ export const markRoomAsRead = async (
     (id) => !readMessageIds.has(id)
   );
 
-  // 읽지 않은 메시지의 content_type 확인 (디버깅용)
-  const unreadMessagesWithType = allMessages.filter((msg) =>
-    unreadMessageIds.includes(msg.id)
-  );
-  const unreadContentTypeCounts = unreadMessagesWithType.reduce((acc, msg) => {
-    const type = msg.content_type || 'null';
-    acc[type] = (acc[type] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  console.log('[markRoomAsRead] Unread messages by content_type:', {
-    roomId,
-    userId,
-    unreadCount: unreadMessageIds.length,
-    unreadContentTypeCounts,
-    unreadMessageIds: unreadMessageIds.slice(0, 20), // 처음 20개만 로그
-    unreadMessagesWithType: unreadMessagesWithType.slice(0, 10).map((msg) => ({
-      id: msg.id,
-      content_type: msg.content_type,
-    })),
-  });
 
   if (unreadMessageIds.length === 0) {
     return;
