@@ -346,6 +346,9 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
       }
 
       try {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:349',message:'Creating postgres_changes channel',data:{targetRoomId,userId:user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
         // postgres_changes 채널 생성
         const channel = baseSupabase
           .channel(`chat:${targetRoomId}:changes`)
@@ -359,11 +362,17 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
             },
             (payload) => {
               try {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:360',message:'postgres_changes event received',data:{targetRoomId,payloadRoomId:payload.new?.room_id,messageId:payload.new?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
                 // payload.new는 이미 ChatMessage 타입
                 const newMessage = payload.new as ChatMessage;
 
                 // 클라이언트에서 room_id 필터링 (RLS 정책과 함께 이중 체크)
                 if (newMessage.room_id !== targetRoomId) {
+                  // #region agent log
+                  fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:366',message:'Message filtered out (different room_id)',data:{targetRoomId,messageRoomId:newMessage.room_id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                  // #endregion
                   return; // 다른 채팅방의 메시지는 무시
                 }
 
@@ -379,6 +388,9 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
                   }
                 }
               } catch (error) {
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:381',message:'Error processing postgres_changes event',data:{error:error instanceof Error?error.message:String(error),targetRoomId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
                 console.error(
                   'Error processing postgres_changes event:',
                   error
@@ -387,6 +399,9 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
             }
           )
           .subscribe((status, err) => {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:389',message:'Channel subscription status',data:{status,error:err?.message,targetRoomId,userId:user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
             if (status === 'SUBSCRIBED') {
               setIsConnected(true);
               setError(null);
@@ -579,10 +594,16 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         hasMarkedAsReadRef.current &&
         previousRoomIdRef.current === targetRoomId
       ) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:593',message:'markRoomAsRead: skipped (already marked)',data:{targetRoomId,hasMarkedAsRead:hasMarkedAsReadRef.current,previousRoomId:previousRoomIdRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
         return;
       }
 
       try {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:600',message:'markRoomAsRead: calling API',data:{targetRoomId,userId:user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
         const response = await fetch('/api/chat/message/read', {
           method: 'POST',
           headers: {
@@ -594,8 +615,15 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
           }),
         });
 
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:612',message:'markRoomAsRead: API response received',data:{targetRoomId,status:response.status,ok:response.ok},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:614',message:'markRoomAsRead: API error response',data:{targetRoomId,status:response.status,error:errorData.error||errorData.message,errorCode:errorData.code},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+          // #endregion
           console.error(
             'Failed to mark room as read:',
             errorData.error || '읽음 처리에 실패했습니다.',
@@ -608,6 +636,9 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         }
 
         await response.json().catch(() => ({}));
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:625',message:'markRoomAsRead: API success',data:{targetRoomId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
 
         // 읽음 처리 후 로컬 상태 업데이트
         setMessages((prev) =>
@@ -624,6 +655,9 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         // 읽음 처리 완료 표시
         hasMarkedAsReadRef.current = true;
       } catch (error) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:641',message:'markRoomAsRead: exception caught',data:{targetRoomId,error:error instanceof Error?error.message:String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
         console.error('Failed to mark room as read:', error);
         // 백그라운드 처리이므로 사용자에게 에러 표시하지 않음
       }

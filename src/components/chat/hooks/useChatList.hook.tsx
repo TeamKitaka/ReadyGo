@@ -500,13 +500,13 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
               },
             })
             // chat_room_members: 사용자가 참여한 채팅방 변경 감지
+            // RLS 정책으로 자동 필터링됨 (클라이언트 체크 불필요)
             .on(
               'postgres_changes',
               {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'chat_room_members',
-                filter: `user_id=eq.${userId}`,
               },
               () => {
                 // 사용자가 새 채팅방에 참여 시 목록에 추가
@@ -519,7 +519,6 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
                 event: 'DELETE',
                 schema: 'public',
                 table: 'chat_room_members',
-                filter: `user_id=eq.${userId}`,
               },
               () => {
                 // 사용자가 채팅방 탈퇴 시 목록에서 제거
@@ -652,18 +651,19 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
               }
             )
             // chat_message_reads: 읽음 처리 감지
+            // RLS 정책으로 자동 필터링됨 (클라이언트 체크 불필요)
             .on(
               'postgres_changes',
               {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'chat_message_reads',
-                filter: `user_id=eq.${userId}`,
               },
               async (payload) => {
                 // 메시지 읽음 처리 시 unreadCount 업데이트
                 try {
-                  const messageId = payload.new?.message_id;
+                  const newRead = payload.new as { message_id?: number } | null;
+                  const messageId = newRead?.message_id;
 
                   if (messageId) {
                     // message_id로 room_id 조회 (낙관적 업데이트를 위해)

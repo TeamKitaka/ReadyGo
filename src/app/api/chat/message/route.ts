@@ -65,6 +65,7 @@ export const GET = async (request: NextRequest) => {
     const messages = await getChatMessagesService(
       supabase,
       roomId,
+      user.id,
       limit,
       offset
     );

@@ -144,7 +144,8 @@ export class ChatCreateError extends Error {
  * ChatUpdateError
  *
  * 발생 조건:
- * - 메시지 읽음 처리 등 업데이트 시 Supabase 에러 발생
+ * - 메시지 읽음 처리(read_status): chat_message_reads INSERT 시 Supabase 에러 발생
+ * - 기타 업데이트 작업(message, post): UPDATE 시 Supabase 에러 발생
  *
  * 처리 방침:
  * - 즉시 throw, 원본 에러 메시지 포함
@@ -158,7 +159,12 @@ export class ChatUpdateError extends Error {
     resource: 'read_status' | 'message' | 'post',
     originalError?: string
   ) {
-    super(`Failed to update ${resource}: ${originalError || 'Unknown error'}`);
+    // read_status의 경우 chat_message_reads INSERT 에러이므로 더 일반적인 메시지 사용
+    const message =
+      resource === 'read_status'
+        ? `Failed to mark messages as read: ${originalError || 'Unknown error'}`
+        : `Failed to update ${resource}: ${originalError || 'Unknown error'}`;
+    super(message);
     this.name = 'ChatUpdateError';
     this.originalError = originalError;
 
