@@ -326,7 +326,10 @@ export const useChatRoomMessages = (
                   }
                 }
               } catch (error) {
-                console.error('Error processing postgres_changes event:', error);
+                console.error(
+                  'Error processing postgres_changes event:',
+                  error
+                );
               }
             }
           )

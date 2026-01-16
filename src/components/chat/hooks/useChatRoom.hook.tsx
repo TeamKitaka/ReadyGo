@@ -162,13 +162,13 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         }
       }
       previousRoomIdRef.current = null;
-      actionsHook.hasMarkedAsReadRef.current = false;
+      hasMarkedAsReadRef.current = false;
       return;
     }
 
     if (!user?.id) {
       previousRoomIdRef.current = null;
-      actionsHook.hasMarkedAsReadRef.current = false;
+      hasMarkedAsReadRef.current = false;
       return;
     }
 

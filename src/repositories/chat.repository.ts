@@ -599,14 +599,6 @@ export const markMessagesAsRead = async (
     .in('message_id', validMessageIds);
 
   if (existingReadsError) {
-    console.error('[markMessagesAsRead] Error checking existing reads:', {
-      message: existingReadsError.message,
-      details: existingReadsError.details,
-      hint: existingReadsError.hint,
-      code: existingReadsError.code,
-      roomId,
-      userId,
-    });
     throw existingReadsError;
   }
 
@@ -639,18 +631,6 @@ export const markMessagesAsRead = async (
       return acc;
     }, {} as Record<string, number>) || {};
 
-    console.log('[markMessagesAsRead] Attempting to insert reads:', {
-      roomId,
-      userId,
-      messageIdsCount: newMessageIds.length,
-      messageIds: newMessageIds.slice(0, 10), // 처음 10개만 로그
-      contentTypeCounts,
-      messagesToMark: messagesToMark?.slice(0, 10).map((msg) => ({
-        id: msg.id,
-        content_type: msg.content_type,
-      })),
-    });
-
     // INSERT만 수행 (RLS 정책이 INSERT만 허용하는 경우 대비)
     const { data: insertData, error: insertError } = await client
       .from('chat_message_reads')
@@ -661,27 +641,10 @@ export const markMessagesAsRead = async (
       // duplicate key 에러는 이미 읽음 처리된 것이므로 무시
       if (insertError.code === '23505') {
         // unique constraint 위반 = 이미 읽음 처리됨
-        console.log('[markMessagesAsRead] Duplicate key (already read), ignoring:', {
-          roomId,
-          userId,
-          messageIdsCount: newMessageIds.length,
-          messageIds: newMessageIds.slice(0, 10),
-        });
         // 이미 읽음 처리된 것이므로 성공으로 처리
         // 하지만 UPDATE는 여전히 수행해야 함
       } else {
         // 다른 에러는 throw
-        console.error('[markMessagesAsRead] Insert error:', {
-          message: insertError.message,
-          details: insertError.details,
-          hint: insertError.hint,
-          code: insertError.code,
-          roomId,
-          userId,
-          messageIds: newMessageIds.slice(0, 10), // 처음 10개만 로그
-          readsDataCount: readsData.length,
-          attemptedInsert: readsData.slice(0, 5), // 처음 5개만 로그
-        });
         throw insertError;
       }
     }
@@ -689,27 +652,6 @@ export const markMessagesAsRead = async (
     // INSERT 성공 또는 duplicate key 에러인 경우 (이미 읽음 처리됨)
     const actuallyInsertedIds = insertData?.map((r) => r.message_id) || [];
     const duplicateKeyError = insertError?.code === '23505';
-
-    if (duplicateKeyError) {
-      console.log('[markMessagesAsRead] Duplicate key (already read), but continuing with UPDATE:', {
-        roomId,
-        userId,
-        messageIdsCount: newMessageIds.length,
-        messageIds: newMessageIds.slice(0, 10),
-        contentTypeCounts,
-      });
-      // duplicate key 에러는 이미 읽음 처리된 것이므로 성공으로 처리
-      // 하지만 UPDATE는 여전히 수행해야 함
-    } else {
-      console.log('[markMessagesAsRead] Insert success:', {
-        roomId,
-        userId,
-        insertedCount: actuallyInsertedIds.length,
-        expectedCount: readsData.length,
-        insertedMessageIds: actuallyInsertedIds.slice(0, 10),
-        contentTypeCounts, // INSERT된 메시지들의 content_type 분포
-      });
-    }
 
     // chat_message_reads에 INSERT된 후 chat_messages.is_read를 true로 업데이트
     // (duplicate key 에러인 경우에도 UPDATE는 수행 - 이미 읽음 처리되었지만 is_read 필드 업데이트 필요)
@@ -721,19 +663,10 @@ export const markMessagesAsRead = async (
 
       if (updateError) {
         // UPDATE 실패는 로그로만 기록 (chat_message_reads INSERT는 이미 성공했거나 이미 존재함)
-        console.warn('[markMessagesAsRead] Failed to update is_read in chat_messages:', {
-          error: updateError.message,
-          code: updateError.code,
-          details: updateError.details,
-          hint: updateError.hint,
-          messageIds: newMessageIds.slice(0, 5),
-          totalCount: newMessageIds.length,
-        });
         // 에러를 throw하지 않음 - chat_message_reads는 이미 처리되었으므로
       }
     } catch (error) {
       // 예상치 못한 에러도 로그로만 기록 (chat_message_reads는 이미 처리되었으므로)
-      console.warn('[markMessagesAsRead] Unexpected error updating is_read:', error);
       // 에러를 throw하지 않음
     }
   }
@@ -811,13 +744,6 @@ export const markRoomAsRead = async (
     .not('id', 'is', null);
 
   if (allMessagesError) {
-    console.error('[markRoomAsRead] Error fetching messages:', {
-      message: allMessagesError.message,
-      code: allMessagesError.code,
-      details: allMessagesError.details,
-      roomId,
-      userId,
-    });
     throw allMessagesError;
   }
 
@@ -863,36 +789,8 @@ export const markRoomAsRead = async (
 
   // markMessagesAsRead 함수를 활용하여 일괄 읽음 처리
   try {
-    console.log('[markRoomAsRead] Calling markMessagesAsRead:', {
-      roomId,
-      userId,
-      unreadMessageIdsCount: unreadMessageIds.length,
-      unreadMessageIds: unreadMessageIds.slice(0, 10), // 처음 10개만 로그
-    });
     await markMessagesAsRead(client, roomId, userId, unreadMessageIds);
-    console.log('[markRoomAsRead] markMessagesAsRead completed successfully:', {
-      roomId,
-      userId,
-      unreadMessageIdsCount: unreadMessageIds.length,
-    });
   } catch (error) {
-    console.error('[markRoomAsRead] Error calling markMessagesAsRead:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      details:
-        error && typeof error === 'object' && 'details' in error
-          ? (error as { details?: string }).details
-          : undefined,
-      code:
-        error && typeof error === 'object' && 'code' in error
-          ? (error as { code?: string }).code
-          : undefined,
-      roomId,
-      userId,
-      unreadMessageIdsCount: unreadMessageIds.length,
-      error,
-      errorType: error?.constructor?.name,
-      errorString: String(error),
-    });
     throw error;
   }
 };

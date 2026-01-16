@@ -753,11 +753,6 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
       return;
     }
 
-    // 인증 완료 후에만 실행
-    if (!user?.id) {
-      return;
-    }
-
     // 초기 목록 로드
     refresh();
     // postgres_changes 구독
