@@ -501,9 +501,10 @@ export const getChatMessages = async (
   );
 
   // 5. 각 메시지에 is_read 필드 추가
+  // 자신이 보낸 메시지는 무조건 is_read: true (chat_message_reads에 없으므로)
   const messagesWithReadStatus = messages.map((message) => ({
     ...message,
-    is_read: readMessageIds.has(message.id),
+    is_read: message.sender_id === userId || readMessageIds.has(message.id),
   })) as ChatMessage[];
 
   // content_type별 읽음 상태 로깅 (디버깅용)

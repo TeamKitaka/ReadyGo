@@ -123,9 +123,6 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
   const seenMessageIdsRef = useRef<Set<number>>(new Set());
   const isSendingRef = useRef(false); // 중복 전송 방지
   const initialLoadMessageIdsRef = useRef<Set<number>>(new Set()); // 초기 로드된 메시지 ID들
-  const initialLoadMessageReadStatusRef = useRef<Map<number, boolean>>(
-    new Map()
-  ); // 초기 로드 시점의 메시지별 is_read 상태
   const triggerScrollToBottomRef = useRef<(() => void) | null>(null); // 스크롤 트리거 함수 ref
   const shouldAutoScrollRef = useRef(true); // 자동 스크롤 여부 (사용자가 수동 스크롤 시 false)
   const isInitialLoadRef = useRef(false); // 초기 로드 플래그
@@ -195,8 +192,14 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
           return prev;
         }
 
+        // 자신이 보낸 메시지는 is_read: true로 설정
+        const messageWithReadStatus: ChatMessage = {
+          ...message,
+          is_read: message.sender_id === user?.id ? true : (message.is_read ?? false),
+        };
+
         // created_at 기준으로 정렬된 위치에 삽입
-        const newMessages = [...prev, message];
+        const newMessages = [...prev, messageWithReadStatus];
         return newMessages.sort((a, b) => {
           const aTime = a.created_at || '';
           const bTime = b.created_at || '';
@@ -285,15 +288,11 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         reversedMessages.map((m) => m.id)
       );
 
-      // 초기 로드 시점의 is_read 상태 저장 (markRoomAsRead 호출 전 상태)
-      // 구분선 표시는 이 초기 상태를 기준으로 판단
-      const initialReadStatusMap = new Map<number, boolean>();
-      reversedMessages.forEach((msg) => {
-        initialReadStatusMap.set(msg.id, msg.is_read ?? false);
-      });
-      initialLoadMessageReadStatusRef.current = initialReadStatusMap;
-
       setMessages(reversedMessages);
+      
+      // 초기 로드 완료 후 읽음 처리 상태 리셋
+      hasMarkedAsReadRef.current = false;
+      
       // 스크롤 트리거는 formattedMessages가 준비된 후 별도 useEffect에서 처리
     } catch (err) {
       const errorMessage =
@@ -587,16 +586,10 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         hasMarkedAsReadRef.current &&
         previousRoomIdRef.current === targetRoomId
       ) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:593',message:'markRoomAsRead: skipped (already marked)',data:{targetRoomId,hasMarkedAsRead:hasMarkedAsReadRef.current,previousRoomId:previousRoomIdRef.current},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
         return;
       }
 
       try {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:600',message:'markRoomAsRead: calling API',data:{targetRoomId,userId:user?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
         const response = await fetch('/api/chat/message/read', {
           method: 'POST',
           headers: {
@@ -608,15 +601,8 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
           }),
         });
 
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:612',message:'markRoomAsRead: API response received',data:{targetRoomId,status:response.status,ok:response.ok},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
-
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:614',message:'markRoomAsRead: API error response',data:{targetRoomId,status:response.status,error:errorData.error||errorData.message,errorCode:errorData.code},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-          // #endregion
           console.error(
             'Failed to mark room as read:',
             errorData.error || '읽음 처리에 실패했습니다.',
@@ -629,9 +615,6 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         }
 
         await response.json().catch(() => ({}));
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:625',message:'markRoomAsRead: API success',data:{targetRoomId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
 
         // 읽음 처리 후 로컬 상태 업데이트
         setMessages((prev) =>
@@ -648,10 +631,6 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
         // 읽음 처리 완료 표시
         hasMarkedAsReadRef.current = true;
       } catch (error) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/ba2fd39d-77d9-4277-99c1-5b0d6bdd39a7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'useChatRoom.hook.tsx:641',message:'markRoomAsRead: exception caught',data:{targetRoomId,error:error instanceof Error?error.message:String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
-        console.error('Failed to mark room as read:', error);
         // 백그라운드 처리이므로 사용자에게 에러 표시하지 않음
       }
     },
@@ -828,8 +807,6 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
     seenMessageIdsRef.current.clear();
     // 초기 로드 메시지 ID 초기화
     initialLoadMessageIdsRef.current.clear();
-    // 초기 로드 시점의 is_read 상태 초기화
-    initialLoadMessageReadStatusRef.current.clear();
     // isLoading 리셋
     setIsLoading(true);
     // error 상태 초기화
@@ -938,18 +915,17 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
 
       // 안읽은 메시지 구분선 추가 (초기 로드된 메시지 중 가장 오래된 안읽은 메시지 앞에 한 번만)
       // 실시간으로 들어오는 메시지에는 구분선 추가하지 않음
-      // 초기 로드 시점의 is_read 상태를 기준으로 판단 (markRoomAsRead 호출 후에도 유지)
+      // 현재 메시지의 실제 is_read 상태를 기준으로 판단 (초기 로드 시점 상태는 참조하지 않음)
       if (
         !hasAddedUnreadDivider &&
         !isOwnMessage &&
         initialLoadMessageIdsRef.current.has(message.id) // 초기 로드된 메시지만 체크
       ) {
-        // 초기 로드 시점의 is_read 상태 확인
-        const initialIsRead =
-          initialLoadMessageReadStatusRef.current.get(message.id) ?? false;
+        // 현재 메시지의 실제 is_read 상태 확인 (DB에서 조회한 최신 상태)
+        const currentIsRead = message.is_read ?? false;
 
-        // 초기 로드 시점에 안읽은 메시지였던 경우에만 구분선 추가
-        if (initialIsRead === false) {
+        // 현재 상태가 안읽은 메시지인 경우에만 구분선 추가
+        if (currentIsRead === false) {
           // 이전 메시지 확인
           let shouldAddDivider = false;
 
@@ -960,12 +936,10 @@ export const useChatRoom = (props: UseChatRoomProps): UseChatRoomReturn => {
             // 이전 메시지가 자신의 메시지인 경우
             shouldAddDivider = true;
           } else {
-            // 이전 메시지의 초기 로드 시점 is_read 상태 확인
-            const previousInitialIsRead =
-              initialLoadMessageReadStatusRef.current.get(previousMessage.id) ??
-              false;
-            if (previousInitialIsRead === true) {
-              // 이전 메시지가 초기 로드 시점에 읽은 상태였던 경우
+            // 이전 메시지의 현재 is_read 상태 확인 (초기 로드 시점 상태가 아닌 현재 상태)
+            const previousCurrentIsRead = previousMessage.is_read ?? false;
+            if (previousCurrentIsRead === true) {
+              // 이전 메시지가 현재 읽은 상태인 경우
               shouldAddDivider = true;
             }
           }

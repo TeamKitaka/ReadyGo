@@ -81,12 +81,13 @@ export const useChatRoomScroll = (
         return;
       }
 
-      // DOM 렌더링 완료 후 스크롤
-      requestAnimationFrame(() => {
+      // 게임링크 프리뷰 로드 완료 대기 후 한 번에 스크롤
+      // (즉시 스크롤하면 프리뷰 로드되면서 스크롤이 흔들림)
+      setTimeout(() => {
         if (containerRef.current) {
           containerRef.current.scrollTop = containerRef.current.scrollHeight;
         }
-      });
+      }, 800);
     },
     []
   );
@@ -100,13 +101,19 @@ export const useChatRoomScroll = (
         return;
       }
 
-      // 먼저 unread-divider를 찾아서 스크롤 시도
-      const findAndScroll = (attempts = 0) => {
+      // 게임링크 프리뷰 로드 대기 후 스크롤
+      setTimeout(() => {
         if (!containerRef.current) {
           return;
         }
 
-        // unread-divider 요소 찾기
+        // 먼저 unread-divider를 찾아서 스크롤 시도
+        const findAndScroll = (attempts = 0) => {
+          if (!containerRef.current) {
+            return;
+          }
+
+          // unread-divider 요소 찾기
         const unreadDividerElement = containerRef.current.querySelector(
           '[data-unread-divider="true"]'
         );
@@ -137,20 +144,21 @@ export const useChatRoomScroll = (
           }
         }
 
-        // 요소를 찾지 못하면 재시도 또는 최하단으로 스크롤
-        if (attempts < 10) {
-          // 최대 10번까지 재시도 (DOM 렌더링 대기)
-          setTimeout(() => findAndScroll(attempts + 1), 50);
-        } else {
-          // 여러 번 시도해도 찾지 못하면 최하단으로 스크롤
-          scrollToBottom(containerRef);
-        }
-      };
+          // 요소를 찾지 못하면 재시도 또는 최하단으로 스크롤
+          if (attempts < 10) {
+            // 최대 10번까지 재시도 (DOM 렌더링 대기)
+            setTimeout(() => findAndScroll(attempts + 1), 50);
+          } else {
+            // 여러 번 시도해도 찾지 못하면 최하단으로 스크롤
+            scrollToBottom(containerRef);
+          }
+        };
 
-      // requestAnimationFrame으로 시작하여 다음 프레임에 실행
-      requestAnimationFrame(() => {
-        findAndScroll(0);
-      });
+        // requestAnimationFrame으로 시작하여 다음 프레임에 실행
+        requestAnimationFrame(() => {
+          findAndScroll(0);
+        });
+      }, 800); // 게임링크 프리뷰 로드 대기
     },
     [getUnreadBoundaryMessageId, scrollToBottom]
   );
