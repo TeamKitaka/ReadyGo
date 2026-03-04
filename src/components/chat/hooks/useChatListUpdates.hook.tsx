@@ -62,7 +62,12 @@ export interface UseChatListUpdatesReturn {
 export const useChatListUpdates = (
   props: UseChatListUpdatesProps
 ): UseChatListUpdatesReturn => {
-  const { optimisticReadRoomsRef, chatRoomsRef, setChatRooms, refresh } = props;
+  const {
+    optimisticReadRoomsRef,
+    chatRoomsRef,
+    setChatRooms,
+    refresh: _refresh,
+  } = props;
   const { user } = useAuth();
   const pathname = usePathname();
 

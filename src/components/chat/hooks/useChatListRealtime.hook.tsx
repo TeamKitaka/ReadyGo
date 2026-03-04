@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { usePathname } from 'next/navigation';
 
@@ -371,8 +371,6 @@ export const useChatListRealtime = (
       optimisticReadRoomsRef,
       chatRoomsRef,
       setChatRooms,
-      messageUpdateTimerRef,
-      pendingMessageUpdatesRef,
     ]
   );
 

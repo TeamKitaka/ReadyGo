@@ -12,8 +12,8 @@ import { join } from 'path';
 const logToFile = async (data: object) => {
   try {
     const logPath = join(process.cwd(), '.cursor', 'debug.log');
-    await appendFile(logPath, JSON.stringify(data) + '\n');
-  } catch (err) {
+    await appendFile(logPath, `${JSON.stringify(data)  }\n`);
+  } catch {
     // Ignore log errors
   }
 };
@@ -45,11 +45,27 @@ export const markRoomAsReadService = async (
 
   try {
     // #region agent log
-    await logToFile({location:'services/chat/markRoomAsReadService.ts:33',message:'markRoomAsReadService: calling repository',data:{roomId,userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'});
+    await logToFile({
+      location: 'services/chat/markRoomAsReadService.ts:33',
+      message: 'markRoomAsReadService: calling repository',
+      data: { roomId, userId },
+      timestamp: Date.now(),
+      sessionId: 'debug-session',
+      runId: 'run1',
+      hypothesisId: 'B',
+    });
     // #endregion
     await chatRepository.markRoomAsRead(client, roomId, userId);
     // #region agent log
-    await logToFile({location:'services/chat/markRoomAsReadService.ts:35',message:'markRoomAsReadService: repository completed',data:{roomId,userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'});
+    await logToFile({
+      location: 'services/chat/markRoomAsReadService.ts:35',
+      message: 'markRoomAsReadService: repository completed',
+      data: { roomId, userId },
+      timestamp: Date.now(),
+      sessionId: 'debug-session',
+      runId: 'run1',
+      hypothesisId: 'B',
+    });
     // #endregion
   } catch (error) {
     // 에러 상세 정보 추출 (Supabase 에러 객체 처리)
@@ -81,7 +97,23 @@ export const markRoomAsReadService = async (
     }
 
     // #region agent log
-    await logToFile({location:'services/chat/markRoomAsReadService.ts:48',message:'markRoomAsReadService: error caught',data:{error:errorMessage,details:errorDetails,code:errorCode,roomId,userId,errorType:error?.constructor?.name,errorString:String(error)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'});
+    await logToFile({
+      location: 'services/chat/markRoomAsReadService.ts:48',
+      message: 'markRoomAsReadService: error caught',
+      data: {
+        error: errorMessage,
+        details: errorDetails,
+        code: errorCode,
+        roomId,
+        userId,
+        errorType: error?.constructor?.name,
+        errorString: String(error),
+      },
+      timestamp: Date.now(),
+      sessionId: 'debug-session',
+      runId: 'run1',
+      hypothesisId: 'B',
+    });
     // #endregion
 
     console.error('[markRoomAsReadService] Error:', {

@@ -362,7 +362,7 @@ export const useChatRoomMessages = (
                   1000 * Math.pow(2, retryCountRef.current - 1),
                   5000
                 );
-                console.log(
+                console.warn(
                   `Realtime 구독 재시도 (${retryCountRef.current}/${maxRetries}) - ${retryDelay}ms 후`
                 );
 
@@ -396,7 +396,7 @@ export const useChatRoomMessages = (
                   1000 * Math.pow(2, retryCountRef.current - 1),
                   5000
                 );
-                console.log(
+                console.warn(
                   `Realtime 구독 재시도 (${retryCountRef.current}/${maxRetries}) - ${retryDelay}ms 후`
                 );
 

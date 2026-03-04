@@ -75,7 +75,7 @@ export const useGameLinkPreview = (
           isLoading: false,
         },
       }));
-    } catch (error) {
+    } catch (_error) {
       // 실패한 게임 정보는 재시도하지 않도록 hasFailed 플래그 설정
       setGameInfoMap((prev) => ({
         ...prev,

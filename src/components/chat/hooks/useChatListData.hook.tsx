@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 
 import { useAuth } from '@/commons/providers/auth/auth.provider';

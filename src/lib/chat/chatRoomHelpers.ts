@@ -22,9 +22,7 @@ export const sortMessagesByCreatedAt = (
  * @param messages 메시지 배열
  * @returns 중복 제거된 메시지 배열
  */
-export const deduplicateMessages = (
-  messages: ChatMessage[]
-): ChatMessage[] => {
+export const deduplicateMessages = (messages: ChatMessage[]): ChatMessage[] => {
   const seenIds = new Set<number>();
   return messages.filter((msg) => {
     if (seenIds.has(msg.id)) {
@@ -48,8 +46,7 @@ export const applyReadStatusToMessage = (
 ): ChatMessage => {
   return {
     ...message,
-    is_read:
-      message.sender_id === userId ? true : message.is_read ?? false,
+    is_read: message.sender_id === userId ? true : (message.is_read ?? false),
   };
 };
 
@@ -78,7 +75,7 @@ export const calculateScrollPosition = (
   }
 
   const { scrollTop, scrollHeight, clientHeight } = container;
-  
+
   if (
     scrollTop === undefined ||
     scrollHeight === undefined ||
@@ -106,9 +103,7 @@ export const calculateScrollPosition = (
  * @param messages 메시지 배열
  * @returns 중복 제거 및 정렬된 메시지 배열
  */
-export const normalizeMessages = (
-  messages: ChatMessage[]
-): ChatMessage[] => {
+export const normalizeMessages = (messages: ChatMessage[]): ChatMessage[] => {
   const deduplicated = deduplicateMessages(messages);
   return sortMessagesByCreatedAt(deduplicated);
 };
