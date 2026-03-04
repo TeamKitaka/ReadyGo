@@ -476,7 +476,9 @@ export const getChatMessages = async (
   }
 
   // 2. 메시지 ID 목록 추출
-  const messageIds = messages.map((m) => m.id).filter((id): id is number => id !== null);
+  const messageIds = messages
+    .map((m) => m.id)
+    .filter((id): id is number => id !== null);
 
   if (messageIds.length === 0) {
     return messages;
@@ -492,12 +494,14 @@ export const getChatMessages = async (
   if (readError) {
     // 읽음 조회 실패 시 모든 메시지를 is_read: false로 처리
     console.warn('[getChatMessages] Error fetching read status:', readError);
-    return messages.map((msg) => ({ ...msg, is_read: false } as ChatMessage));
+    return messages.map((msg) => ({ ...msg, is_read: false }) as ChatMessage);
   }
 
   // 4. 읽음 처리된 메시지 ID Set 생성
   const readMessageIds = new Set(
-    (readMessages || []).map((r) => r.message_id).filter((id): id is number => id !== null)
+    (readMessages || [])
+      .map((r) => r.message_id)
+      .filter((id): id is number => id !== null)
   );
 
   // 5. 각 메시지에 is_read 필드 추가
@@ -506,7 +510,6 @@ export const getChatMessages = async (
     ...message,
     is_read: message.sender_id === userId || readMessageIds.has(message.id),
   })) as ChatMessage[];
-
 
   return messagesWithReadStatus;
 };
@@ -619,18 +622,6 @@ export const markMessagesAsRead = async (
       read_at: now,
     }));
 
-    // INSERT할 메시지들의 content_type 확인을 위해 메시지 조회
-    const { data: messagesToMark, error: messagesError } = await client
-      .from('chat_messages')
-      .select('id, content_type')
-      .in('id', newMessageIds);
-
-    const contentTypeCounts = messagesToMark?.reduce((acc, msg) => {
-      const type = msg.content_type || 'null';
-      acc[type] = (acc[type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>) || {};
-
     // INSERT만 수행 (RLS 정책이 INSERT만 허용하는 경우 대비)
     const { data: insertData, error: insertError } = await client
       .from('chat_message_reads')
@@ -650,8 +641,7 @@ export const markMessagesAsRead = async (
     }
 
     // INSERT 성공 또는 duplicate key 에러인 경우 (이미 읽음 처리됨)
-    const actuallyInsertedIds = insertData?.map((r) => r.message_id) || [];
-    const duplicateKeyError = insertError?.code === '23505';
+    void insertData;
 
     // chat_message_reads에 INSERT된 후 chat_messages.is_read를 true로 업데이트
     // (duplicate key 에러인 경우에도 UPDATE는 수행 - 이미 읽음 처리되었지만 is_read 필드 업데이트 필요)
@@ -665,7 +655,7 @@ export const markMessagesAsRead = async (
         // UPDATE 실패는 로그로만 기록 (chat_message_reads INSERT는 이미 성공했거나 이미 존재함)
         // 에러를 throw하지 않음 - chat_message_reads는 이미 처리되었으므로
       }
-    } catch (error) {
+    } catch {
       // 예상치 못한 에러도 로그로만 기록 (chat_message_reads는 이미 처리되었으므로)
       // 에러를 throw하지 않음
     }
@@ -751,7 +741,6 @@ export const markRoomAsRead = async (
     return;
   }
 
-
   const allMessageIds = allMessages
     .map((m) => (m as { id: number }).id)
     .filter((id): id is number => id !== null && typeof id === 'number');
@@ -781,7 +770,6 @@ export const markRoomAsRead = async (
   const unreadMessageIds = allMessageIds.filter(
     (id) => !readMessageIds.has(id)
   );
-
 
   if (unreadMessageIds.length === 0) {
     return;

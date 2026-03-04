@@ -28,9 +28,7 @@ export interface UseChatRoomActionsProps {
 export interface UseChatRoomActionsReturn {
   sendMessage: (content: string, contentType?: string) => Promise<void>;
   markAsRead: (messageIds: number[]) => Promise<void>;
-  markAsReadOnScroll: (
-    containerRef: React.RefObject<HTMLDivElement>
-  ) => void;
+  markAsReadOnScroll: (containerRef: React.RefObject<HTMLDivElement>) => void;
   markRoomAsRead: (targetRoomId: number) => Promise<void>;
 }
 
@@ -102,10 +100,6 @@ export const useChatRoomActions = (
         // 여기서는 로컬 상태에 추가하지 않음 (중복 방지)
         triggerScrollToBottom?.();
       } catch (error) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : '메시지 전송에 실패했습니다.';
         console.error('[useChatRoom] Failed to send message:', error);
         throw error;
       } finally {
@@ -169,18 +163,25 @@ export const useChatRoomActions = (
         }
 
         // 채팅 목록의 안읽은 표시 즉시 업데이트
-        const optimisticFn = markRoomAsReadOptimistic || markRoomAsReadOptimisticFromList;
+        const optimisticFn =
+          markRoomAsReadOptimistic || markRoomAsReadOptimisticFromList;
         optimisticFn(targetRoomId);
 
         // 읽음 처리 완료 표시
         if (hasMarkedAsReadRef) {
           hasMarkedAsReadRef.current = true;
         }
-      } catch (error) {
+      } catch {
         // 백그라운드 처리이므로 사용자에게 에러 표시하지 않음
       }
     },
-    [user?.id, setMessages, markRoomAsReadOptimistic, markRoomAsReadOptimisticFromList]
+    [
+      user?.id,
+      setMessages,
+      markRoomAsReadOptimistic,
+      markRoomAsReadOptimisticFromList,
+      hasMarkedAsReadRef,
+    ]
   );
 
   /**

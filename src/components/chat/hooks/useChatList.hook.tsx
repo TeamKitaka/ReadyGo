@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 
 import { useAuth } from '@/commons/providers/auth/auth.provider';
@@ -94,14 +94,21 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
     setChatRooms,
     refresh: dataHook.refresh,
   });
+  const { refresh } = dataHook;
+  const { markRoomAsReadOptimistic, getOptimisticUnreadCount } = updatesHook;
+  const {
+    scheduleMessageUpdate,
+    messageUpdateTimerRef,
+    pendingMessageUpdatesRef,
+  } = updatesHook;
 
   // debounced refresh 함수
   const debouncedRefresh = useMemo(
     () =>
-      debounce((...args: Parameters<typeof dataHook.refresh>) => {
-        dataHook.refresh(...args);
+      debounce((...args: Parameters<typeof refresh>) => {
+        refresh(...args);
       }, 300),
-    [dataHook.refresh]
+    [refresh]
   );
 
   // Realtime hook
@@ -110,11 +117,12 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
     chatRoomsRef,
     setChatRooms,
     debouncedRefresh,
-    markRoomAsReadOptimistic: updatesHook.markRoomAsReadOptimistic,
-    scheduleMessageUpdate: updatesHook.scheduleMessageUpdate,
-    messageUpdateTimerRef: updatesHook.messageUpdateTimerRef,
-    pendingMessageUpdatesRef: updatesHook.pendingMessageUpdatesRef,
+    markRoomAsReadOptimistic,
+    scheduleMessageUpdate,
+    messageUpdateTimerRef,
+    pendingMessageUpdatesRef,
   });
+  const { cleanupChannel, subscribeToPostgresChanges } = realtimeHook;
 
   /**
    * 초기 목록 로드 및 postgres_changes 구독
@@ -125,25 +133,20 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
         setChatRooms([]);
         setIsLoading(false);
       }
-      realtimeHook.cleanupChannel();
+      cleanupChannel();
       return;
     }
 
     // 초기 목록 로드
-    dataHook.refresh();
+    refresh();
     // postgres_changes 구독
-    realtimeHook.subscribeToPostgresChanges(user.id);
+    subscribeToPostgresChanges(user.id);
 
     // cleanup 함수
     return () => {
-      realtimeHook.cleanupChannel();
+      cleanupChannel();
     };
-  }, [
-    user?.id,
-    dataHook.refresh,
-    realtimeHook.subscribeToPostgresChanges,
-    realtimeHook.cleanupChannel,
-  ]);
+  }, [user?.id, refresh, subscribeToPostgresChanges, cleanupChannel]);
 
   /**
    * 자동 새로고침 구현
@@ -160,7 +163,7 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
 
     // 타이머 설정
     autoRefreshTimerRef.current = setInterval(() => {
-      dataHook.refresh();
+      refresh();
     }, refreshInterval);
 
     // cleanup 함수
@@ -170,7 +173,7 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
         autoRefreshTimerRef.current = null;
       }
     };
-  }, [autoRefresh, refreshInterval, user?.id, dataHook.refresh]);
+  }, [autoRefresh, refreshInterval, user?.id, refresh]);
 
   /**
    * 컴포넌트 언마운트 시 cleanup
@@ -181,19 +184,19 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
     return () => {
       isMountedRef.current = false;
       // postgres_changes 채널 정리
-      realtimeHook.cleanupChannel();
+      cleanupChannel();
       // 자동 새로고침 타이머 정리
       if (autoRefreshTimerRef.current) {
         clearInterval(autoRefreshTimerRef.current);
         autoRefreshTimerRef.current = null;
       }
       // 메시지 업데이트 타이머 정리
-      if (updatesHook.messageUpdateTimerRef.current) {
-        clearTimeout(updatesHook.messageUpdateTimerRef.current);
-        updatesHook.messageUpdateTimerRef.current = null;
+      if (messageUpdateTimerRef.current) {
+        clearTimeout(messageUpdateTimerRef.current);
+        messageUpdateTimerRef.current = null;
       }
     };
-  }, [realtimeHook.cleanupChannel, updatesHook.messageUpdateTimerRef]);
+  }, [cleanupChannel, messageUpdateTimerRef]);
 
   /**
    * 포맷된 채팅방 목록 계산 (UI에서 바로 사용 가능)
@@ -261,7 +264,7 @@ export const useChatList = (props?: UseChatListProps): UseChatListReturn => {
     formattedChatRooms,
     isLoading,
     error,
-    markRoomAsReadOptimistic: updatesHook.markRoomAsReadOptimistic,
-    getOptimisticUnreadCount: updatesHook.getOptimisticUnreadCount,
+    markRoomAsReadOptimistic,
+    getOptimisticUnreadCount,
   };
 };
