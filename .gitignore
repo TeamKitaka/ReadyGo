@@ -48,3 +48,7 @@ storybook-static
 
 # admin api docs (보안상 비공개)
 docs/api/admin/
+
+
+portfolio.example.md
+portfolio.md
