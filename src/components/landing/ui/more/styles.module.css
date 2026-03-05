@@ -1,0 +1,103 @@
+.section {
+  position: relative;
+  background: linear-gradient(180deg, #0a0b14, #11121c);
+  padding: 120px 20px;
+  overflow: hidden;
+}
+
+.glow {
+  position: absolute;
+  width: 1268px;
+  height: 966px;
+  background: #5ffce2;
+  opacity: 0.1;
+  filter: blur(150px);
+  border-radius: 50%;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 80px;
+  pointer-events: none;
+}
+
+.inner {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  text-align: center;
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.title {
+  margin: 0;
+  font-size: 48px;
+  line-height: 62.4px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 891px;
+  font-size: 17px;
+  line-height: 28.9px;
+  color: #99a1af;
+}
+
+.previewFrame {
+  width: 100%;
+  max-width: 1084px;
+  background: rgba(147, 148, 158, 0.1);
+  border: 1px solid rgba(95, 252, 226, 0.1);
+  border-radius: 24px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.previewImage {
+  width: 100%;
+  border-radius: 16px;
+  display: block;
+  object-fit: cover;
+}
+
+.ctaButton {
+  background: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 1000px;
+  padding: 14px 22px;
+  height: 50px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ctaIcon {
+  width: 6px;
+  height: 6px;
+}
+
+@media (max-width: 900px) {
+  .section {
+    padding: 96px 20px;
+  }
+
+  .title {
+    font-size: 36px;
+    line-height: 46px;
+  }
+}
