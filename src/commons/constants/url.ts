@@ -86,7 +86,7 @@ export const URL_METADATA: Record<string, UrlMetadata> = {
   },
   [URL_PATHS.HOME]: {
     path: URL_PATHS.HOME,
-    accessStatus: 'member-only',
+    accessStatus: 'public',
     visibility: {
       header: true,
       sidebar: true,
