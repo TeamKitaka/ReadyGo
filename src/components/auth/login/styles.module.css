@@ -36,14 +36,9 @@
   width: 100%;
   height: 40px;
   margin: 0;
-  font-family:
-    var(--font-pretendard, 'Pretendard'),
-    -apple-system,
-    BlinkMacSystemFont,
-    system-ui,
-    sans-serif;
+  font-family: 'Cafe24ProUp', var(--font-pretendard, 'Pretendard'), sans-serif;
   font-style: normal;
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-regular);
   font-size: 36px;
   line-height: 40px;
   color: var(--color-text-primary);
