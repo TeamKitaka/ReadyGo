@@ -4,7 +4,7 @@
 }
 
 .inner {
-  max-width: 1200px;
+  max-width: 1222px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -48,19 +48,26 @@
   color: #99a1af;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
+}
+
+.subtitle span {
+  display: block;
 }
 
 .cards {
   display: flex;
+  width: 100%;
   flex-wrap: wrap;
   gap: 32px;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: space-between;
 }
 
 .card {
-  flex: 1 1 520px;
-  max-width: 595px;
+  flex: 0 0 595px;
+  width: 595px;
+  max-width: 100%;
   background: #1a1b26;
   border: 1px solid rgba(95, 252, 226, 0.15);
   border-radius: 24px;
@@ -75,17 +82,31 @@
   font-size: 24px;
   line-height: 36px;
   font-weight: 700;
-  color: #5ffce2;
+  color: var(--color-text-interactive-primary);
+  white-space: nowrap;
 }
 
 .cardDesc {
   margin: 0;
+  width: 515px;
+  max-width: 100%;
   font-size: 16px;
   line-height: 27.2px;
-  color: #f3f4f6;
+  color: var(--color-text-secondary);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0;
+}
+
+.cardDesc span {
+  display: block;
+}
+
+@media (max-width: 1262px) {
+  .cards {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }
 
 @media (max-width: 900px) {
@@ -96,5 +117,10 @@
   .title {
     font-size: 36px;
     line-height: 46px;
+  }
+
+  .cards {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }

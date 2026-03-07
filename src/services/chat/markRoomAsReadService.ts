@@ -12,7 +12,7 @@ import { join } from 'path';
 const logToFile = async (data: object) => {
   try {
     const logPath = join(process.cwd(), '.cursor', 'debug.log');
-    await appendFile(logPath, `${JSON.stringify(data)  }\n`);
+    await appendFile(logPath, `${JSON.stringify(data)}\n`);
   } catch {
     // Ignore log errors
   }

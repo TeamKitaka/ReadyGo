@@ -13,9 +13,7 @@ export const FeaturesSection = ({ sectionRef }: FeaturesSectionProps) => {
       <div className={styles.inner}>
         <h2 className={styles.title}>
           <span>게임 플레이 데이터를 기반으로</span>
-          <span className={styles.titleAccent}>
-            게임 매칭을 더 똑똑하게
-          </span>
+          <span className={styles.titleAccent}>게임 매칭을 더 똑똑하게</span>
         </h2>
 
         <div className={styles.grid}>

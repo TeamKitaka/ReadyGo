@@ -18,8 +18,8 @@ export const ServiceSection = ({ sectionRef }: ServiceSectionProps) => {
           </h2>
           <p className={styles.subtitle}>
             <span>
-              멀티플레이 게임은 넘쳐나지만, 함께 게임하기 편한 사람을 찾는
-              일은 여전히 어렵습니다.
+              멀티플레이 게임은 넘쳐나지만, 함께 게임하기 편한 사람을 찾는 일은
+              여전히 어렵습니다.
             </span>
             <span>
               단순한 게임 목록이나 장르가 아니라 실제 플레이 데이터와 행동
@@ -30,9 +30,7 @@ export const ServiceSection = ({ sectionRef }: ServiceSectionProps) => {
 
         <div className={styles.cards}>
           <article className={styles.card}>
-            <h3 className={styles.cardTitle}>
-              플레이 데이터 기반 성향 분석
-            </h3>
+            <h3 className={styles.cardTitle}>플레이 데이터 기반 성향 분석</h3>
             <p className={styles.cardDesc}>
               <span>
                 Steam API를 통해 유저의 플레이 데이터를 수집하고 게임 플레이
@@ -47,9 +45,7 @@ export const ServiceSection = ({ sectionRef }: ServiceSectionProps) => {
           </article>
 
           <article className={styles.card}>
-            <h3 className={styles.cardTitle}>
-              동물 타입 기반 직관적인 매칭
-            </h3>
+            <h3 className={styles.cardTitle}>동물 타입 기반 직관적인 매칭</h3>
             <p className={styles.cardDesc}>
               <span>
                 분석된 플레이 성향은 동물 타입 프로필과 매칭 퍼센트로
