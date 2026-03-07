@@ -24,6 +24,19 @@ export default function PartySection({
   parties,
   className = '',
 }: PartySectionProps) {
+  const renderTitleWithMonaEmoji = (text: string) =>
+    text.split(/(🎲|🔥)/g).map((part, index) => {
+      if (part === '🎲' || part === '🔥') {
+        return (
+          <span key={`emoji-${index}`} className={styles.monaEmoji}>
+            {part}
+          </span>
+        );
+      }
+
+      return <React.Fragment key={`text-${index}`}>{part}</React.Fragment>;
+    });
+
   const containerClasses = [styles.container, className]
     .filter(Boolean)
     .join(' ');
@@ -32,7 +45,7 @@ export default function PartySection({
     <div className={containerClasses}>
       {/* 섹션 제목 */}
       <div className={styles.heading}>
-        <h2 className={styles.headingText}>{title}</h2>
+        <h2 className={styles.headingText}>{renderTitleWithMonaEmoji(title)}</h2>
       </div>
 
       {/* 파티 카드 그리드 */}
