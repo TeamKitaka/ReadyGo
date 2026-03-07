@@ -3,8 +3,6 @@
 import styles from './styles.module.css';
 
 export const FooterSection = () => {
-  const logoIcon =
-    'https://www.figma.com/api/mcp/asset/1a4777a2-943b-4864-a23a-d34f52fcda4b';
   const year = new Date().getFullYear();
 
   return (

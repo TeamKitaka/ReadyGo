@@ -10,12 +10,14 @@ export const useLandingSections = () => {
   const contactRef = useRef<HTMLDivElement | null>(null);
 
   const scrollTo = (section: LandingSectionKey) => {
-    const targetMap: Record<LandingSectionKey, React.RefObject<HTMLDivElement>> =
-      {
-        about: aboutRef,
-        features: featuresRef,
-        contact: contactRef,
-      };
+    const targetMap: Record<
+      LandingSectionKey,
+      React.RefObject<HTMLDivElement>
+    > = {
+      about: aboutRef,
+      features: featuresRef,
+      contact: contactRef,
+    };
 
     const ref = targetMap[section];
     if (ref.current) {
@@ -30,4 +32,3 @@ export const useLandingSections = () => {
     scrollTo,
   };
 };
-
