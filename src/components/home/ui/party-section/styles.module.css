@@ -31,9 +31,7 @@
 }
 
 .monaEmoji {
-  font-family:
-    'Mona12 Color Emoji',
-    var(--typo-heading-lg-font-family);
+  font-family: 'Mona12 Color Emoji', var(--typo-heading-lg-font-family);
 }
 
 /* 그리드 컨테이너 */

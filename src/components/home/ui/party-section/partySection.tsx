@@ -45,7 +45,9 @@ export default function PartySection({
     <div className={containerClasses}>
       {/* 섹션 제목 */}
       <div className={styles.heading}>
-        <h2 className={styles.headingText}>{renderTitleWithMonaEmoji(title)}</h2>
+        <h2 className={styles.headingText}>
+          {renderTitleWithMonaEmoji(title)}
+        </h2>
       </div>
 
       {/* 파티 카드 그리드 */}
