@@ -11,7 +11,7 @@ import type { ChatMessage } from '@/types/chat';
  * 채팅방 메시지 목록 조회 Service
  *
  * 책임:
- * - 입력 검증 (roomId, limit, offset)
+ * - 입력 검증 (roomId, userId, limit, offset)
  * - Repository 에러 처리
  *
  * 비책임:
@@ -20,12 +20,17 @@ import type { ChatMessage } from '@/types/chat';
 export const getChatMessagesService = async (
   client: SupabaseClient<Database>,
   roomId: number,
+  userId: string,
   limit: number = 50,
   offset: number = 0
 ): Promise<ChatMessage[]> => {
   // 입력 검증
   if (typeof roomId !== 'number' || isNaN(roomId) || roomId <= 0) {
     throw new ChatValidationError('roomId는 양수여야 합니다.');
+  }
+
+  if (!userId || typeof userId !== 'string') {
+    throw new ChatValidationError('userId는 필수입니다.');
   }
 
   if (typeof limit !== 'number' || isNaN(limit) || limit < 1) {
@@ -40,6 +45,7 @@ export const getChatMessagesService = async (
     const messages = await chatRepository.getChatMessages(
       client,
       roomId,
+      userId,
       limit,
       offset
     );

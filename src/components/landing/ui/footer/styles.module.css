@@ -1,0 +1,56 @@
+@font-face {
+  font-family: 'Cafe24ProUp';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2507-1@1.0/Cafe24PROUP.woff2')
+    format('woff2');
+  font-weight: normal;
+  font-display: swap;
+}
+
+.footer {
+  background: #030712;
+  border-top: 1px solid rgba(95, 252, 226, 0.1);
+  padding: 23px 32px;
+}
+
+.inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  color: #a9afb9;
+  font-size: 14px;
+}
+
+.logoArea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff;
+}
+
+.logoText {
+  font-family: 'Cafe24ProUp', 'Pretendard', sans-serif;
+  font-size: 18px;
+  letter-spacing: -0.4px;
+  font-weight: 400;
+}
+
+.links {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .footer {
+    padding: 20px;
+  }
+
+  .inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

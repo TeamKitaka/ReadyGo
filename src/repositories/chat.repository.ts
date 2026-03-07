@@ -449,26 +449,69 @@ export const getUserChatRooms = async (
 /**
  * 특정 채팅방의 메시지 목록 조회
  * - DB 접근만 수행, 에러 처리 및 데이터 가공 없음
+ * - chat_message_reads 테이블과 조인하여 is_read 상태 계산
  * - Supabase 응답 구조를 그대로 반환
  */
 export const getChatMessages = async (
   client: SupabaseClient<Database>,
   roomId: number,
+  userId: string,
   limit: number = 50,
   offset: number = 0
 ): Promise<ChatMessage[]> => {
-  const { data, error } = await client
+  // 1. 메시지 조회
+  const { data: messages, error: messagesError } = await client
     .from('chat_messages')
     .select('*')
     .eq('room_id', roomId)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
-  if (error) {
-    throw error;
+  if (messagesError) {
+    throw messagesError;
   }
 
-  return data || [];
+  if (!messages || messages.length === 0) {
+    return [];
+  }
+
+  // 2. 메시지 ID 목록 추출
+  const messageIds = messages
+    .map((m) => m.id)
+    .filter((id): id is number => id !== null);
+
+  if (messageIds.length === 0) {
+    return messages;
+  }
+
+  // 3. 읽음 처리된 메시지 ID 조회
+  const { data: readMessages, error: readError } = await client
+    .from('chat_message_reads')
+    .select('message_id')
+    .eq('user_id', userId)
+    .in('message_id', messageIds);
+
+  if (readError) {
+    // 읽음 조회 실패 시 모든 메시지를 is_read: false로 처리
+    console.warn('[getChatMessages] Error fetching read status:', readError);
+    return messages.map((msg) => ({ ...msg, is_read: false }) as ChatMessage);
+  }
+
+  // 4. 읽음 처리된 메시지 ID Set 생성
+  const readMessageIds = new Set(
+    (readMessages || [])
+      .map((r) => r.message_id)
+      .filter((id): id is number => id !== null)
+  );
+
+  // 5. 각 메시지에 is_read 필드 추가
+  // 자신이 보낸 메시지는 무조건 is_read: true (chat_message_reads에 없으므로)
+  const messagesWithReadStatus = messages.map((message) => ({
+    ...message,
+    is_read: message.sender_id === userId || readMessageIds.has(message.id),
+  })) as ChatMessage[];
+
+  return messagesWithReadStatus;
 };
 
 /**
@@ -559,14 +602,6 @@ export const markMessagesAsRead = async (
     .in('message_id', validMessageIds);
 
   if (existingReadsError) {
-    console.error('[markMessagesAsRead] Error checking existing reads:', {
-      message: existingReadsError.message,
-      details: existingReadsError.details,
-      hint: existingReadsError.hint,
-      code: existingReadsError.code,
-      roomId,
-      userId,
-    });
     throw existingReadsError;
   }
 
@@ -588,49 +623,42 @@ export const markMessagesAsRead = async (
     }));
 
     // INSERT만 수행 (RLS 정책이 INSERT만 허용하는 경우 대비)
-    const { error: insertError } = await client
+    const { data: insertData, error: insertError } = await client
       .from('chat_message_reads')
-      .insert(readsData);
+      .insert(readsData)
+      .select('message_id'); // INSERT된 데이터 확인용
 
     if (insertError) {
-      console.error('[markMessagesAsRead] Insert error:', {
-        message: insertError.message,
-        details: insertError.details,
-        hint: insertError.hint,
-        code: insertError.code,
-        roomId,
-        userId,
-        messageIds: newMessageIds,
-        readsDataCount: readsData.length,
-      });
-      throw insertError;
+      // duplicate key 에러는 이미 읽음 처리된 것이므로 무시
+      if (insertError.code === '23505') {
+        // unique constraint 위반 = 이미 읽음 처리됨
+        // 이미 읽음 처리된 것이므로 성공으로 처리
+        // 하지만 UPDATE는 여전히 수행해야 함
+      } else {
+        // 다른 에러는 throw
+        throw insertError;
+      }
     }
-  }
 
-  // chat_message_reads에 INSERT된 후 chat_messages.is_read를 true로 업데이트
-  // 주의: UPDATE RLS 정책이 필요함
-  try {
-    const { data: _updateData, error: updateError } = await client
-      .from('chat_messages')
-      .update({ is_read: true })
-      .in('id', validMessageIds)
-      .select();
+    // INSERT 성공 또는 duplicate key 에러인 경우 (이미 읽음 처리됨)
+    void insertData;
 
-    if (updateError) {
-      console.error(
-        'Failed to update is_read in chat_messages:',
-        updateError,
-        'Message IDs:',
-        validMessageIds,
-        'Note: UPDATE RLS policy is required for chat_messages table'
-      );
-      // chat_message_reads는 성공했으므로 에러를 throw하지 않음
-      // 하지만 is_read 업데이트 실패는 로그로 기록
+    // chat_message_reads에 INSERT된 후 chat_messages.is_read를 true로 업데이트
+    // (duplicate key 에러인 경우에도 UPDATE는 수행 - 이미 읽음 처리되었지만 is_read 필드 업데이트 필요)
+    try {
+      const { error: updateError } = await client
+        .from('chat_messages')
+        .update({ is_read: true })
+        .in('id', newMessageIds);
+
+      if (updateError) {
+        // UPDATE 실패는 로그로만 기록 (chat_message_reads INSERT는 이미 성공했거나 이미 존재함)
+        // 에러를 throw하지 않음 - chat_message_reads는 이미 처리되었으므로
+      }
+    } catch {
+      // 예상치 못한 에러도 로그로만 기록 (chat_message_reads는 이미 처리되었으므로)
+      // 에러를 throw하지 않음
     }
-    // Update completed successfully (or silently if no messages matched)
-  } catch (error) {
-    console.error('Unexpected error updating is_read:', error);
-    // chat_message_reads는 성공했으므로 에러를 throw하지 않음
   }
 };
 
@@ -697,9 +725,10 @@ export const markRoomAsRead = async (
   // 해당 채팅방에서 현재 사용자가 읽지 않은 모든 메시지 ID 조회
   // chat_message_reads 테이블에 없는 메시지만 조회 (더 정확한 방법)
   // 먼저 읽지 않은 메시지 ID를 조회
+  // content_type 필터링 없음 - 모든 타입의 메시지 포함 (text, game_link, profile_link 등)
   const { data: allMessages, error: allMessagesError } = await client
     .from('chat_messages')
-    .select('id')
+    .select('id, content_type')
     .eq('room_id', roomId)
     .neq('sender_id', userId)
     .not('id', 'is', null);
@@ -750,21 +779,6 @@ export const markRoomAsRead = async (
   try {
     await markMessagesAsRead(client, roomId, userId, unreadMessageIds);
   } catch (error) {
-    console.error('[markRoomAsRead] Error calling markMessagesAsRead:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      details:
-        error && typeof error === 'object' && 'details' in error
-          ? (error as { details?: string }).details
-          : undefined,
-      code:
-        error && typeof error === 'object' && 'code' in error
-          ? (error as { code?: string }).code
-          : undefined,
-      roomId,
-      userId,
-      unreadMessageIdsCount: unreadMessageIds.length,
-      error,
-    });
     throw error;
   }
 };

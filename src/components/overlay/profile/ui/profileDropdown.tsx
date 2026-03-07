@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ComponentType } from 'react';
 import Icon from '@/commons/components/icon';
 import Avatar from '@/commons/components/avatar';
 import { useAuth } from '@/commons/providers/auth/auth.provider';
+import { useModal } from '@/commons/providers/modal';
 import {
   useUserStatusStore,
   type ManualStatus,
@@ -11,6 +12,7 @@ import {
 import { useProfileBinding } from '../hooks/index.binding.hook';
 import { getAvatarImagePath } from '@/lib/avatar/getAvatarImagePath';
 import { useSteamOAuth } from '@/components/auth/hooks/useSteamOAuth.hook';
+import ProfileEditModal from './profileEditModal';
 import styles from './styles.module.css';
 
 type UserStatus = 'online' | 'away' | 'dnd' | 'offline';
@@ -41,6 +43,7 @@ const STATUS_CONFIG = {
 
 export default function ProfileDropdown({ onClose }: ProfileDropdownProps) {
   const { logout, user: authUser } = useAuth();
+  const { openModal } = useModal();
   const { profileData } = useProfileBinding();
   const { myStatus, setMyManualStatus } = useUserStatusStore();
   const { handleSteamLink } = useSteamOAuth();
@@ -85,13 +88,20 @@ export default function ProfileDropdown({ onClose }: ProfileDropdownProps) {
     setMyManualStatus(status as ManualStatus);
   };
 
-  const handleViewProfile = () => {
-    // TODO: 프로필 페이지로 이동
-    onClose();
-  };
-
   const handleEditProfile = () => {
-    // TODO: 프로필 수정 페이지로 이동
+    if (!authUser?.id) {
+      return;
+    }
+
+    openModal({
+      component: ProfileEditModal as unknown as ComponentType<
+        Record<string, unknown>
+      >,
+      componentProps: {
+        currentNickname: user.nickname,
+        avatarImagePath,
+      },
+    });
     onClose();
   };
 
@@ -179,14 +189,14 @@ export default function ProfileDropdown({ onClose }: ProfileDropdownProps) {
 
       {/* 프로필 메뉴 */}
       <div className={styles.section}>
-        <button
+        {/* <button
           className={styles.menuItem}
           onClick={handleViewProfile}
           role="menuitem"
         >
           <Icon name="user" size={16} />
           <span>프로필 보기</span>
-        </button>
+        </button> */}
         <button
           className={styles.menuItem}
           onClick={handleEditProfile}

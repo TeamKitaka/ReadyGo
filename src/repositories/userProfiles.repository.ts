@@ -64,6 +64,51 @@ export const updateAnimalType = async (
 };
 
 /**
+ * user_profiles의 nickname을 업데이트한다
+ * - DB 접근만 수행, 에러 처리는 상위 레이어에서 담당
+ * - Supabase 응답 구조를 그대로 반환
+ */
+export const updateNickname = async (
+  client: SupabaseClient<Database>,
+  userId: string,
+  nickname: string
+) => {
+  return await client
+    .from('user_profiles')
+    .update({ nickname })
+    .eq('id', userId);
+};
+
+/**
+ * user_profiles의 nickname, avatar_url을 함께 업데이트한다
+ * - DB 접근만 수행, 에러 처리는 상위 레이어에서 담당
+ * - Supabase 응답 구조를 그대로 반환
+ */
+export const updateProfileBasics = async (
+  client: SupabaseClient<Database>,
+  userId: string,
+  params: {
+    nickname?: string;
+    avatarUrl?: string;
+  }
+) => {
+  const updateData: {
+    nickname?: string;
+    avatar_url?: string;
+  } = {};
+
+  if (params.nickname !== undefined) {
+    updateData.nickname = params.nickname;
+  }
+
+  if (params.avatarUrl !== undefined) {
+    updateData.avatar_url = params.avatarUrl;
+  }
+
+  return await client.from('user_profiles').update(updateData).eq('id', userId);
+};
+
+/**
  * user_profiles의 모든 user id 목록을 조회한다
  * - DB 접근만 수행, 에러 처리 및 데이터 가공 없음
  * - Supabase 응답 구조를 그대로 반환

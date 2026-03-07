@@ -1,3 +1,5 @@
+@import url('https://cdn.jsdelivr.net/gh/MonadABXY/mona-font/web/mona.css');
+
 /* 매치 섹션 컨테이너 */
 .container {
   background-color: var(--color-bg-primary);
@@ -27,6 +29,10 @@
   color: var(--color-text-primary);
   margin: 0;
   white-space: nowrap;
+}
+
+.monaEmoji {
+  font-family: 'Mona12 Color Emoji', var(--typo-heading-lg-font-family);
 }
 
 /* 그리드 컨테이너 */

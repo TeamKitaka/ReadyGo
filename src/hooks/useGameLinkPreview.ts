@@ -8,6 +8,7 @@ export type GameInfo = {
   header_image: string | null;
   short_description: string | null;
   isLoading: boolean;
+  hasFailed?: boolean; // 실패한 게임 정보 재시도 방지
 };
 
 export type GameInfoMap = Record<number, GameInfo>;
@@ -29,9 +30,13 @@ export const useGameLinkPreview = (
    * 게임 정보 조회 함수
    */
   const fetchGameInfo = useCallback(async (appId: number) => {
-    // 이미 로딩 중이거나 정보가 있으면 스킵
+    // 이미 로딩 중이거나 정보가 있거나 실패한 경우 스킵
     setGameInfoMap((prev) => {
-      if (prev[appId]?.isLoading || prev[appId]?.name) {
+      if (
+        prev[appId]?.isLoading ||
+        prev[appId]?.name ||
+        prev[appId]?.hasFailed
+      ) {
         return prev;
       }
 
@@ -44,6 +49,7 @@ export const useGameLinkPreview = (
           header_image: null,
           short_description: null,
           isLoading: true,
+          hasFailed: false,
         },
       };
     });
@@ -69,8 +75,8 @@ export const useGameLinkPreview = (
           isLoading: false,
         },
       }));
-    } catch (error) {
-      console.error(`Failed to fetch game info for app_id ${appId}:`, error);
+    } catch {
+      // 실패한 게임 정보는 재시도하지 않도록 hasFailed 플래그 설정
       setGameInfoMap((prev) => ({
         ...prev,
         [appId]: {
@@ -79,6 +85,7 @@ export const useGameLinkPreview = (
           header_image: null,
           short_description: null,
           isLoading: false,
+          hasFailed: true,
         },
       }));
     }
